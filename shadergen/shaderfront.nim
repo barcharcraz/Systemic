@@ -1,30 +1,39 @@
 import macros
-proc genGlProcDef(s: PNimrodNode): string =
-  var rv = ""
+dumpTree:
+  proc testBasicOps(verts: openarray[int]): int =
+    for i in verts.items:
+      result = result + i
+proc genVarDecleration(typename: string, name: string): string = 
+  return typename & name
+proc genArgList(typenames: seq[string], names: seq[string]): string =
+  result = ""
+  for t in typenames.pairs:
+    result = result & t.val & " " & names[t.key] & " "
+proc genGlProcDef(s: PNimrodNode): string {.compileTime.} =
   var params: seq[string]
   var paramNames: seq[string]
   expectKind(s, {nnkProcDef})
-  var name = $s
+  for param in s.params.findChild((it.kind == nnkIdentDefs)).children:
+    if param.kind != nnkEmpty:
+      params.add($param)
+      paramNames.add($param)
+  var rv = $s.params
+  var name = $s.name
   var paramNodes = "foo"
-  rv = $paramNodes
-  #result = rv & " " & name & "()" & "{"
-  result = ""
+  #rv = $paramNodes
+  result = (rv & " " & name & "()" & " {")
 
 macro testGen(s: stmt): expr =
   var shader: string = ""
   for i in s.children:
     if(i.kind == nnkProcDef):
-      shader = shader & "foo"
+      shader = shader & genGlProcDef(i)
   result = newStrLitNode(shader)
 
-dumpTree:
-  proc testBasicOps(verts: openarray[int]): int =
-    for i in verts.items:
-      result = result + i
+
 dumpTree:
   const test = "foo"
-const
-  str = testGen do:
-          proc testGenFunc(c: int):int =
-            result = c + c
+
+proc testGenFunc(c: int):int {.testGen.} = 
+  result = c + c
 echo str
