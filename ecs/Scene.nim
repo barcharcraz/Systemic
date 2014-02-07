@@ -1,4 +1,4 @@
-type SceneId = int
+type SceneId* = int
 type TScene* = object
   id*: SceneId
   updateList: seq[proc(id: SceneId)]
