@@ -2,8 +2,9 @@ import linagl/vector
 #import linagl/matrix
 import ecs/Scene
 import ecs/SceneNode
+import strutils
 import math
-
+type TInterval = tuple[min: float, max: float]
 type TSphere = object
   center: TVec3
   radius: float
@@ -26,8 +27,12 @@ proc findIntersection(ray: TVec3, eye: TVec3, sphere: TSphere): float =
     var t = min(tpos, tmin)
     return t
   
-proc findIntersectionPoint(ray: TVec3, eye: TVec3, sphere: TSphere): TVec3 = 
-  result = ray * findIntersection(ray, eye, sphere)
+proc findIntersectionPoint(ray: TVec3, eye: TVec3, sphere: TSphere): tuple[res: bool, val: TVec3] = 
+  var d = findIntersection(ray, eye, sphere)
+  if d < 0.0:
+    result = (false, ray)
+  else:
+    result = (true, ray * d)
 proc GetDiffuseColor(inter: TVec3, obj: TSphere, light: TLight): TVec3 =
   var toLight = inter - light.pos
   var norm = inter - obj.center
@@ -37,9 +42,12 @@ proc GetDiffuseColor(inter: TVec3, obj: TSphere, light: TLight): TVec3 =
   result = ndl.float32 * light.diffuse
 proc GetColor(Ray: TVec3, eye: TVec3, sphere: TSphere, light: TLight): TVec3 =
   var obj = initSphere()
-  var intersection = findIntersectionPoint(ray, eye, sphere)
+  var (hasIntersect, intersection) = findIntersectionPoint(ray, eye, sphere)
   var diffuseColor: TVec3 = GetDiffuseColor(intersection, sphere, light)
-  result = diffuseColor
+  if hasIntersect:
+    result = diffuseColor
+  else:
+    result = [0.0'f32, 0.0'f32, 0.0'f32]
   
 proc getWindowBounds(fov: float, aspect: float): tuple[bl, tr: TVec3] = 
   result.bl = [0.0'f32,0.0'f32,0.0'f32].TVec3
@@ -50,23 +58,31 @@ proc getWindowBounds(fov: float, aspect: float): tuple[bl, tr: TVec3] =
   result.tr[0] = tan(fov/2)
   result.tr[1] = tan(fov/2) * aspect
 
-proc getPixelPos(res: tuple[x,y: int], bounds: tuple[min,max: TVec3], t: TVec3, tmax: int): TVec3 =
-  var dist = array[float32, 0..2]
-  var step = array[float32, 0..2]
-  for (idx, elm) in dist.pairs:
-    dist[idx] = bounds.max[idx] - bounds.min[idx]
-    step[idx] = dist[idx]/tmax
-    result[idx] = bounds.min[idx] + step * t
-  
+proc scaleTo(fromr: TInterval, tor: TInterval, t: float): float =
+  var steps = fromr.max - fromr.min
+  var stepSize = (tor.max - tor.min) / steps
+  var pos = (t - fromr.min) / steps
+  echo fromr
+  result = tor.min + (stepSize * pos)
 when isMainModule:
   var(bottom, top) = getWindowBounds(45, (4.0/3.0))
   echo "Window is: " & $bottom & " and " & $top
-  var TestSphere = TSphere(center: [0.0'f32,0.0'f32,-5.0'f32], radius: 5.0'f)
+  var TestSphere = TSphere(center: [0.0'f32,0.0'f32,-10.0'f32], radius: 5.0)
   var testLight = TLight(pos: [0.0'f32,0.0'f32,-2.0'f32], diffuse:[1.0'f32,1.0'f32,1.0'f32])
-  var testWin = array[array[TVec3[0..479], 0..639]]
+  var testWin: array[0..39, array[0..39, TVec3]]
   var eyePos = [0.0'f32, 0.0'f32, 1.0'f32]
-  var res = (640, 480)
-  var bounds = getWindowBounds(45.0, (4.0/3.0))
-  for (x, xelm) in testWin:
-    for (y, elm) in xelm:
-      testWin[x][y] = GetColor(getPixelPos(res, bounds, 
+  var res = (x: 40.0, y: 40.0)
+  var bounds = getWindowBounds(45.0, (1.0))
+  for x, xelm in testWin:
+    for y, elm in xelm:
+      var rayx = scaleTo((0.0'f32, res.x), (bounds.bl[0].float,bounds.tr[0].float), x.float)
+      var rayy = scaleTo((0.0'f32, res.y), res.TInterval, (bounds.bl[1].float,bounds.tr[1].float), y.float)
+      var ray = [rayx.float32, rayy.float32, 0.0'f32]
+      echo($(rayx, rayy))
+      testWin[x][y] = GetColor(ray, eyePos, testSphere, testLight)
+
+  for x in testWin:
+    for y in x:
+      write(stdout, formatFloat(y.mag(), ffDecimal, 3) & " ")
+    echo ""
+  echo findIntersectionPoint([0.0'f32, 0.0'f32, -1.0'f32], eyePos, testSphere)
