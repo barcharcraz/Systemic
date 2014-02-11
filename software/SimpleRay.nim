@@ -61,28 +61,29 @@ proc getWindowBounds(fov: float, aspect: float): tuple[bl, tr: TVec3] =
 proc scaleTo(fromr: TInterval, tor: TInterval, t: float): float =
   var steps = fromr.max - fromr.min
   var stepSize = (tor.max - tor.min) / steps
+  var totalDist = (tor.max - tor.min)
   var pos = (t - fromr.min) / steps
-  echo fromr
-  result = tor.min + (stepSize * pos)
+  result = tor.min + (totalDist * pos)
 when isMainModule:
-  var(bottom, top) = getWindowBounds(45, (4.0/3.0))
-  echo "Window is: " & $bottom & " and " & $top
-  var TestSphere = TSphere(center: [0.0'f32,0.0'f32,-10.0'f32], radius: 5.0)
-  var testLight = TLight(pos: [0.0'f32,0.0'f32,-2.0'f32], diffuse:[1.0'f32,1.0'f32,1.0'f32])
-  var testWin: array[0..39, array[0..39, TVec3]]
+  var(bottom, top) = getWindowBounds(45, (1.0))
+  #echo "Window is: " & $bottom & " and " & $top
+  var TestSphere = TSphere(center: [0.0'f32,0.0'f32,-20.0'f32], radius: 5.0)
+  var testLight = TLight(pos: [10.0'f32,0.0'f32,-20.0'f32], diffuse:[1.0'f32,1.0'f32,1.0'f32])
+  var testWin: array[0..19, array[0..19, TVec3]]
   var eyePos = [0.0'f32, 0.0'f32, 1.0'f32]
-  var res = (x: 40.0, y: 40.0)
+  var res = (x: 20.0, y: 20.0)
   var bounds = getWindowBounds(45.0, (1.0))
   for x, xelm in testWin:
     for y, elm in xelm:
-      var rayx = scaleTo((0.0'f32, res.x), (bounds.bl[0].float,bounds.tr[0].float), x.float)
-      var rayy = scaleTo((0.0'f32, res.y), res.TInterval, (bounds.bl[1].float,bounds.tr[1].float), y.float)
-      var ray = [rayx.float32, rayy.float32, 0.0'f32]
-      echo($(rayx, rayy))
+      var rayx = scaleTo((0.0, res.x), (bounds.bl[0].float,bounds.tr[0].float), x.float)
+      var rayy = scaleTo((0.0, res.y), (bounds.bl[1].float,bounds.tr[1].float), y.float)
+      #echo($(rayx, rayy))
+      var ray = [rayx.float32, rayy.float32, -1.0'f32]
       testWin[x][y] = GetColor(ray, eyePos, testSphere, testLight)
-
+      var intersection = findIntersectionPoint(ray, eyePos, testSphere)
   for x in testWin:
     for y in x:
-      write(stdout, formatFloat(y.mag(), ffDecimal, 3) & " ")
+      write(stdout, formatFloat(y[2] * -1, ffDecimal, 3) & " ")
     echo ""
-  echo findIntersectionPoint([0.0'f32, 0.0'f32, -1.0'f32], eyePos, testSphere)
+  #echo findIntersectionPoint([0.0'f32, 0.0'f32, -1.0'f32], eyePos, testSphere)
+  
