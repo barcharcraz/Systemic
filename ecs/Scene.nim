@@ -7,7 +7,10 @@ proc initScene*(): TScene =
   var id {.global.}: int = 0
   result.id = id
   inc(id)
-  result.updateList.newSeq(10)
+  result.updateList.newSeq(0)
+
+proc addSystem*(scene: var TScene, func: proc(id: SceneId)) =
+  scene.updateList.add(func)
 
 proc update*(this: TScene) =
   for elm in this.updateList:
