@@ -22,7 +22,7 @@ proc GetDefaultNode[T](): var TSceneNode[T] =
     result = newIdentNode(!(name & "SceneNode"))
   result = concatName(T.name)
 
-macro MakeComponentNode(typ: expr): stmt =
+macro MakeComponentNode*(typ: expr): stmt =
   var nodeName = repr(typ) & "SceneNode"
   var brackets = newNimNode(nnkBracketExpr)
   brackets.add(newIdentNode(!"initSceneNode"))
@@ -42,7 +42,8 @@ template MakeComponent*(typ: typedesc) =
 
 proc addComponent*[T](scene: TScene, item: T) = 
   GetDefaultNode[T]().AddToNode(scene.id, item)
-
+proc addComponent*[T](scene: SceneId; item: T) =
+  GetDefaultNode[T]().AddToNode(scene, item)
 ##gets the sequence of typ components in the given scene
 template getComponent*(scene: TScene, typ: expr): expr = 
   GetDefaultNode[typ]().sceneList[scene.id]

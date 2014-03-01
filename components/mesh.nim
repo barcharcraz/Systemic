@@ -1,4 +1,4 @@
-import linagl
+import vecmath
 type TVertex = object
   pos: TVec4f
   norm: TVec4f
