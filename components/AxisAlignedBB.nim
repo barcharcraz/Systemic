@@ -6,3 +6,4 @@ type TAxisAlignedBB = object
 
 proc initAABB*(initial: TAlignedBox3f): TAxisAlignedBB =
   result = TAxisAlignedBB(RestAABB: initial, CurAABB: initial)
+  

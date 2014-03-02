@@ -14,3 +14,5 @@ proc initCamera*(near, far, fov: float32): TCamera =
 proc initCamera*(): TCamera = initCamera(1, 100, 60)
 proc initCamera*(near, far: float32): TCamera = initCamera(near, far, 60)
 proc initCamera*(fov: float32): TCamera = initCamera(1, 100, fov)
+
+

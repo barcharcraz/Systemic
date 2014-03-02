@@ -2,7 +2,10 @@
 import Scene
 import SceneNode
 
-type EntityId = distinct int
+type EntityId* = distinct int
+type TComponent*[T] = object
+  id: EntityId
+  data: T
 
 var EntityMapping: seq[SceneId] = @[]
 
@@ -13,9 +16,7 @@ proc genEntity*(): EntityId =
 
 
 
-type TComponent*[T] = object
-  id: EntityId
-  data: T
+
 
 proc initComponent*[T](id: EntityId; data: T): TComponent[T] =
   result.id = id
@@ -26,7 +27,9 @@ template MakeEntityComponent*(typ: typedesc) =
 
 
 proc add*[T](ent: EntityId, elm: T) =
-  EntityMapping[ent].addComponent(T)
+  var component = initComponent(ent, elm)
+  var scene: SceneId = EntityMapping[ent.int]
+  scene.addComponent(component)
 
 iterator components[T](ent: EntityId): T {.inline.} =
   var scene = EntityMapping[ent]
@@ -35,9 +38,9 @@ iterator components[T](ent: EntityId): T {.inline.} =
       yield elm
 
 when isMainModule:
-  MakeEntityComponent(int)
+  #MakeEntityComponent(int)
+  var TComponent_int_SceneNode = initSceneNode[TComponent[int]]()
   var entitytest = genEntity()
   entitytest.add(4)
   entitytest.add(7)
-
-
+  

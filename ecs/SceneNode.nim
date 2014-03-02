@@ -1,12 +1,15 @@
 import Scene
 import macros
 import typetraits
+import strutils
+
+
 type TSceneNode*[T] = object
   sceneList: seq[seq[T]]
 proc initSceneNode*[T](): TSceneNode[T] = 
   newSeq(result.sceneList, 10)
 
-proc addToNode[T](node: var TSceneNode[T], scene: SceneId, item: T) =
+proc addToNode*[T](node: var TSceneNode[T], scene: SceneId, item: T) =
   if node.sceneList.len <= scene:
     #we need to use this version of newseq to work
     #around a compiler bug
@@ -17,16 +20,24 @@ proc addToNode[T](node: var TSceneNode[T], scene: SceneId, item: T) =
     newSeq(node.sceneList[scene], 0)
   node.sceneList[scene].add(item)
 
-proc GetDefaultNode[T](): var TSceneNode[T] =
-  macro concatName(name: static[string]): expr =
-    result = newIdentNode(!(name & "SceneNode"))
-  result = concatName(T.name)
+macro concatName(name: static[string]): expr =
+  var resultString: string = name & "SceneNode"
+  resultString = resultString.replace("[", "_")
+  resultString = resultString.replace("]", "_")
+  result = newIdentNode(!resultString)
+  echo repr(result)
+proc GetDefaultNode*[T](): var TSceneNode[T] =
+  result = concatName(typetraits.name(T))
 
 macro MakeComponentNode*(typ: expr): stmt =
   var nodeName = repr(typ) & "SceneNode"
+  nodeName = nodeName.replace("[", "_")
+  nodeName = nodeName.replace("]", "_")
+  echo nodeName
   var brackets = newNimNode(nnkBracketExpr)
   brackets.add(newIdentNode(!"initSceneNode"))
-  brackets.add(newIdentNode(!(repr(typ))))
+  echo repr(typ)
+  brackets.add(newIdentNode(!repr(typ)))
   var identDefs = newNimNode(nnkIdentDefs)
   identDefs.add(newIdentNode(nodeName))
   identDefs.add(newNimNode(nnkEmpty))
@@ -35,15 +46,17 @@ macro MakeComponentNode*(typ: expr): stmt =
   identDefs.add(initCall)
   result = newNimNode(nnkStmtList)
   result.add(newNimNode(nnkVarSection).add(identDefs))
+  echo repr(result)
 
 
 template MakeComponent*(typ: typedesc) =
   MakeComponentNode(typ)
 
 proc addComponent*[T](scene: TScene, item: T) = 
-  GetDefaultNode[T]().AddToNode(scene.id, item)
+  GetDefaultNode[T]().addToNode(scene.id, item)
 proc addComponent*[T](scene: SceneId; item: T) =
-  GetDefaultNode[T]().AddToNode(scene, item)
+  echo name(T)
+  GetDefaultNode[T]().addToNode(scene, item)
 ##gets the sequence of typ components in the given scene
 template getComponent*(scene: TScene, typ: expr): expr = 
   GetDefaultNode[typ]().sceneList[scene.id]
@@ -84,4 +97,5 @@ when isMainModule:
   addSystem(testScene, testSystem)
   addSystem(testScene, testIndividualSystem)
   testScene.update()
+  
   
