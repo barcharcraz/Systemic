@@ -9,7 +9,7 @@ type
   TVec4f* = array[4, float32]
   TVec3f* = array[4, float32]
 type
-  TAlignedBox3f* = tuple[min: TVec3f, max: TVec3]
+  TAlignedBox3f* = tuple[min: TVec3f, max: TVec3f]
 discard """
 type RowMajorMatrix = generic x
   x is TMatrix

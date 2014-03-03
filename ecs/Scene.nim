@@ -1,11 +1,12 @@
-type SceneId* = int
+type SceneId* = distinct int
+proc `==`*(a,b: SceneId): bool {.borrow.}
 type TScene* = object
   id*: SceneId
   updateList: seq[proc(id: SceneId)]
 
 proc initScene*(): TScene = 
   var id {.global.}: int = 0
-  result.id = id
+  result.id = id.SceneId
   inc(id)
   result.updateList.newSeq(0)
 
