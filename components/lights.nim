@@ -1,4 +1,4 @@
-import linagl
+import vecmath
 type TLightKind = enum
   lkPoint,
   lkDirectional

@@ -1,1 +1,6 @@
 nimcache
+.build
+*.sln
+*.nimproj
+*.suo
+bin

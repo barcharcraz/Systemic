@@ -1,6 +1,6 @@
 import vecmath
 
-type TAxisAlignedBB = object
+type TAxisAlignedBB* = object
   RestAABB: TAlignedBox3f
   CurAABB: TAlignedBox3f
 
