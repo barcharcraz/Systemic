@@ -8,7 +8,7 @@ type
   TMat4f* = array[4*4, float32]
   TMat3f* = array[3*3, float32]
   TVec4f* = array[4, float32]
-  TVec3f* = array[4, float32]
+  TVec3f* = array[3, float32]
   TVec2f* = array[2, float32]
   TQuatf* = array[4, float32] #poor man's quaternion
 type
@@ -27,7 +27,7 @@ proc mat*(self: var TMat4f; i,j: int): var float32 =
   var idx = (4 * j) + i
   result = self[idx]
 proc identity4f(): TMat4f = 
-  for i in 0..3
+  for i in 0..3:
     result.mat(i,i) = 1.0'f32
 proc toRotMatrix*(q: TQuatf): TMat3f =
   result[0] = 1 - 2 * (q.j*q.j)
@@ -44,7 +44,7 @@ proc toTranslationMatrix*(v: TVec3f): TMat4f =
   result.mat(0,3) = v[0]
   result.mat(1,3) = v[1]
   result.mat(2,3) = v[2]
-proc toAffine(m: TMat3f): TMat4f =
+proc toAffine*(m: TMat3f): TMat4f =
   for i in 0..2:
     for j in 0..2:
       result.mat(i,j) = m.at(i,j)
@@ -94,4 +94,8 @@ proc mul[T; NA, MA, NB, MB: static[int]](a: TMatrix[T, NA, MA, RowMajor]; b: TMa
   discard
 """
 
-  
+when isMainModule:
+  var id = identity4f()
+  var trans = toTranslationMatrix([1.0'f32, 1.0'f32, 1.0'f32])
+  var result = mul(id, trans)
+  echo repr(result)

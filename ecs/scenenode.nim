@@ -1,8 +1,8 @@
-import Scene
+import ecs.scene
 import macros
 import typetraits
 import strutils
-import entity
+import ecs.entity
 
 type TSceneNode*[T] = object
   sceneList*: seq[seq[T]]
@@ -16,7 +16,7 @@ proc addToNode*[T](node: var TSceneNode[T], scene: SceneId, item: T) =
     var toInst: seq[T]
     newSeq(toInst, 4)
     node.sceneList.insert(toInst, scene.int)
-  if node.sceneList[scene.int] == nil:
+  if node.sceneList[scene.int].isnil:
     newSeq(node.sceneList[scene.int], 0)
   node.sceneList[scene.int].add(item)
 
@@ -25,9 +25,7 @@ macro concatName(name: static[string]): expr =
   resultString = resultString.replace("[", "_")
   resultString = resultString.replace("]", "_")
   result = newIdentNode(!resultString)
-  echo repr(result)
 proc GetDefaultNode*[T](): var TSceneNode[T] =
-  echo typetraits.name(T)
   result = concatName(typetraits.name(T))
 proc GetDefaultNode*[T](name: static[string]): var TSceneNode[T] =
   result = concatName(name)
@@ -35,20 +33,20 @@ macro MakeComponentNode*(typ: expr): stmt =
   var nodeName = repr(typ) & "SceneNode"
   nodeName = nodeName.replace("[", "_")
   nodeName = nodeName.replace("]", "_")
-  echo nodeName
   var brackets = newNimNode(nnkBracketExpr)
   brackets.add(newIdentNode(!"initSceneNode"))
-  echo repr(typ)
   brackets.add(typ)
   var identDefs = newNimNode(nnkIdentDefs)
-  identDefs.add(newIdentNode(nodeName))
+  var postfix = newNimNode(nnkPostfix)
+  postfix.add(newIdentNode(!"*"))
+  postfix.add(newIdentNode(nodeName))
+  identDefs.add(postfix)
   identDefs.add(newNimNode(nnkEmpty))
   var initCall = newNimNode(nnkCall)
   initCall.add(brackets)
   identDefs.add(initCall)
   result = newNimNode(nnkStmtList)
   result.add(newNimNode(nnkVarSection).add(identDefs))
-  echo repr(result)
 
 
 template MakeComponent*(typ: expr) {.immediate,dirty.} =
@@ -84,6 +82,13 @@ proc addSystem*[T: notArray](scene: var TScene, func: proc(id: SceneId, t: T)) =
   scene.addSystem do (id: SceneId):
     for elm in components(id, T):
       func(id, elm)
+
+##these versions of the addSystem proc use var params
+proc AddSystem*[T: notArray](scene: var TScene, func: proc(id: SceneId; t: var T)) =
+  scene.addSystem do (id: SceneId):
+    var comps = addr components(id, T)
+    for i in 0..comps[].high:
+      func(id, comps[][i])
 
 ##these versions of the addSystem procdeure are for adding functions that
 ##do not need to know about what scene they are being run on

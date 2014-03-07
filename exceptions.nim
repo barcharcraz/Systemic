@@ -1,3 +1,4 @@
 type ENoScene* = object of ESynch
-type ESceneNotUnique* = object of Esynch
-type ENoSuchComponent* = object of Esynch
+type ESceneNotUnique* = object of ESynch
+type ENoSuchComponent* = object of ESynch
+type EGraphicsAPI* = object of ESynch
