@@ -44,8 +44,8 @@ proc initOpenGlRenderer*() =
   glDepthFunc(GL_LEQUAL)
   glDepthMask(true)
   glDepthRange(0.0'f32, 1.0'f32)
-  glEnable(cGL_CULL_FACE)
-  glFrontFace(GL_CW)
+  #glEnable(cGL_CULL_FACE)
+  #glFrontFace(GL_CW)
 
 
 
@@ -58,12 +58,12 @@ struct matrices_t {
 };
 uniform matrices_t mvp;
 
-in vec4 pos;
+in vec3 pos;
 void main() {
   mat4 modelviewproj = mvp.proj * mvp.view * mvp.model;
   mat4 modelview = mvp.view * mvp.model;
 
-  vec4 rv = modelviewproj * pos;
+  vec4 rv = modelviewproj * vec4(pos, 1);
 
   gl_Position = rv;
 }
@@ -71,11 +71,11 @@ void main() {
 """
 var defPS = """
 #version 130
-
+in vec3 norm;
 out vec4 outputColor;
 
 void main() {
-  outputColor = vec4(0.0,1.0,1.0,1.0);
+  outputColor = vec4(normalize(norm),1.0);
 }
 
 """
@@ -135,13 +135,13 @@ proc CreateTVertexAttribPtr(program: GLuint): GLuint =
   var normLoc = glGetAttribLocation(program, "norm")
   if posLoc != -1:
     glEnableVertexAttribArray(posLoc.GLuint)
-    glVertexAttribPointer(posLoc.GLuint, 4, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, nil)
+    glVertexAttribPointer(posLoc.GLuint, 3, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, nil)
   if normLoc != -1:
     glEnableVertexAttribArray(normLoc.GLuint)
-    glVertexAttribPointer(normLoc.GLuint, 4, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[ptr GLvoid](sizeof(TVec4f)))
+    glVertexAttribPointer(normLoc.GLuint, 3, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[ptr GLvoid](sizeof(TVec3f)))
   if uvLoc != -1:
     glEnableVertexAttribArray(uvLoc.GLuint)
-    glVertexAttribPointer(uvLoc.GLuint, 2, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[ptr GLvoid]( 2 * sizeof(TVec4f)))
+    glVertexAttribPointer(uvLoc.GLuint, 2, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[ptr GLvoid]( 2 * sizeof(TVec3f)))
 
 proc CreateMeshBuffers(mesh: var TMesh): tuple[vert: GLuint, index: GLuint] =
   glGenBuffers(1, addr result.vert)

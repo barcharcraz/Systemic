@@ -11,6 +11,7 @@ import components.camera
 import components.transform
 import components
 import logging
+import assetloader
 var log = newConsoleLogger()
 handlers.add(log)
 
@@ -23,12 +24,7 @@ makeContextCurrent(wnd)
 var done = false
 
 var mainscene = initScene()
-var tmesh: TMesh
-tmesh.verts = @[]
-tmesh.verts.add(initVertex([-5.0'f32, 0.0'f32, -10.0'f32]))
-tmesh.verts.add(initVertex([0.0'f32, 5.0'f32, -10.0'f32]))
-tmesh.verts.add(initVertex([5.0'f32, 0.0'f32, -10.0'f32]))
-tmesh.indices = @[0.uint32, 1.uint32, 2.uint32]
+var tmesh = loadMesh("testobj.obj")
 var camEnt = genEntity()
 var meshEnt = genEntity()
 mainscene.id.add(camEnt)
@@ -36,7 +32,7 @@ mainscene.id.add(meshEnt)
 camEnt.add(initCamera())
 camEnt.add(initTransform())
 meshEnt.add(tmesh)
-meshEnt.add(initTransform())
+meshEnt.add(initTransform([0.0'f32, 0.0'f32, -10.0'f32]))
 mainscene.addSystem(glrenderer.RenderUntextured)
 initOpenGLRenderer()
 glViewport(0,0,640,480)
