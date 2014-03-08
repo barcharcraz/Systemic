@@ -1,7 +1,7 @@
 import vecmath
 type TVertex* = object
-  pos*: TVec4f
-  norm*: TVec4f
+  pos*: TVec3f
+  norm*: TVec3f
   uv*: TVec2f
 proc initVertex*(pos: TVec3f): TVertex =
   ##initialize a vertex with default values
@@ -9,7 +9,6 @@ proc initVertex*(pos: TVec3f): TVertex =
   result.pos[0] = pos[0]
   result.pos[1] = pos[1]
   result.pos[2] = pos[2]
-  result.pos[3] = 1.0'f32
   #norm and UV are initialized to zero
 type TMesh* = object
   verts*: seq[TVertex]

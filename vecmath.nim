@@ -10,6 +10,7 @@ type
   TVec4f* = array[4, float32]
   TVec3f* = array[3, float32]
   TVec2f* = array[2, float32]
+  TVec3d* = array[3, float64]
   TQuatf* = array[4, float32] #poor man's quaternion
 type
   TAlignedBox3f* = tuple[min: TVec3f, max: TVec3f]
@@ -17,6 +18,10 @@ proc i*(q: TQuatf): float32 = q[1]
 proc j*(q: TQuatf): float32 = q[2]
 proc k*(q: TQuatf): float32 = q[3]
 proc w*(q: TQuatf): float32 = q[0]
+proc vec3dtovec3f*(vd: TVec3d): TVec3f =
+  result[0] = vd[0].float32
+  result[1] = vd[1].float32
+  result[2] = vd[2].float32
 proc at*(self: TMat4f; i,j: int): float32 =
   var idx = (4 * j) + i
   result = self[idx]
