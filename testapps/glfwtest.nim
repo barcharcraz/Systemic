@@ -25,6 +25,8 @@ var done = false
 
 var mainscene = initScene()
 var tmesh = loadMesh("testobj.obj")
+for elm in tmesh.verts:
+  echo(repr(elm.norm))
 var camEnt = genEntity()
 var meshEnt = genEntity()
 mainscene.id.add(camEnt)

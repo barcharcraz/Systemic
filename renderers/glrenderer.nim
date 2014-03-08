@@ -59,10 +59,12 @@ struct matrices_t {
 uniform matrices_t mvp;
 
 in vec3 pos;
+in vec3 norm;
+out vec3 norm_out;
 void main() {
   mat4 modelviewproj = mvp.proj * mvp.view * mvp.model;
   mat4 modelview = mvp.view * mvp.model;
-
+  norm_out = norm;
   vec4 rv = modelviewproj * vec4(pos, 1);
 
   gl_Position = rv;
@@ -71,11 +73,11 @@ void main() {
 """
 var defPS = """
 #version 130
-in vec3 norm;
+in vec3 norm_out;
 out vec4 outputColor;
 
 void main() {
-  outputColor = vec4(normalize(norm),1.0);
+  outputColor = vec4(normalize(norm_out),1.0);
 }
 
 """
