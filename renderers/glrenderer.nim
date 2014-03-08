@@ -127,30 +127,31 @@ proc CreateProgram(shaders: varargs[GLuint]): GLuint =
     glDetachShader(result, elm)
   CheckError()
 
-proc CreateTVertexAttribPtr(): GLuint =
+proc CreateTVertexAttribPtr(program: GLuint): GLuint =
   glGenVertexArrays(1, addr result)
   glBindVertexArray(result)
-
   var posLoc = glGetAttribLocation(program, "pos")
   var uvLoc = glGetAttribLocation(program, "uv")
   var normLoc = glGetAttribLocation(program, "norm")
   if posLoc != -1:
-    glEnableVertexAttribArray(posLoc)
+    glEnableVertexAttribArray(posLoc.GLuint)
     glVertexAttribPointer(posLoc.GLuint, 4, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, nil)
   if normLoc != -1:
-    glEnableVertexAttribArray(normLoc)
+    glEnableVertexAttribArray(normLoc.GLuint)
     glVertexAttribPointer(normLoc.GLuint, 4, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[ptr GLvoid](sizeof(TVec4f)))
   if uvLoc != -1:
-    glEnableVertexAttribArray(uvLoc)
+    glEnableVertexAttribArray(uvLoc.GLuint)
     glVertexAttribPointer(uvLoc.GLuint, 2, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[ptr GLvoid]( 2 * sizeof(TVec4f)))
 
 proc CreateMeshBuffers(mesh: var TMesh): tuple[vert: GLuint, index: GLuint] =
   glGenBuffers(1, addr result.vert)
-  glGenBuffers(1, addr result, index)
+  glGenBuffers(1, addr result.index)
   glBindBuffer(GL_ARRAY_BUFFER, result.vert)
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, result.index)
   var vertSize = sizeof(TVertex) * mesh.verts.len
-  var indexSize = sizeof(uint32) * mesh.index.len
+  var indexSize = sizeof(uint32) * mesh.indices.len
+  glBufferData(GL_ARRAY_BUFFER, vertSize.GLsizeiptr, addr mesh.verts[0], GL_STATIC_DRAW)
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertSize.GLsizeiptr, addr mesh.indices[0], GL_STATIC_DRAW)
   
 
 proc BindTransforms(program: GLuint; model, view, proj: var TMat4f) =
@@ -206,13 +207,10 @@ proc RenderUntextured*(scene: SceneId; meshEnt: var TComponent[TMesh]) {.procvar
   if buffers == nil:
     meshEnt.id.add(initObjectBuffers())
     buffers = mEntFirstOpt[TObjectBuffers](meshEnt.id)
-    glGenBuffers(1, addr buffers.vertex)
-    glGenBuffers(1, addr buffers.index)
-    glBindBuffer(GL_ARRAY_BUFFER.GLenum, buffers[].vertex)
-    glBufferData(GL_ARRAY_BUFFER.GLenum, vertSize.GLsizeiptr, addr element.verts[0], GL_STATIC_DRAW)
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER.GLenum, buffers[].index)
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER.GLenum, indexSize.GLsizeiptr, addr element.indices[0], GL_STATIC_DRAW)
-    buffers.vao = CreateTVertexAttribPtr()
+    var (vert, index) = CreateMeshBuffers(meshEnt.data)
+    buffers.vertex = vert
+    buffers.index = index
+    buffers.vao = CreateTVertexAttribPtr(program)
         
   CheckError()
   
