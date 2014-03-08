@@ -47,6 +47,8 @@ proc initOpenGlRenderer*() =
   glEnable(cGL_CULL_FACE)
   glFrontFace(GL_CW)
 
+
+
 var defVS = """
 #version 130
 struct matrices_t {
@@ -125,6 +127,32 @@ proc CreateProgram(shaders: varargs[GLuint]): GLuint =
     glDetachShader(result, elm)
   CheckError()
 
+proc CreateTVertexAttribPtr(): GLuint =
+  glGenVertexArrays(1, addr result)
+  glBindVertexArray(result)
+
+  var posLoc = glGetAttribLocation(program, "pos")
+  var uvLoc = glGetAttribLocation(program, "uv")
+  var normLoc = glGetAttribLocation(program, "norm")
+  if posLoc != -1:
+    glEnableVertexAttribArray(posLoc)
+    glVertexAttribPointer(posLoc.GLuint, 4, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, nil)
+  if normLoc != -1:
+    glEnableVertexAttribArray(normLoc)
+    glVertexAttribPointer(normLoc.GLuint, 4, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[ptr GLvoid](sizeof(TVec4f)))
+  if uvLoc != -1:
+    glEnableVertexAttribArray(uvLoc)
+    glVertexAttribPointer(uvLoc.GLuint, 2, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[ptr GLvoid]( 2 * sizeof(TVec4f)))
+
+proc CreateMeshBuffers(mesh: var TMesh): tuple[vert: GLuint, index: GLuint] =
+  glGenBuffers(1, addr result.vert)
+  glGenBuffers(1, addr result, index)
+  glBindBuffer(GL_ARRAY_BUFFER, result.vert)
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, result.index)
+  var vertSize = sizeof(TVertex) * mesh.verts.len
+  var indexSize = sizeof(uint32) * mesh.index.len
+  
+
 proc BindTransforms(program: GLuint; model, view, proj: var TMat4f) =
   var viewIdx = glGetUniformLocation(program, "mvp.view")
   var modelIdx = glGetUniformLocation(program, "mvp.model")
@@ -184,24 +212,14 @@ proc RenderUntextured*(scene: SceneId; meshEnt: var TComponent[TMesh]) {.procvar
     glBufferData(GL_ARRAY_BUFFER.GLenum, vertSize.GLsizeiptr, addr element.verts[0], GL_STATIC_DRAW)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER.GLenum, buffers[].index)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER.GLenum, indexSize.GLsizeiptr, addr element.indices[0], GL_STATIC_DRAW)
-    glGenVertexArrays(1, addr buffers.vao)
-    glBindVertexArray(buffers.vao)
-    glEnableVertexAttribArray(0)
-    var posLoc = glGetAttribLocation(program, "pos")
-    glVertexAttribPointer(posLoc.GLuint, 4, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, nil)
-    
+    buffers.vao = CreateTVertexAttribPtr()
+        
   CheckError()
   
   glBindVertexArray(buffers.vao)
-  #glEnableVertexAttribArray(1)
-  #glEnableVertexAttribArray(2)
-  #var uvLoc = glGetAttribLocation(program, "uv")
-  #var normLoc = glGetAttribLocation(program, "norm")
   CheckError()
   glBindBuffer(GL_ARRAY_BUFFER.GLenum, buffers.vertex)
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER.GLenum, buffers.index)
-  #glVertexAttribPointer(normLoc.GLuint, 4, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[ptr GLvoid](sizeof(TVec4f)))
-  #glVertexAttribPointer(uvLoc.GLuint, 2, cGL_FLOAT, false, sizeof(TVertex).GLsizei, cast[ptr GLvoid](2 * sizeof(TVec4f)))
   CheckError()
 
   glDrawElements(GL_TRIANGLES, cast[GLSizei](element.indices.len), cGL_UNSIGNED_INT, nil)
