@@ -172,6 +172,25 @@ proc BindTransforms(program: GLuint; model, view, proj: var TMat4f) =
   glUniformMatrix4fv(modelidx, 1.GLsizei, false, cast[PGLfloat](addr model[0]))
   CheckError()
 
+proc CreateTexture(data: ptr GLvoid; width, height: int): GLuint =
+  ## creates a texture using immutable texture storage and 
+  ## uploads `data` to it.
+  glGenTextures(1, addr result)
+  glBindTexture(GL_TEXTURE_2D, result)
+  glTexStorage2D(GL_TEXTURE_2D, 6, GL_RGB8, width.GLsizei, height.GLsizei)
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width.GLsizei, height.GLsizei, GL_RGB, cGL_UNSIGNED_INT, data)
+  glGenerateMipmap(GL_TEXTURE_2D)
+  glBindTexture(GL_TEXTURE_2D, 0)
+proc AttachTextureToProgram(texture: GLuint; program: GLuint; texUint: GLenum; sampler: string) =
+  glUseProgram(program)
+  glActiveTexture(texUint)
+  glBindTexture(GL_TEXTURE_2D, texture)
+  var samplerLoc = glGetUniformLocation(program, sampler.cstring)
+  var texIndex = texUint - GL_TEXTURE0
+  glUniform1i(samplerLoc, texIndex.GLint)
+
+
+
 proc RenderUntextured*(scene: SceneId; meshEnt: var TComponent[TMesh]) {.procvar.} =
   var program {.global.}: GLuint
   var ps {.global.}: GLuint

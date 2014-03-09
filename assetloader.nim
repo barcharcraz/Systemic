@@ -1,5 +1,7 @@
 import assimp
+import freeimage
 import components.mesh as cmesh
+import components.image
 import exceptions
 import vecmath
 proc loadMesh*(filename: string): cmesh.TMesh =
@@ -26,3 +28,5 @@ proc loadMesh*(filename: string): cmesh.TMesh =
     result.indices[i*3 + 2] = findex[2].uint32
   aiReleaseImport(scene)
     
+proc loadTexture(filename: string): TImage =
+  FreeImage_Load()
