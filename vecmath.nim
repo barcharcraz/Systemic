@@ -3,7 +3,7 @@ type ColMajor = object
 type RowMajor = object
 type Options = ColMajor | RowMajor
 type TMatrix*[T; N: static[int]; M: static[int]; O: Options] = object
-  data: array[N*M, T]
+  data: array[0..M*N-1, T]
 type
   TMat4f* = array[4*4, float32]
   TMat3f* = array[3*3, float32]
@@ -82,7 +82,7 @@ type ColMajorMatrix = generic x
 ## gets the element at the ith row and the jth column
 ## of a matrix
 """
-discard """
+
 proc at(self: TMatrix; i,j: int): auto =
   when self.O is RowMajor:
     var idx = (self.M * i) + j
@@ -92,15 +92,14 @@ proc at(self: TMatrix; i,j: int): auto =
     result = self.data[idx]
 
 
-proc `[]`(self: TMatrix; i,j:int): self.T =
-  self.at(i,j)
 
-proc mul[T; NA, MA, NB, MB: static[int]](a: TMatrix[T, NA, MA, RowMajor]; b: TMatrix[T, NB, MB, RowMajor]): TMatrix[T, NA, MB, RowMajor] =
-  discard
-"""
 
 when isMainModule:
   var id = identity4f()
   var trans = toTranslationMatrix([1.0'f32, 1.0'f32, 1.0'f32])
   var result = mul(id, trans)
   echo repr(result)
+  var realMtx: TMatrix[float32, 4, 4, ColMajor]
+  realMtx.data[0] = 1.0'f32
+  echo realMtx.at(0,0)
+

@@ -4,6 +4,10 @@ import components.mesh as cmesh
 import components.image
 import exceptions
 import vecmath
+import os
+import strutils
+import tables
+import logging
 proc loadMesh*(filename: string): cmesh.TMesh =
   var scene = aiImportFile(filename.cstring, 0)
   if scene.meshCount == 0:
@@ -28,5 +32,32 @@ proc loadMesh*(filename: string): cmesh.TMesh =
     result.indices[i*3 + 2] = findex[2].uint32
   aiReleaseImport(scene)
     
-proc loadTexture(filename: string): TImage =
-  FreeImage_Load()
+FreeImage_Initialise(0)
+addQuitProc do {.noconv.}:
+  FreeImage_DeInitialise()
+var textureCache = initTable[string, ptr FIBITMAP]()
+proc loadTexture*(filename: string) =
+  if textureCache.hasKey(filename):
+    warn(filename & " is already in the texture cache")
+  var imageType = FreeImage_GetFileType(filename, 0)
+  if imageType == FIF_UNKNOWN:
+    raise newException(EUnsupportedFormat, "format of " & filename & " is not supported")
+  var image = FreeImage_Load(imageType, filename, 0)
+  var image32 = FreeImage_ConvertTo32Bits(image)
+  FreeImage_Unload(image)
+  textureCache.add(filename, image32)
+proc unloadTexture*(filename: string) =
+  if not textureCache.hasKey(filename):
+    warn("tried to unload " & filename & " which is not in the texture cache")
+  var image = textureCache[filename]
+  FreeImage_Unload(image)
+  textureCache.del(filename)
+proc getTexture*(filename: string): TImage =
+  if not textureCache.hasKey(filename):
+    info("loading " & filename)
+    loadTexture(filename)
+  var image = textureCache[filename]
+  result.width = FreeImage_GetWidth(image).int
+  result.height = FreeImage_GetHeight(image).int
+  result.bpp = FreeImage_GetBPP(image).int
+  result.data = FreeImage_GetBits(image)

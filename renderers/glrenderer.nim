@@ -2,6 +2,7 @@ import opengl
 import components.mesh
 import components.camera
 import components.transform
+import components.image
 import components
 import ecs.Scene
 import ecs.entitynode
@@ -17,6 +18,7 @@ type TObjectBuffers = object
   vertex: GLuint
   index: GLuint
   vao: GLuint
+  tex: GLuint
 proc initObjectBuffers(): TObjectBuffers =
   result.vertex = 0
   result.index = 0
@@ -60,11 +62,14 @@ uniform matrices_t mvp;
 
 in vec3 pos;
 in vec3 norm;
+in vec2 uv;
 out vec3 norm_out;
+out vec2 uv_out;
 void main() {
   mat4 modelviewproj = mvp.proj * mvp.view * mvp.model;
   mat4 modelview = mvp.view * mvp.model;
   norm_out = norm;
+  uv_out = uv;
   vec4 rv = modelviewproj * vec4(pos, 1);
 
   gl_Position = rv;
@@ -74,10 +79,11 @@ void main() {
 var defPS = """
 #version 130
 in vec3 norm_out;
+in vec2 uv_out;
 out vec4 outputColor;
-
+uniform sampler2D tex;
 void main() {
-  outputColor = vec4(normalize(norm_out),1.0);
+  outputColor = texture(tex, uv_out);
 }
 
 """
@@ -172,22 +178,21 @@ proc BindTransforms(program: GLuint; model, view, proj: var TMat4f) =
   glUniformMatrix4fv(modelidx, 1.GLsizei, false, cast[PGLfloat](addr model[0]))
   CheckError()
 
-proc CreateTexture(data: ptr GLvoid; width, height: int): GLuint =
+proc CreateTexture(data: GLvoid; width, height: int): GLuint =
   ## creates a texture using immutable texture storage and 
   ## uploads `data` to it.
   glGenTextures(1, addr result)
   glBindTexture(GL_TEXTURE_2D, result)
-  glTexStorage2D(GL_TEXTURE_2D, 6, GL_RGB8, width.GLsizei, height.GLsizei)
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width.GLsizei, height.GLsizei, GL_RGB, cGL_UNSIGNED_INT, data)
+  glTexStorage2D(GL_TEXTURE_2D, 6, GL_RGBA8, width.GLsizei, height.GLsizei)
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width.GLsizei, height.GLsizei, GL_BGRA, cGL_UNSIGNED_BYTE, data)
   glGenerateMipmap(GL_TEXTURE_2D)
   glBindTexture(GL_TEXTURE_2D, 0)
-proc AttachTextureToProgram(texture: GLuint; program: GLuint; texUint: GLenum; sampler: string) =
+proc AttachTextureToProgram(texture: GLuint; program: GLuint; texUint: GLint; sampler: string) =
   glUseProgram(program)
-  glActiveTexture(texUint)
+  glActiveTexture(GL_TEXTURE0.GLuint + texUint.GLuint)
   glBindTexture(GL_TEXTURE_2D, texture)
   var samplerLoc = glGetUniformLocation(program, sampler.cstring)
-  var texIndex = texUint - GL_TEXTURE0
-  glUniform1i(samplerLoc, texIndex.GLint)
+  glUniform1i(samplerLoc, texUint)
 
 
 
@@ -200,6 +205,7 @@ proc RenderUntextured*(scene: SceneId; meshEnt: var TComponent[TMesh]) {.procvar
   var camTrans = EntFirst[TTransform](cameraEnt)
   var modelMatrix = EntFirst[TTransform](meshEnt.id).GenMatrix()
   var cam = EntFirst[TCamera](cameraEnt)
+  var diffuseTex = EntFirst[TImage](meshEnt.id)
   var viewMatrix = camTrans.GenMatrix()
   var projMatrix = cam
   #the camera uses the convention where
@@ -232,9 +238,10 @@ proc RenderUntextured*(scene: SceneId; meshEnt: var TComponent[TMesh]) {.procvar
     buffers.vertex = vert
     buffers.index = index
     buffers.vao = CreateTVertexAttribPtr(program)
+    buffers.tex = CreateTexture(diffuseTex.data, diffuseTex.width, diffuseTex.height)
         
   CheckError()
-  
+  AttachTextureToProgram(buffers.tex, program, 0, "tex")
   glBindVertexArray(buffers.vao)
   CheckError()
   glBindBuffer(GL_ARRAY_BUFFER.GLenum, buffers.vertex)

@@ -4,6 +4,7 @@ import components.lights
 import components.material
 import components.mesh
 import components.transform
+import components.image
 import ecs.Entity
 import ecs.EntityNode
 import ecs.SceneNode
@@ -14,3 +15,4 @@ MakeEntityComponent(TDirectionalLight)
 MakeEntityComponent(TMesh)
 MakeEntityComponent(TMaterial)
 MakeEntityComponent(TTransform)
+MakeEntityComponent(TImage)
