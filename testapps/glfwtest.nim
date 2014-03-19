@@ -9,9 +9,11 @@ import renderers.glrenderer
 import components.mesh
 import components.camera
 import components.transform
+import systems.movement
 import components
 import logging
 import assetloader
+import vecmath
 var log = newConsoleLogger()
 handlers.add(log)
 
@@ -34,7 +36,9 @@ camEnt.add(initTransform())
 meshEnt.add(tmesh)
 meshEnt.add(initTransform([0.0'f32, 0.0'f32, -10.0'f32]))
 meshEnt.add(getTexture("diffuse.bmp"))
+meshEnt.add(initVelocity(quatFromAngleAxis(0.5, [1.0'f32, 0.0'f32, 0.0'f32])))
 mainscene.addSystem(glrenderer.RenderUntextured)
+mainscene.addSystem(movement.VelocitySystem)
 initOpenGLRenderer()
 glViewport(0,0,640,480)
 glClearColor(1.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)

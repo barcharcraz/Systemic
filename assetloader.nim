@@ -1,5 +1,5 @@
 import assimp
-import freeimage
+import FreeImage
 import components.mesh as cmesh
 import components.image
 import exceptions

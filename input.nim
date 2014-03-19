@@ -1,4 +1,6 @@
 import tables
+import ecs/entitynode
+import ecs/scenenode
 type TUsagePage* = enum
   upUndefined = 00,
   upGenericDesktop = 01
@@ -95,14 +97,10 @@ type TMouseButton = enum
 const MaxNumAxis = 16
 type TKeyCombination* = set[TKey]
 type TAxis = float
-type TDevice = object
-  usage_page: int16
-  usage: int16
-  device: ref
 type TDeviceData = object
   axes: array[0..MaxNumAxis, TAxis]
 type TInputMapping* = object
-  devices: seq[TDevice]
+  pressed: TKeyCombination
   axisActions: TTable[string, ptr TAxis]
   actions: TTable[string, TKeyCombination]
 type TMouse* = object
@@ -112,7 +110,7 @@ type TMouse* = object
 type TKeyboard* = object
   keys*: TKeyCombination
 proc initInputMapping*(): TInputMapping =
-  result.devices = newSeq[TDevice]()
+  result.pressed = {}
   result.axisActions = initTable[string, ptr TAxis]()
   result.actions = initTable[string, TKeyCombination]()
 proc ActivateKey*(self: var TInputMapping, key: TKey) =
@@ -124,7 +122,8 @@ proc AddAction*(self: var TInputMapping, name: string, action: TKeyCombination) 
 proc AddAxisAction*(self: var TInputMapping, name: string, action: ptr TAxis) =
   self.axisActions.add(name, action)
 proc AxisAction*(self: TInputMapping, name: string): TAxis =
-  result = self.axisActions[name]
+  result = self.axisActions[name][]
 proc Action*(self: TInputMapping, name: string): bool =
   result = self.actions[name] <= self.pressed
   
+MakeEntityComponent(TInputMapping)

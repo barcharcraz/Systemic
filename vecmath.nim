@@ -1,4 +1,5 @@
 import macros
+import math
 type ColMajor = object
 type RowMajor = object
 type Options = ColMajor | RowMajor
@@ -18,6 +19,11 @@ proc i*(q: TQuatf): float32 = q[1]
 proc j*(q: TQuatf): float32 = q[2]
 proc k*(q: TQuatf): float32 = q[3]
 proc w*(q: TQuatf): float32 = q[0]
+proc cwiseadd*[T](a, b: T): T =
+  assert(a.low == b.low)
+  assert(a.high == b.high)
+  for i in a.low..a.high:
+    result[i] = a[i] + b[i]
 proc vec3dtovec3f*(vd: TVec3d): TVec3f =
   result[0] = vd[0].float32
   result[1] = vd[1].float32
@@ -71,6 +77,24 @@ proc mul*(a: TMat4f; b: TMat4f): TMat4f =
   for i in 0..3:
     for j in 0..3:
       result.mat(i,j) = dot(a.row(i), b.col(j))
+proc scale*(a: TVec3f; s: float): TVec3f =
+  result[0] = a[0] * s
+  result[1] = a[1] * s
+  result[2] = a[2] * s
+proc mult*(q: TQuatf; r: TQuatf): TQuatf =
+  result[0] = r[0]*q[0] - r[1]*q[1] - r[2]*q[2] - r[3]*q[3]
+  result[1] = r[0]*q[1] + r[1]*q[0] - r[2]*q[3] + r[3]*q[2]
+  result[2] = r[0]*q[2] + r[1]*q[3] + r[2]*q[0] - r[3]*q[1]
+  result[3] = r[0]*q[3] - r[1]*q[2] + r[2]*q[1] + r[3]*q[0]
+proc quatFromAngleAxis*(angle: float; axis: TVec3f): TQuatf =
+  var vecScale = sin(0.5 * angle)
+  result[1] = axis[0] * vecScale
+  result[2] = axis[1] * vecScale
+  result[3] = axis[2] * vecScale
+  result[0] = cos(0.5 * angle)
+
+proc identityQuatf*(): TQuatf =
+  result[0] = 1.0'f32
 discard """
 type RowMajorMatrix = generic x
   x is TMatrix

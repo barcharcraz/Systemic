@@ -1,8 +1,17 @@
 import vecmath
-
+type TVelocity* = object
+  lin*: TVec3f
+  rot*: TQuatf
 type TTransform* = object
   position*: TVec3f
   rotation*: TQuatf
+
+proc initVelocity*(): TVelocity =
+  result.rot = identityQuatf()
+  result.lin = [0.0'f32, 0.0'f32, 0.0'f32]
+proc initVelocity*(rot: TQuatf): TVelocity =
+  result.rot = rot
+  result.lin = [0.0'f32, 0.0'f32, 0.0'f32]
 
 proc initTransform*(): TTransform =
   result.position = [0.0'f32, 0.0'f32, 0.0'f32]
