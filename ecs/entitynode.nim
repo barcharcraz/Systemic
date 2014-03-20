@@ -110,7 +110,7 @@ iterator matchEntsComponents(scene: SceneId; typ1: typedesc; typ2: typedesc): tu
         yield (addr comps1[i1], addr comps2[i2])
         break
 dumpTree:
-  iterator matchEntsComponents(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): 
+  iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): 
     tuple[a: ptr TComponent[typ1]; b: ptr TComponent[typ2], c: ptr TComponent[typ3]] {.inline.} =
     var comps = components(scene, TComponent[typ3])
     for a,b in matchEntsComponents(scene, typ1, typ2):
@@ -120,9 +120,64 @@ dumpTree:
 macro makeEntIterator(num: static[int]): stmt {.immediate.} =
   var parms: seq[PNimrodNode]
   newSeq(parms, 0)
+  var returnTup = newNimNode(nnkStaticTy)
   for i in 1..num:
-    parms.add(newIdentDefs(newIdentNode(!("typ" & $i)),
-      newIdentNode(!"typedesc")))
+    var bracket = newNimNode(nnkBracketExpr)
+    bracket.add(newIdentNode(!"TComponent"))
+    bracket.add(newIdentNode(!("typ" & $i)))
+    var constNode = newNimNode(nnkConstTy)
+    constNode.add(bracket)
+    var identDefs = newNimNode(nnkIdentDefs)
+    identDefs.add(newIdentNode(!($(chr(ord('a') + (i-1))))))
+    identDefs.add(constNode)
+    identDefs.add(newEmptyNode())
+    returnTup.add(identDefs)
+  parms.add(returnTup)
+  var scene = newNimNode(nnkIdentDefs)
+  scene.add(newIdentNode(!"scene"))
+  scene.add(newIdentNode(!"SceneId"))
+  scene.add(newEmptyNode())
+  parms.add(scene)
+  for i in 1..num:
+    var identDefs = newNimNode(nnkIdentDefs)
+    identDefs.add(newIdentNode(!("typ" & $i)))
+    identDefs.add(newIdentNode(!"typedesc"))
+    identDefs.add(newEmptyNode())
+    parms.add(identDefs)
+  var procName = newNimNode(nnkPostfix)
+  procName.add(newIdentNode(!"*"))
+  procName.add(newIdentNode(!"matchEnts"))
+  result = newProc(procName, parms, procType = nnkIteratorDef)
+  proc getIndexIdent(idx: int): PNimrodNode =
+    result = newIdentNode(!("i" & $idx))
+  proc getCompsIdent(idx: int): PNimrodNode = 
+    result = newIdentNode(!("comps" & $idx))
+  proc getCurType(idx: int): PNimrodNode =
+    result = newIdentNode(!("typ" & $idx))
+  for i in 1..num:
+    var indexIdent = getIndexIdent(i)
+    var compsIdent = getCompsIdent(i)
+    var curType = getCurType()
+    var inner: PNimrodNode
+    if i == num:
+      inner = newNimNode(nnkYieldStmt)
+      var par = newNimNode(nnkPar)
+      for tupidx in 1..num:
+        par.add(quote do:
+          addr `getCompsIdent(i)`[`getIndexIdent(i)`].data
+          )
+      inner.add(par)
+    elif i == 1:
+      inner = quote(discard)
+    else:
+      inner = quote do:
+        if `getCompsIdent(i)`[`getIndexIdent(i)`].id == `getCompsIdent(i-1)`[`getIndexIdent(i-1)`].id:
+          
+    var level = quote do:
+      var `compsIdent` = components(scene, TComponent[`curType`])
+      for `indexIdent` in 0..`compsIdent`.high:
+        `inner`
+
 
 iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc): tuple[a: ptr typ1, b: ptr typ2] {.inline.} =
   var comps1 = components(scene, TComponent[typ1])
