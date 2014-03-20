@@ -52,7 +52,7 @@ proc initOpenGlRenderer*() =
 
 
 var defVS = """
-#version 130
+#version 140
 struct matrices_t {
   mat4 model;
   mat4 view;
@@ -77,7 +77,7 @@ void main() {
 
 """
 var defPS = """
-#version 130
+#version 140
 in vec3 norm_out;
 in vec2 uv_out;
 out vec4 outputColor;

@@ -1,18 +1,20 @@
 import macros
+import typetraits
 type ColMajor = object
 type RowMajor = object
-type Options = ColMajor | RowMajor
+type Options = generic x
+  x is ColMajor or
+    x is RowMajor
 type TMatrix*[N: static[int]; M: static[int]; T; O: Options] = object
   data: array[0..M*N-1, T]
-type SquareMatrix = generic x
-  x is TMatrix
-  x.N == x.M
 type 
-  Vector[N: static[int]] = TMatrix[N, 1, float32, ColMajor]
+  SquareMatrix[N: static[int]; T] = TMatrix[N,N,T,ColMajor]
 type
+  TVec*[N: static[int]; T] = TMatrix[N, 1, T, ColMajor]
   TVecf*[N: static[int]] = TMatrix[N, 1, float32, ColMajor]
   TMat4f* = TMatrix[4, 4, float32, ColMajor]
   TMat3f* = TMatrix[3, 3, float32, ColMajor]
+  TMat2f* = TMatrix[2, 2, float32, ColMajor]
   TVec4f* = TMatrix[4, 1, float32, ColMajor]
   TVec3f* = TMatrix[3, 1, float32, ColMajor]
   TVec2f* = TMatrix[2, 1, float32, ColMajor]
@@ -21,79 +23,17 @@ type
   TAlignedBox3f* = object
     min: array[3, float32]
     max: array[3, float32]
-discard """
-proc i*(q: TQuatf): float32 = q[1]
-proc j*(q: TQuatf): float32 = q[2]
-proc k*(q: TQuatf): float32 = q[3]
-proc w*(q: TQuatf): float32 = q[0]
-proc at*(self: TMat4f; i,j: int): float32 =
-  var idx = (4 * j) + i
-  result = self[idx]
-proc at*(self: TMat3f; i,j: int): float32 =
-  var idx = (3 * j) + i
-  result = self[idx]
-proc mat*(self: var TMat4f; i,j: int): var float32 =
-  var idx = (4 * j) + i
-  result = self[idx]
-proc identity4f(): TMat4f = 
-  for i in 0..3:
-    result.mat(i,i) = 1.0'f32
-proc toRotMatrix*(q: TQuatf): TMat3f =
-  result[0] = 1 - 2 * (q.j*q.j)
-  result[1] = 2*(q.i*q.j + q.k*q.w)
-  result[2] = 2*(q.i*q.k - q.j*q.w)
-  result[3] = 2*(q.i*q.j - q.k*q.w)
-  result[4] = 1 - 2*(q.i*q.i + q.k*q.k)
-  result[5] = 2*(q.j*q.k - q.i*q.w)
-  result[6] = 2*(q.j*q.w + q.i*q.k)
-  result[7] = 2*(q.j*q.k - q.i*q.w)
-  result[8] = 1 - 2*(q.j*q.j + q.i*q.i)
-proc toTranslationMatrix*(v: TVec3f): TMat4f =
-  result = identity4f()
-  result.mat(0,3) = v[0]
-  result.mat(1,3) = v[1]
-  result.mat(2,3) = v[2]
-proc toAffine*(m: TMat3f): TMat4f =
-  for i in 0..2:
-    for j in 0..2:
-      result.mat(i,j) = m.at(i,j)
-  result.mat(3,3) = 1
-proc row*(a: TMat4f; r: int): TVec4f =
-  result[0] = a.at(r, 0)
-  result[1] = a.at(r, 1)
-  result[2] = a.at(r, 2)
-  result[3] = a.at(r, 3)
-proc col*(a: TMat4f; c: int): TVec4f =
-  result[0] = a.at(0, c)
-  result[1] = a.at(1, c)
-  result[2] = a.at(2, c)
-  result[3] = a.at(3, c)
-proc dot*[T: array](a: T; b: T): float32 =
-  for i in 0..high(a):
-    result = result + (a[i] * b[i])
-proc mul*(a: TMat4f; b: TMat4f): TMat4f =
-  for i in 0..3:
-    for j in 0..3:
-      result.mat(i,j) = dot(a.row(i), b.col(j))
-"""
-discard """
-type RowMajorMatrix = generic x
-  x is TMatrix
-  x.O is RowMajor
-type ColMajorMatrix = generic x
-  x is TMatrix
-  x.O is ColMajor
-  
-## gets the element at the ith row and the jth column
-## of a matrix
-"""
 
 proc `[]=`(self: var TMatrix; i,j: int; val: TMatrix.T) =
   when TMatrix.O is RowMajor:
     var idx = (TMatrix.M * (i-1)) + (j-1)
     self.data[idx] = val
   when TMatrix.O is ColMajor:
+    echo("i: " & $i & " j: " & $j)
+    echo(name(type self))
+    echo("Matrix.N: " & $TMatrix.N)
     var idx = (TMatrix.N * (j-1)) + (i-1)
+    echo idx
     self.data[idx] = val
 
 proc `[]`(self: TMatrix; i,j: int): TMatrix.T =
@@ -103,16 +43,16 @@ proc `[]`(self: TMatrix; i,j: int): TMatrix.T =
   when TMatrix.O is ColMajor:
     var idx = (TMatrix.N * (j-1)) + (i-1)
     result = self.data[idx]
-proc `[]`(self: Vector; i: int): Vector.T =
+proc `[]`(self: TVec; i: int): TVec.T =
   result = self[i, 1]
-proc `[]=`(self: Vector; i: int; val: Vector.T) =
+proc `[]=`(self: var TVec; i: int; val: TVec.T) =
   self[i, 1] = val
 proc rows(mtx: TMatrix): int = TMatrix.N
 proc cols(mtx: TMatrix): int = TMatrix.M
-proc identity[T: SquareMatrix](): T =
-  for i in 1..result.rows():
-    result[i,i] = 1
-proc dot*(a, b: Vector): Vector.T =
+proc identity[T](): T =
+  for i in 1..rows(result):
+    result[i,i] = 1.float32
+proc dot*(a, b: TVec): TVec.T =
   #assert(a.data.len == b.data.len)
   for i in 1..a.data.len:
     result += a[i] * b[i]
@@ -120,14 +60,16 @@ proc row*(a: TMatrix; i: int): auto =
   result = TMatrix[TMatrix.M, 1, TMatrix.T, TMatrix.O]()
   for idx in 1..TMatrix.M:
     result[idx] = a[i,idx]
-discard """
+proc col*(a: TMatrix; j: int): auto =
+  result = TMatrix[TMatrix.N, 1, TMatrix.T, TMatrix.O]()
+  for idx in 1..TMatrix.N:
+    result[idx] = a[idx, j]
 proc mult(a: TMatrix; b: TMatrix): TMatrix =
   when a.N != b.M:
     {.fatal: "MIXED MATRICES OF DIFFEReNT SIZES".}
   for i in 1..a.N:
     for j in 1..b.M:
-      result[i,j] = 
-"""
+      result[i,j] = dot(row(a,i), col(b,j))
 discard """
 const XSwiz = {'x', 'r', 'u' }
 const YSwiz = {'y', 'g', 'v' }
@@ -145,18 +87,41 @@ proc `.`(self: Vector; field: static[string]): TVec[field.len] =
       result[i] = self[4]
 """
 when isMainModule:
+
   import unittest
+
   var realMtx: TMatrix[4, 4, float32, ColMajor]
-  realMtx = identity[TMatrix[4,4,float32,ColMajor]]()
+  realMtx = identity[SquareMatrix[4, float32]]()
   echo repr(realMtx[1,1])
+
   test "TDotProduct":
-    var a = TVec3f(data: [1.0'f32, 2.0'f32, 0.0'f32])
-    var b = TVec3f(data: [0.0'f32, 5.0'f32, 1.0'f32])
-    var c = dot(a,b)
-    check(c == 10.0'f32)
+    var av = TVec3f(data: [1.0'f32, 2.0'f32, 0.0'f32])
+    var bv = TVec3f(data: [0.0'f32, 5.0'f32, 1.0'f32])
+    var cv = dot(av,bv)
+    check(cv == 10.0'f32)
+  
   test "TRow":
-    var a: TMat4f
-    var r = a.row(1)
-    check(r.data == [1'f32, 0'f32, 0'f32, 0'f32])
+    var ta: TMat4f
+    ta[1,1] = 1.0'f32
+    var tr = ta.row(1)
+    check(tr.data == [1'f32, 0'f32, 0'f32, 0'f32])
+  echo("foo" & $TMat2f.N)
+ 
+  var a: TMat2f
+  echo("A rows: " & $(a.N))
+  a[1,1] = 1.0'f32
+  a[1,2] = 2.0'f32
+  a[2,1] = 3.0'f32
+  a[2,2] = 4.0'f32
+  var b: TMat2f
+  b[1,1] = 4.0'f32
+  b[1,2] = 3.0'f32
+  b[2,1] = 2.0'f32
+  b[2,2] = 1.0'f32
+  var prod = mult(a,b)
+  #check(prod[1,1] == 8.0'f32)
+  #check(prod[1,2] == 5.0'f32)
+  #check(prod[2,1] == 20.0'f32)
+  #check(prod[2,2] == 13.0'f32)
 
 
