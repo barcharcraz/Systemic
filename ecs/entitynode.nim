@@ -100,21 +100,36 @@ proc mgetAny*[T](scene: SceneId): var T =
 proc getAny*[T](scene: SceneId): T =
   result = mgetAny[T](scene)
 
-iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc): tuple[a: ptr typ1, b: ptr typ2] {.inline.} =
+
+iterator matchEntsComponents(scene: SceneId; typ1: typedesc; typ2: typedesc): tuple[a: ptr TComponent[typ1], b: ptr TComponent[typ2]] {.inline.} =
   var comps1 = components(scene, TComponent[typ1])
   var comps2 = components(scene, TComponent[typ2])
   for i1 in 0..comps1.high:
     for i2 in 0..comps2.high:
       if comps1[i1].id == comps2[i2].id:
-        yield (addr comps1[i1].data, addr comps2[i2].data)
+        yield (addr comps1[i1], addr comps2[i2])
         break
+dumpTree:
+  iterator matchEntsComponents(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): 
+    tuple[a: ptr TComponent[typ1]; b: ptr TComponent[typ2], c: ptr TComponent[typ3]] {.inline.} =
+    var comps = components(scene, TComponent[typ3])
+    for a,b in matchEntsComponents(scene, typ1, typ2):
+      for i in 0..comps.high:
+        if comps[i].id == a.id:
+          yield (a, b, addr comps[i])
+macro makeEntIterator(num: static[int]): stmt {.immediate.} =
+  var parms: seq[PNimrodNode]
+  newSeq(parms, 0)
+  for i in 1..num:
+    parms.add(newIdentDefs(newIdentNode(!("typ" & $i)),
+      newIdentNode(!"typedesc")))
 
-iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): 
-  tuple[a: ptr typ1; b: ptr typ2, c: ptr typ3] =
-  var comps = components(scene, TComponent[typ3])
-  for a,b in matchEnts(scene, typ1, typ2):
-    for i in 0..comps.high:
-      if 
+iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc): tuple[a: ptr typ1, b: ptr typ2] {.inline.} =
+  var comps1 = components(scene, TComponent[typ1])
+  var comps2 = components(scene, TCOmponent[typ2])
+  for i1 in 0..comps1.high:
+    for i2 in 0..comps2.high:
+      yield (addr a[].data, addr b[].data)
 #yes these are not ideal but until QuasiQuotes are working again
 #it is far too much effort to write the macro required for these,
 discard """
