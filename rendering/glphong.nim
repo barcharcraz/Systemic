@@ -24,6 +24,24 @@ void main() {
 }
 """
 var defPS = LightStructs & ForwardLighting & """
-
+in vec3 norm_out;
+in vec3 view_pos;
+in vec2 uv_out;
+out vec4 outputColor;
+uniform directionalLight_t dlights[NUM_DIRECTIONAL];
+uniform material_t mat;
+uniform sampler2D tex;
+void main() {
+  outputColor = mat.ambiant;
+  
+  for(int i = 0; i < NUM_DIRECTIONAL; ++i) {
+    outputColor += directionalLight(dlights[i], normal, viewPos, mat);
+  }
+  outputColor = clamp(outputColor, 0.0, 1.0)
+  outputColor = outputColor * texture(tex, vec2(uvout.x, 1 - uvout.y));
+}
 
 """
+
+proc RenderPhongLit*(scene: SceneId; meshEnt: var TComponent[TMesh]) {.procvar.} =
+

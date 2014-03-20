@@ -99,8 +99,18 @@ proc mgetAny*[T](scene: SceneId): var T =
 
 proc getAny*[T](scene: SceneId): T =
   result = mgetAny[T](scene)
+
+iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc): tuple[ptr typ1, ptr typ2] {.inline.} =
+  for elm1 in components(scene, TComponent[typ1]):
+    for elm2 in components(scene, TComponent[typ2]):
+      if elm1.id == elm2.id:
+        yield (addr elm1, addr elm2)
+        break
+
+
 #yes these are not ideal but until QuasiQuotes are working again
 #it is far too much effort to write the macro required for these,
+proc matchEntHelper(scene: SceneId; curEnt: EntityId; typ: typedesc)
 proc matchEnt*(scene: SceneId; typ1: typedesc): EntityId =
   result = components(scene, TComponent[typ1])[0].id
 proc matchEnt*(scene: SceneId; typ1: typedesc; typ2: typedesc): EntityId =
