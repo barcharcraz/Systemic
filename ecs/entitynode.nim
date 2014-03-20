@@ -100,17 +100,39 @@ proc mgetAny*[T](scene: SceneId): var T =
 proc getAny*[T](scene: SceneId): T =
   result = mgetAny[T](scene)
 
-iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc): tuple[ptr typ1, ptr typ2] {.inline.} =
-  for elm1 in components(scene, TComponent[typ1]):
-    for elm2 in components(scene, TComponent[typ2]):
-      if elm1.id == elm2.id:
-        yield (addr elm1, addr elm2)
+iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc): tuple[a: ptr typ1, b: ptr typ2] {.inline.} =
+  var comps1 = components(scene, TComponent[typ1])
+  var comps2 = components(scene, TComponent[typ2])
+  for i1 in 0..comps1.high:
+    for i2 in 0..comps2.high:
+      if comps1[i1].id == comps2[i2].id:
+        yield (addr comps1[i1].data, addr comps2[i2].data)
         break
 
-
+iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): 
+  tuple[a: ptr typ1; b: ptr typ2, c: ptr typ3] =
+  var comps = components(scene, TComponent[typ3])
+  for a,b in matchEnts(scene, typ1, typ2):
+    for i in 0..comps.high:
+      if 
 #yes these are not ideal but until QuasiQuotes are working again
 #it is far too much effort to write the macro required for these,
-proc matchEntHelper(scene: SceneId; curEnt: EntityId; typ: typedesc)
+discard """
+proc matchEntHelper(scene: SceneId; curEnt: EntityId; first: typedesc; typ: varargs[expr]): EntityId =    
+  for elm in components(scene, TComponent[first]):
+    if elm.id == curEnt:
+      if typ.len == 1:
+        return curEnt
+      else:
+        return matchEntHelper(scene, curEnt, typ)
+    else:
+      return -1.EntityId
+proc matchEnt*(scene: SceneId; first: typedesc; typ: varargs[expr]): EntityId = 
+  for elm in components(scene, TComponent[first]):
+    result = matchEntHelper(scene, elm.id, typ)
+    if result != -1:
+      return 
+"""
 proc matchEnt*(scene: SceneId; typ1: typedesc): EntityId =
   result = components(scene, TComponent[typ1])[0].id
 proc matchEnt*(scene: SceneId; typ1: typedesc; typ2: typedesc): EntityId =
@@ -128,7 +150,6 @@ proc matchEnt*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): 
         for elm3 in components(scene, TComponent[typ3]):
           if elm3.id == elm2.id:
             return elm1.id
-
 when isMainModule:
   MakeEntityComponent(int)
   MakeEntityComponent(char)
@@ -137,9 +158,11 @@ when isMainModule:
   #var TComponent_int_SceneNode = initSceneNode[TComponent[int]]()
   var entitytest = genEntity()
   var otherEntity = genEntity()
+  var thirdEntity = genEntity()
   var testScene = initScene()
   testScene.id.add(entitytest)
   testScene.id.add(otherEntity)
+  testScene.id.add(thirdEntity)
   echo repr(EntityMapping)
   entitytest.add(4)
   entitytest.add(7)
@@ -148,6 +171,8 @@ when isMainModule:
   otherEntity.add(2)
   otherEntity.add('a')
   otherEntity.add("foo")
+  thirdEntity.add(3)
+  thirdEntity.add('3')
   
   echo "all ints"
   for elm in testScene.components(TComponent[int]):
@@ -174,4 +199,10 @@ when isMainModule:
   test("tEntSearch"): check(matchEnt(testScene.id, int, float32).int == 0)
   test("tEntSearchInv"): check(matchEnt(testScene.id, char, float32).int == -1)
   test("tEntSearchthree"): check(matchEnt(testScene.id, char, string, int).int == 1)
+  test("tMathcEntTuple"):
+    var got33: bool = false
+    for intc, charc in testScene.id.matchEnts(int, char):
+      if intc[] == 3 and charc[] == '3':
+        got33 = true
+    check(got33)
 
