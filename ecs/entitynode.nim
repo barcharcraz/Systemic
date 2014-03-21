@@ -129,6 +129,14 @@ iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto {.inli
 iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): auto {.inline.} =
   for a,b,c in matchEntsComponents(scene, typ1, typ2, typ3):
     yield (addr a[].data, addr b[].data, addr c[].data)
+proc matchEnt*(scene: SceneId; tup: var tuple[a: distinct auto]) =
+  for a in matchEntsComponents(scene type(tup.a)):
+    tup = (addr a[].data)
+    return
+proc matchEnt*(scene: SceneId; tup: var tuple[a: distinct auto, b: distinct auto]) =
+  for a,b in matchEntsComponents(scene, type(tup.a), type(tup.b)):
+    tup = (addr a[].data, addr b[].data)
+    return
 proc matchEnt*(scene: SceneId; typ1: typedesc): EntityId =
   for elm in matchEntsComponents(scene, typ1):
     return elm.id
@@ -142,8 +150,7 @@ proc matchEnt*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): 
   for a,b,c in matchEntsComponents(scene, typ1, typ2, typ3):
     assert(a.id == b.id and a.id == c.id)
     return a.id
-proc matchEnt*(scene: SceneId; tup: var tuple[a: distinct auto]) =
-  for a in matchEntsComponents
+
 when isMainModule:
   MakeEntityComponent(int)
   MakeEntityComponent(char)
