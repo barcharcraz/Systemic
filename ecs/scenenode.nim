@@ -84,7 +84,7 @@ proc addSystem*[T: notArray](scene: var TScene, func: proc(id: SceneId, t: T)) =
       func(id, elm)
 
 ##these versions of the addSystem proc use var params
-proc AddSystem*[T: notArray](scene: var TScene, func: proc(id: SceneId; t: var T)) =
+proc addSystem*[T: notArray](scene: var TScene, func: proc(id: SceneId; t: var T)) =
   scene.addSystem do (id: SceneId):
     var comps = addr components(id, T)
     for i in 0..comps[].high:

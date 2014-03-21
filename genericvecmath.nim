@@ -29,11 +29,7 @@ proc `[]=`(self: var TMatrix; i,j: int; val: TMatrix.T) =
     var idx = (TMatrix.M * (i-1)) + (j-1)
     self.data[idx] = val
   when TMatrix.O is ColMajor:
-    echo("i: " & $i & " j: " & $j)
-    echo(name(type self))
-    echo("Matrix.N: " & $TMatrix.N)
     var idx = (TMatrix.N * (j-1)) + (i-1)
-    echo idx
     self.data[idx] = val
 
 proc `[]`(self: TMatrix; i,j: int): TMatrix.T =

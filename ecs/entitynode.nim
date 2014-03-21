@@ -101,125 +101,49 @@ proc getAny*[T](scene: SceneId): T =
   result = mgetAny[T](scene)
 
 
-iterator matchEntsComponents(scene: SceneId; typ1: typedesc; typ2: typedesc): tuple[a: ptr TComponent[typ1], b: ptr TComponent[typ2]] {.inline.} =
-  var comps1 = components(scene, TComponent[typ1])
-  var comps2 = components(scene, TComponent[typ2])
-  for i1 in 0..comps1.high:
-    for i2 in 0..comps2.high:
-      if comps1[i1].id == comps2[i2].id:
-        yield (addr comps1[i1], addr comps2[i2])
+iterator matchEntsComponents*(scene: SceneId; typ1: typedesc): auto {.inline.} =
+  var comps = components(scene, TComponent[typ1])
+  static: echo(typ1.name())
+  for i in comps.low..comps.high:
+    yield (addr comps[i])
+iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto {.inline.} =
+  var comps = components(scene, TComponent[typ2])
+  for elm in matchEntsComponents(scene, typ1):
+    for i1 in 0..comps.high:
+      if comps[i1].id == elm.id:
+        yield (elm, addr comps[i1])
         break
-dumpTree:
-  iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): 
-    tuple[a: ptr TComponent[typ1]; b: ptr TComponent[typ2], c: ptr TComponent[typ3]] {.inline.} =
-    var comps = components(scene, TComponent[typ3])
-    for a,b in matchEntsComponents(scene, typ1, typ2):
-      for i in 0..comps.high:
-        if comps[i].id == a.id:
-          yield (a, b, addr comps[i])
-macro makeEntIterator(num: static[int]): stmt {.immediate.} =
-  var parms: seq[PNimrodNode]
-  newSeq(parms, 0)
-  var returnTup = newNimNode(nnkStaticTy)
-  for i in 1..num:
-    var bracket = newNimNode(nnkBracketExpr)
-    bracket.add(newIdentNode(!"TComponent"))
-    bracket.add(newIdentNode(!("typ" & $i)))
-    var constNode = newNimNode(nnkConstTy)
-    constNode.add(bracket)
-    var identDefs = newNimNode(nnkIdentDefs)
-    identDefs.add(newIdentNode(!($(chr(ord('a') + (i-1))))))
-    identDefs.add(constNode)
-    identDefs.add(newEmptyNode())
-    returnTup.add(identDefs)
-  parms.add(returnTup)
-  var scene = newNimNode(nnkIdentDefs)
-  scene.add(newIdentNode(!"scene"))
-  scene.add(newIdentNode(!"SceneId"))
-  scene.add(newEmptyNode())
-  parms.add(scene)
-  for i in 1..num:
-    var identDefs = newNimNode(nnkIdentDefs)
-    identDefs.add(newIdentNode(!("typ" & $i)))
-    identDefs.add(newIdentNode(!"typedesc"))
-    identDefs.add(newEmptyNode())
-    parms.add(identDefs)
-  var procName = newNimNode(nnkPostfix)
-  procName.add(newIdentNode(!"*"))
-  procName.add(newIdentNode(!"matchEnts"))
-  result = newProc(procName, parms, procType = nnkIteratorDef)
-  proc getIndexIdent(idx: int): PNimrodNode =
-    result = newIdentNode(!("i" & $idx))
-  proc getCompsIdent(idx: int): PNimrodNode = 
-    result = newIdentNode(!("comps" & $idx))
-  proc getCurType(idx: int): PNimrodNode =
-    result = newIdentNode(!("typ" & $idx))
-  for i in 1..num:
-    var indexIdent = getIndexIdent(i)
-    var compsIdent = getCompsIdent(i)
-    var curType = getCurType()
-    var inner: PNimrodNode
-    if i == num:
-      inner = newNimNode(nnkYieldStmt)
-      var par = newNimNode(nnkPar)
-      for tupidx in 1..num:
-        par.add(quote do:
-          addr `getCompsIdent(i)`[`getIndexIdent(i)`].data
-          )
-      inner.add(par)
-    elif i == 1:
-      inner = quote(discard)
-    else:
-      inner = quote do:
-        if `getCompsIdent(i)`[`getIndexIdent(i)`].id == `getCompsIdent(i-1)`[`getIndexIdent(i-1)`].id:
-          
-    var level = quote do:
-      var `compsIdent` = components(scene, TComponent[`curType`])
-      for `indexIdent` in 0..`compsIdent`.high:
-        `inner`
 
-
-iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc): tuple[a: ptr typ1, b: ptr typ2] {.inline.} =
-  var comps1 = components(scene, TComponent[typ1])
-  var comps2 = components(scene, TCOmponent[typ2])
-  for i1 in 0..comps1.high:
-    for i2 in 0..comps2.high:
-      yield (addr a[].data, addr b[].data)
-#yes these are not ideal but until QuasiQuotes are working again
-#it is far too much effort to write the macro required for these,
-discard """
-proc matchEntHelper(scene: SceneId; curEnt: EntityId; first: typedesc; typ: varargs[expr]): EntityId =    
-  for elm in components(scene, TComponent[first]):
-    if elm.id == curEnt:
-      if typ.len == 1:
-        return curEnt
-      else:
-        return matchEntHelper(scene, curEnt, typ)
-    else:
-      return -1.EntityId
-proc matchEnt*(scene: SceneId; first: typedesc; typ: varargs[expr]): EntityId = 
-  for elm in components(scene, TComponent[first]):
-    result = matchEntHelper(scene, elm.id, typ)
-    if result != -1:
-      return 
-"""
+iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): auto {.inline.} =
+  var comps = components(scene, TComponent[typ3])
+  for a,b in matchEntsComponents(scene, typ1, typ2):
+    for i in 0..comps.high:
+      if comps[i].id == a.id:
+        yield (a, b, addr comps[i])
+iterator matchEnts*(scene: SceneId; typ1: typedesc): auto {.inline.} =
+  for a in matchEntsComponents(scene, typ1):
+    yield (addr a[].data)
+iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto {.inline.} =
+  for a,b in matchEntsComponents(scene, typ1, typ2):
+    yield (addr a[].data, addr b[].data)
+iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): auto {.inline.} =
+  for a,b,c in matchEntsComponents(scene, typ1, typ2, typ3):
+    yield (addr a[].data, addr b[].data, addr c[].data)
 proc matchEnt*(scene: SceneId; typ1: typedesc): EntityId =
-  result = components(scene, TComponent[typ1])[0].id
+  for elm in matchEntsComponents(scene, typ1):
+    return elm.id
 proc matchEnt*(scene: SceneId; typ1: typedesc; typ2: typedesc): EntityId =
-  result = (-1).EntityId
-  for elm in components(scene, TComponent[typ1]):
-    for typ in components(scene, TComponent[typ2]):
-      if typ.id == elm.id:
-        return elm.id
-
+  result = EntityId(-1)
+  for a,b in matchEntsComponents(scene, typ1, typ2):
+    assert(a.id == b.id)
+    return a.id
 proc matchEnt*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): EntityId =
-  result = (-1).EntityId
-  for elm1 in components(scene, TComponent[typ1]):
-    for elm2 in components(scene, TComponent[typ2]):
-      if elm2.id == elm1.id:
-        for elm3 in components(scene, TComponent[typ3]):
-          if elm3.id == elm2.id:
-            return elm1.id
+  result = EntityId(-1)
+  for a,b,c in matchEntsComponents(scene, typ1, typ2, typ3):
+    assert(a.id == b.id and a.id == c.id)
+    return a.id
+proc matchEnt*(scene: SceneId; tup: var tuple[a: distinct auto]) =
+  for a in matchEntsComponents
 when isMainModule:
   MakeEntityComponent(int)
   MakeEntityComponent(char)
