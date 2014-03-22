@@ -14,11 +14,12 @@ import components
 import logging
 import assetloader
 import vecmath
+import rendering.glcore
 var log = newConsoleLogger()
 handlers.add(log)
 
 glfw.init()
-var api = initGL_API(glv32, true, true, glpCore, glrNone)
+var api = initGL_API(glv31, true, true, glpAny, glrNone)
 var winhints = initHints(GL_API = api)
 var wnd = newWnd(title = "GL test", hints = winhints)
 makeContextCurrent(wnd)

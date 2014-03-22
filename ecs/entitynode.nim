@@ -103,7 +103,6 @@ proc getAny*[T](scene: SceneId): T =
 
 iterator matchEntsComponents*(scene: SceneId; typ1: typedesc): auto {.inline.} =
   var comps = components(scene, TComponent[typ1])
-  static: echo(typ1.name())
   for i in comps.low..comps.high:
     yield (addr comps[i])
 iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto {.inline.} =
@@ -129,14 +128,22 @@ iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto {.inli
 iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): auto {.inline.} =
   for a,b,c in matchEntsComponents(scene, typ1, typ2, typ3):
     yield (addr a[].data, addr b[].data, addr c[].data)
-proc matchEnt*(scene: SceneId; tup: var tuple[a: distinct auto]) =
-  for a in matchEntsComponents(scene type(tup.a)):
+proc matchEnt*[Ta](scene: SceneId; tup: var tuple[a: Ta]) =
+  for a in matchEntsComponents(scene, Ta):
     tup = (addr a[].data)
     return
-proc matchEnt*(scene: SceneId; tup: var tuple[a: distinct auto, b: distinct auto]) =
-  for a,b in matchEntsComponents(scene, type(tup.a), type(tup.b)):
+proc matchEnt*[Ta, Tb](scene: SceneId; tup: var tuple[a: Ta, b: Tb]) =
+  for a,b in matchEntsComponents(scene, Ta, Tb):
     tup = (addr a[].data, addr b[].data)
     return
+proc matchEnt*[Ta, Tb, Tc](scene: SceneId; 
+               tup: var tuple[a: Ta, 
+                              b: Tb, 
+                              c: Tc]) =
+  for a,b,c in matchEntsComponents(scene, Ta, Tb, Tc):
+    tup = (addr a[].data, addr b[].data, addr c[].data)
+    return
+
 proc matchEnt*(scene: SceneId; typ1: typedesc): EntityId =
   for elm in matchEntsComponents(scene, typ1):
     return elm.id
@@ -150,7 +157,16 @@ proc matchEnt*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): 
   for a,b,c in matchEntsComponents(scene, typ1, typ2, typ3):
     assert(a.id == b.id and a.id == c.id)
     return a.id
-
+#procs to add a system that takes a tuple of entities, these
+#are quite useful for more scripty code
+proc addSystem*[Ta](scene: SceneId; func: proc(id: SceneId; tup: tuple[a: Ta])) =
+  scene.addSystem do (id: SceneId):
+    for elm in matchEnts(Ta):
+      func(scene, (elm))
+proc addSystem*[Ta, Tb](scene: SceneId; func: proc(id: SceneId; tup: tuple[a: Ta, b: Tb])) =
+  scene.addSystem do (id: SceneId):
+    for a,b in matchEnts(Ta, Tb):
+      func(scene, (a,b))
 when isMainModule:
   MakeEntityComponent(int)
   MakeEntityComponent(char)
