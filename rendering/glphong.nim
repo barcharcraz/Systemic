@@ -44,4 +44,7 @@ void main() {
 """
 
 proc RenderPhongLit*(scene: SceneId; meshEnt: var TComponent[TMesh]) {.procvar.} =
+  var program {.global.}: GLuint
+  var ps {.global.}: GLuint
+  var vs {.global.}: GLuint
 
