@@ -1,4 +1,7 @@
 import rendering.glshaders
+import glcore
+import ecs
+
 var defVS = """
 #version 140
 struct matrices_t {
@@ -43,8 +46,14 @@ void main() {
 
 """
 
-proc RenderPhongLit*(scene: SceneId; meshEnt: var TComponent[TMesh]) {.procvar.} =
+proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   var program {.global.}: GLuint
   var ps {.global.}: GLuint
   var vs {.global.}: GLuint
+  var meshes = addr components(scene, TComponent[TMesh])
+  var (cam, camTrans) = entComponents(scene, TCamera, TTransform)
+  var transforms = mwalkComponentsOpt(scene, TTransform)
+  var images = mwalkComponentsOpt(scene, TTransform)
+  var materials = mwalkComponentsOpt(scene, TMaterial)
+  for mesh in meshes:
 

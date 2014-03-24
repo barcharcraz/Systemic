@@ -119,6 +119,26 @@ iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc; ty
     for i in 0..comps.high:
       if comps[i].id == a.id:
         yield (a, b, addr comps[i])
+
+proc mwalkComponentsOpt*(scene: SceneId; typ: typedesc): iterator(ent: EntityId): ptr typ =
+  result = iterator(ent: EntityId): typ =
+    var components = addr components(scene, TComponent[typ])
+    for i in position..components.high:
+      if components[i].id == ent:
+        yield addr components[i].data
+      elif components[i].id.int > ent.int:
+        yield nil
+proc mwalkComponents*(scene: SceneId; typ: typedesc): iterator(ent: EntityId): var typ =
+  result = iterator(ent: EntityId): typ =
+    for elm in mwalkComponentsOpt(scene, typ):
+      if elm == nil:
+        raise newException(ENoSuchComponent, "That entity does not have the component in question")
+      else:
+        yield elm[]
+proc walkComponents*(scene: SceneId; typ: typedesc): iterator(ent: EntityId): typ =
+  result = iterator(ent: EntityId): typ =
+    for elm in mwalkComponents(scene, typ):
+      yield elm
 iterator matchEnts*(scene: SceneId; typ1: typedesc): auto {.inline.} =
   for a in matchEntsComponents(scene, typ1):
     yield (addr a[].data)
@@ -128,14 +148,13 @@ iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto {.inli
 iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): auto {.inline.} =
   for a,b,c in matchEntsComponents(scene, typ1, typ2, typ3):
     yield (addr a[].data, addr b[].data, addr c[].data)
-proc matchEnt*[Ta](scene: SceneId; tup: var tuple[a: Ta]) =
-  for a in matchEntsComponents(scene, Ta):
-    tup = (addr a[].data)
-    return
-proc matchEnt*[Ta, Tb](scene: SceneId; tup: var tuple[a: Ta, b: Tb]) =
-  for a,b in matchEntsComponents(scene, Ta, Tb):
-    tup = (addr a[].data, addr b[].data)
-    return
+
+proc entComponets*(scene: SceneId, typ1: typedesc): auto =
+  for a in matchEnts(scene, typ1):
+    return a
+proc entComponets*(scene: SceneId, typ1: typedesc, typ2: typedesc): auto =
+  for a in matchEnts(scene, typ1, typ2):
+    return a
 proc matchEnt*[Ta, Tb, Tc](scene: SceneId; 
                tup: var tuple[a: Ta, 
                               b: Tb, 
@@ -159,11 +178,11 @@ proc matchEnt*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): 
     return a.id
 #procs to add a system that takes a tuple of entities, these
 #are quite useful for more scripty code
-proc addSystem*[Ta](scene: SceneId; func: proc(id: SceneId; tup: tuple[a: Ta])) =
+proc addSystem*[Ta](scene: SceneId; func: proc(id: SceneId; tup: tuple[a: ptr Ta])) =
   scene.addSystem do (id: SceneId):
     for elm in matchEnts(Ta):
       func(scene, (elm))
-proc addSystem*[Ta, Tb](scene: SceneId; func: proc(id: SceneId; tup: tuple[a: Ta, b: Tb])) =
+proc addSystem*[Ta, Tb](scene: SceneId; func: proc(id: SceneId; tup: tuple[a: ptr Ta, b: ptr Tb])) =
   scene.addSystem do (id: SceneId):
     for a,b in matchEnts(Ta, Tb):
       func(scene, (a,b))

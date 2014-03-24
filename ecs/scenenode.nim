@@ -3,7 +3,7 @@ import macros
 import typetraits
 import strutils
 import ecs.entity
-
+import utils.algo
 type TSceneNode*[T] = object
   sceneList*: seq[seq[T]]
 proc initSceneNode*[T](): TSceneNode[T] = 
@@ -19,7 +19,16 @@ proc addToNode*[T](node: var TSceneNode[T], scene: SceneId, item: T) =
   if node.sceneList[scene.int].isnil:
     newSeq(node.sceneList[scene.int], 0)
   node.sceneList[scene.int].add(item)
-
+proc addToNode*(node: var TSceneNode, scene: SceneId, item: TComponent) =
+  if node.sceneList.len <= scene.int:
+    var toInst: seq[type(item)]
+    newSeq(toInst, 4)
+    node.sceneList.insert(toInst, scene.int)
+  if node.sceneList[scene.int].isnil:
+    newSeq(node.sceneList[scene.int], 0)
+  var list = addr node.sceneList[scene.int]
+  var insertPos = lowerBound(list[], item) do (a,b)->auto:
+    result = system.cmp(a.id, b.id)
 macro concatName(name: static[string]): expr =
   var resultString: string = name & "SceneNode"
   resultString = resultString.replace("[", "_")
