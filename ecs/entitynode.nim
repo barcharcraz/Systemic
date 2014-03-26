@@ -112,6 +112,8 @@ iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc): a
       if comps[i1].id == elm.id:
         yield (elm, addr comps[i1])
         break
+      if comps[i1].id.int > elm.id.int:
+        break
 
 iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): auto {.inline.} =
   var comps = components(scene, TComponent[typ3])
@@ -119,7 +121,9 @@ iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc; ty
     for i in 0..comps.high:
       if comps[i].id == a.id:
         yield (a, b, addr comps[i])
-
+      if comps[i].id.int > a.id.int:
+        break
+discard """
 proc mwalkOpt*(scene: SceneId; typ: typedesc): iterator(ent: EntityId): ptr typ {.closure.} =
   result = iterator(ent: EntityId): ptr typ {.closure.} =
     var components = addr components(scene, TComponent[typ])
@@ -128,7 +132,7 @@ proc mwalkOpt*(scene: SceneId; typ: typedesc): iterator(ent: EntityId): ptr typ 
         yield addr components[i].data
       elif components[i].id.int > ent.int:
         yield nil
-discard """
+
 proc mwalkOpt*(scene: SceneId; typ1: typedesc; typ2: typedesc): iterator(ent: EntityId): tuple[a: ptr typ1, b: ptr typ2] =
   result = iterator(ent: EntityId): tuple[a: ptr typ1, b: ptr typ2] =
     var iter1 = mWalkOpt(scene, typ1)
@@ -153,30 +157,22 @@ proc walk*(scene: SceneId; typ: typedesc): auto =
     for elm in mwalk(scene, typ):
       yield elm
 """
-iterator matchEnts*(scene: SceneId; typ1: typedesc): auto {.inline.} =
+iterator walk*(scene: SceneId; typ1: typedesc): auto {.inline.} =
   for a in matchEntsComponents(scene, typ1):
     yield (addr a[].data)
-iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto {.inline.} =
+iterator walk*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto {.inline.} =
   for a,b in matchEntsComponents(scene, typ1, typ2):
     yield (addr a[].data, addr b[].data)
-iterator matchEnts*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): auto {.inline.} =
+iterator walk*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): auto {.inline.} =
   for a,b,c in matchEntsComponents(scene, typ1, typ2, typ3):
     yield (addr a[].data, addr b[].data, addr c[].data)
 
 proc entComponets*(scene: SceneId, typ1: typedesc): auto =
-  for a in matchEnts(scene, typ1):
+  for a in walk(scene, typ1):
     return a
 proc entComponets*(scene: SceneId, typ1: typedesc, typ2: typedesc): auto =
-  for a in matchEnts(scene, typ1, typ2):
+  for a in walk(scene, typ1, typ2):
     return a
-proc matchEnt*[Ta, Tb, Tc](scene: SceneId; 
-               tup: var tuple[a: Ta, 
-                              b: Tb, 
-                              c: Tc]) =
-  for a,b,c in matchEntsComponents(scene, Ta, Tb, Tc):
-    tup = (addr a[].data, addr b[].data, addr c[].data)
-    return
-
 proc matchEnt*(scene: SceneId; typ1: typedesc): EntityId =
   for elm in matchEntsComponents(scene, typ1):
     return elm.id
@@ -194,11 +190,11 @@ proc matchEnt*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): 
 #are quite useful for more scripty code
 proc addSystem*[Ta](scene: SceneId; func: proc(id: SceneId; tup: tuple[a: ptr Ta])) =
   scene.addSystem do (id: SceneId):
-    for elm in matchEnts(Ta):
+    for elm in walk(id, Ta):
       func(scene, (elm))
 proc addSystem*[Ta, Tb](scene: SceneId; func: proc(id: SceneId; tup: tuple[a: ptr Ta, b: ptr Tb])) =
   scene.addSystem do (id: SceneId):
-    for a,b in matchEnts(Ta, Tb):
+    for a,b in walk(id, Ta, Tb):
       func(scene, (a,b))
 when isMainModule:
   MakeEntityComponent(int)
@@ -251,7 +247,7 @@ when isMainModule:
   test("tEntSearchthree"): check(matchEnt(testScene.id, char, string, int).int == 1)
   test("tMathcEntTuple"):
     var got33: bool = false
-    for intc, charc in testScene.id.matchEnts(int, char):
+    for intc, charc in testScene.id.walk(int, char):
       if intc[] == 3 and charc[] == '3':
         got33 = true
     check(got33)
