@@ -1,6 +1,7 @@
 import rendering.glshaders
 import glcore
 import ecs
+import opengl
 
 var defVS = """
 #version 140
@@ -50,11 +51,31 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   var program {.global.}: GLuint
   var ps {.global.}: GLuint
   var vs {.global.}: GLuint
-  var meshes = addr components(scene, TComponent[TMesh])
+  var dlights = addr components(scene, TComponent[TDirectionalLight)
+  if vs == 0 or ps == 0:
+    var def = genDefine("NUM_DIRECTIONAL", dlights.len)
+    vs = CompileShader(GL_VERTEX_SHADER, def & defVS)
+    ps = CompileShader(GL_FRAGMENT_SHADER, def & defPS)
+    program = CreateProgram(vs, ps)
   var (cam, camTrans) = entComponents(scene, TCamera, TTransform)
-  var transforms = mwalkComponentsOpt(scene, TTransform)
-  var images = mwalkComponentsOpt(scene, TTransform)
-  var materials = mwalkComponentsOpt(scene, TMaterial)
-  for mesh in meshes:
-
+  var viewMatrix = camTrans.GenMatrix().AdjustViewMatrix()
+  var projMatrix = cam.AdjustProjMatrix()
+  glUseProgram(program)
+  BindViewProjMatrix(program, view, proj)
+  for id,mesh,trans,tex,mat in scene.walk(TMesh,TTransform,TImage,TMaterial):
+    var buffers = mEntFirstOpt[TObjectBuffers(id)
+    if buffers == nil:
+      id.add(initObjectBuffers)
+      buffers = mEntFirstOpt[TObjectBuffers](id)
+      buffers.vert, buffers.index = CreateMeshBuffers(mesh)
+      buffers.vao = CreateVertexAttribPtr(program)
+      buffers.tex = CreateTexture(tex.data, tex.width, tex.height)
+    AttachTextureToProgram(buffers.tex, program, 0, "tex")
+    glBindVertexArray(buffers.vao)
+    CheckError()
+    glBindBuffer(GL_ARRAY_BUFFER.GLenum, buffers.vertex)
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER.GLenum, buffers.index)
+    CheckError()
+    glDrawElements(GL_TRIANGLES, cast[GLSizei](mesh.indices.length), cGL_UNSIGNED_INT, nil)
+    CheckError()
 

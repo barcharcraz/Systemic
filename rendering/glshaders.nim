@@ -66,3 +66,6 @@ vec4 directionalLight(in directionalLight_t light,
 #endif
 
 """
+
+proc genDefine*(name: string, val: auto): string =
+  result = "#define " & name & " " & $val & "\n"

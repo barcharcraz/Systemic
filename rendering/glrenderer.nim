@@ -91,7 +91,7 @@ proc RenderUntextured*(scene: SceneId; meshEnt: var TComponent[TMesh]) {.procvar
     var (vert, index) = CreateMeshBuffers(meshEnt.data)
     buffers.vertex = vert
     buffers.index = index
-    buffers.vao = CreateTVertexAttribPtr(program)
+    buffers.vao = CreateVertexAttribPtr(program)
     buffers.tex = CreateTexture(diffuseTex.data, diffuseTex.width, diffuseTex.height)
         
   CheckError()

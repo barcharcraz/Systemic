@@ -123,49 +123,18 @@ iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc; ty
         yield (a, b, addr comps[i])
       if comps[i].id.int > a.id.int:
         break
-discard """
-proc mwalkOpt*(scene: SceneId; typ: typedesc): iterator(ent: EntityId): ptr typ {.closure.} =
-  result = iterator(ent: EntityId): ptr typ {.closure.} =
-    var components = addr components(scene, TComponent[typ])
-    for i in components.low..components.high:
-      if components[i].id == ent:
-        yield addr components[i].data
-      elif components[i].id.int > ent.int:
-        yield nil
-
-proc mwalkOpt*(scene: SceneId; typ1: typedesc; typ2: typedesc): iterator(ent: EntityId): tuple[a: ptr typ1, b: ptr typ2] =
-  result = iterator(ent: EntityId): tuple[a: ptr typ1, b: ptr typ2] =
-    var iter1 = mWalkOpt(scene, typ1)
-    var iter2 = mWalkOpt(scene, typ2)
-    while not (finished(iter1) and finished(iter2)):
-      yield (iter1(ent), iter2(ent))
-proc mwalkOpt*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): auto =
-  result = iterator(ent: EntityId): auto=
-    var iter1 = mWalkOpt(scene, typ1, typ2)
-    var iter2 = mWalkOpt(scene, typ3)
-    while not (finished(iter1) and finished(iter2)):
-      yield (iter1(ent), iter2(ent))
-proc mwalk*(scene: SceneId; typ: typedesc): iterator(ent: EntityId): var typ =
-  result = iterator(ent: EntityId): typ =
-    for elm in mwalkOpt(scene, typ):
-      if elm == nil:
-        raise newException(ENoSuchComponent, "That entity does not have the component in question")
-      else:
-        yield elm[]
-proc walk*(scene: SceneId; typ: typedesc): auto =
-  result = iterator(ent: EntityId): typ =
-    for elm in mwalk(scene, typ):
-      yield elm
-"""
 iterator walk*(scene: SceneId; typ1: typedesc): auto {.inline.} =
   for a in matchEntsComponents(scene, typ1):
-    yield (addr a[].data)
+    yield (a.id, addr a[].data)
 iterator walk*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto {.inline.} =
   for a,b in matchEntsComponents(scene, typ1, typ2):
-    yield (addr a[].data, addr b[].data)
-iterator walk*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): auto {.inline.} =
+    yield (a.id, addr a[].data, addr b[].data)
+iterator walk*(scene: SceneId; typ1, typ2, typ3: typedesc): auto {.inline.} =
   for a,b,c in matchEntsComponents(scene, typ1, typ2, typ3):
-    yield (addr a[].data, addr b[].data, addr c[].data)
+    yield (a.id, addr a[].data, addr b[].data, addr c[].data)
+iterator walk*(scene: SceneId; typ1, typ2, typ3, typ4: typedesc): auto {.inline.} =
+  for a,b,c,d in matchEntsComponents(scene, typ1, typ2, typ3):
+    yield (a.id, addr a[].data, addr b[].data, addr c[].data, addr d[].data)
 
 proc entComponets*(scene: SceneId, typ1: typedesc): auto =
   for a in walk(scene, typ1):

@@ -96,7 +96,7 @@ proc CreateProgram*(shaders: varargs[GLuint]): GLuint =
     glDetachShader(result, elm)
   CheckError()
 
-proc CreateTVertexAttribPtr*(program: GLuint): GLuint =
+proc CreateVertexAttribPtr*(program: GLuint): GLuint =
   glGenVertexArrays(1, addr result)
   glBindVertexArray(result)
   var posLoc = glGetAttribLocation(program, "pos")
@@ -122,22 +122,28 @@ proc CreateMeshBuffers*(mesh: var TMesh): tuple[vert: GLuint, index: GLuint] =
   glBufferData(GL_ARRAY_BUFFER, vertSize.GLsizeiptr, addr mesh.verts[0], GL_STATIC_DRAW)
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertSize.GLsizeiptr, addr mesh.indices[0], GL_STATIC_DRAW)
   
-
-proc BindTransforms*(program: GLuint; model, view, proj: var TMat4f) =
-  var viewIdx = glGetUniformLocation(program, "mvp.view")
+proc BindModelMatrix*(program: GLuint; model: var TMat4f) =
   var modelIdx = glGetUniformLocation(program, "mvp.model")
+  CheckError()
+  if modelIdx == -1:
+    warn("glGetUniformLocation returned -1 for modelidx")
+  glUniformMatrix4fv(modelIdx, 1.GLsizei, false, cast[PGLfloat](addr model[0]))
+  CheckError()
+proc BindViewProjMatrix*(program: GLuint, view, proj: var TMat4f) =
+  var viewIdx = glGetUniformLocation(program, "mvp.view")
   var projidx = glGetUniformLocation(program, "mvp.proj")
   CheckError()
   if projidx == -1:
     warn("glGetUniformLocation returned -1 for projIdx")
   if viewidx == -1:
     warn("glGetUniformLocation returned -1 for viewIdx")
-  if modelidx == -1:
-    warn("glGetUniformLocation returned -1 for modelIdx")
   glUniformMatrix4fv(viewIdx, 1.GLsizei, false, cast[PGLfloat](addr view[0]))
   glUniformMatrix4fv(projidx, 1.GLsizei, false, cast[PGLfloat](addr proj[0]))
-  glUniformMatrix4fv(modelidx, 1.GLsizei, false, cast[PGLfloat](addr model[0]))
   CheckError()
+
+proc BindTransforms*(program: GLuint; model, view, proj: var TMat4f) =
+  BindViewProjMatrix(program, view, proj)
+  BindModelMatrix(program, model)
 
 proc CreateTexture*(data: GLvoid; width, height: int): GLuint =
   ## creates a texture using immutable texture storage and 
@@ -154,5 +160,12 @@ proc AttachTextureToProgram*(texture: GLuint; program: GLuint; texUint: GLint; s
   glBindTexture(GL_TEXTURE_2D, texture)
   var samplerLoc = glGetUniformLocation(program, sampler.cstring)
   glUniform1i(samplerLoc, texUint)
-
-
+proc BindMaterial
+proc AdjustViewMatrix*(mat: TMat4f): TMat4f =
+  result = mat
+  result.mat(0,3) *= -1
+  result.mat(1,3) *= -1
+  result.mat(2,3) *= -1
+proc AdjustProjMatrix*(mat: TMat4f): TMat4f =
+  result = mat
+  result.mat(2,3) *= 2
