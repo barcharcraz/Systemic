@@ -120,7 +120,7 @@ iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc; ty
       if comps[i].id == a.id:
         yield (a, b, addr comps[i])
 
-proc mwalkComponentsOpt*(scene: SceneId; typ: typedesc): iterator(ent: EntityId): ptr typ =
+proc mwalkOpt*(scene: SceneId; typ: typedesc): iterator(ent: EntityId): ptr typ =
   result = iterator(ent: EntityId): typ =
     var components = addr components(scene, TComponent[typ])
     for i in position..components.high:
@@ -128,17 +128,33 @@ proc mwalkComponentsOpt*(scene: SceneId; typ: typedesc): iterator(ent: EntityId)
         yield addr components[i].data
       elif components[i].id.int > ent.int:
         yield nil
-proc mwalkComponents*(scene: SceneId; typ: typedesc): iterator(ent: EntityId): var typ =
+
+proc mwalkOpt*(scene: SceneId; typ1: typedesc; typ2: typedesc): iterator(ent: EntityId): tuple[a: ptr typ1, b: ptr typ2] =
+  result = iterator(ent: EntityId): tuple[a: ptr typ1, b: ptr typ2] =
+    var iter1 = mWalkOpt(scene, typ1)
+    var iter2 = mWalkOpt(scene, typ2)
+    while not (finished(iter1) and finished(iter2)):
+      yield (iter1(ent), iter2(ent))
+proc mwalkOpt*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): auto =
+  result = iterator(ent: EntityId): auto=
+    var iter1 = mWalkOpt(scene, typ1, typ2)
+    var iter2 = mWalkOpt(scene, typ3)
+    while not (finished(iter1) and finished(iter2)):
+      yield (iter1(ent), iter2(ent))
+proc mwalk*(scene: SceneId; typ: typedesc): iterator(ent: EntityId): var typ =
   result = iterator(ent: EntityId): typ =
-    for elm in mwalkComponentsOpt(scene, typ):
+    for elm in mwalkOpt(scene, typ):
       if elm == nil:
         raise newException(ENoSuchComponent, "That entity does not have the component in question")
       else:
         yield elm[]
-proc walkComponents*(scene: SceneId; typ: typedesc): iterator(ent: EntityId): typ =
+template walk*
+proc walk*(scene: SceneId; typ: typedesc): auto =
   result = iterator(ent: EntityId): typ =
-    for elm in mwalkComponents(scene, typ):
+    for elm in mwalk(scene, typ):
       yield elm
+proc walk*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto =
+  
 iterator matchEnts*(scene: SceneId; typ1: typedesc): auto {.inline.} =
   for a in matchEntsComponents(scene, typ1):
     yield (addr a[].data)
@@ -241,4 +257,10 @@ when isMainModule:
       if intc[] == 3 and charc[] == '3':
         got33 = true
     check(got33)
+  test("tMwalkOpt"):
+    var walker = mWalkOpt(testScene.id, int, float32, string)
+    var comps = components(testScene.id, TComponent[int])
+    for elm in comps:
+      var (i, f, s) = walker(elm.id)
+      echo(i, f)
 

@@ -57,3 +57,4 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   var materials = mwalkComponentsOpt(scene, TMaterial)
   for mesh in meshes:
 
+
