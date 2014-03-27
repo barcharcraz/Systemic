@@ -1,6 +1,7 @@
 
 import opengl
 import components
+import macros
 import ecs.Scene
 import ecs.entitynode
 import ecs.scenenode
@@ -121,7 +122,7 @@ proc CreateMeshBuffers*(mesh: var TMesh): tuple[vert: GLuint, index: GLuint] =
   var indexSize = sizeof(uint32) * mesh.indices.len
   glBufferData(GL_ARRAY_BUFFER, vertSize.GLsizeiptr, addr mesh.verts[0], GL_STATIC_DRAW)
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertSize.GLsizeiptr, addr mesh.indices[0], GL_STATIC_DRAW)
-  
+
 proc BindModelMatrix*(program: GLuint; model: var TMat4f) =
   var modelIdx = glGetUniformLocation(program, "mvp.model")
   CheckError()
@@ -144,7 +145,20 @@ proc BindViewProjMatrix*(program: GLuint, view, proj: var TMat4f) =
 proc BindTransforms*(program: GLuint; model, view, proj: var TMat4f) =
   BindViewProjMatrix(program, view, proj)
   BindModelMatrix(program, model)
-
+proc BindMaterial*(program: GLuint; mat: var TMaterial) = 
+  var ambiantIdx = glGetUniformLocation(program, "mat.ambiant")
+  var diffuseIdx = glGetUniformLocation(program, "mat.diffuse")
+  var specularIdx = glGetUniformLocation(program, "mat.specular")
+  var shineIdx = glGetUniformLocation(program, "mat.shine")
+  if ambiantIdx == -1: warn("glGetUniformLocation returned -1 for mat.ambiant")
+  if diffuseIdx == -1: warn("glGetUniformLocation returned -1 for mat.diffuse")
+  if specularIdx == -1: warn("glGetUniformLocation returned -1 for mat.specular")
+  if shineIdx == -1: warn("glGetUniformLocation returned -1 for mat.shine")
+  glUniform4fv(ambiantIdx, 1, addr mat.ambiant[0])
+  glUniform4fv(diffuseIdx, 1, addr mat.diffuse[0])
+  glUniform4fv(specularIdx, 1, addr mat.specular[0])
+  glUniform1fv(shineIdx, 1, addr mat.shine)
+  CheckError()
 proc CreateTexture*(data: GLvoid; width, height: int): GLuint =
   ## creates a texture using immutable texture storage and 
   ## uploads `data` to it.
@@ -160,7 +174,14 @@ proc AttachTextureToProgram*(texture: GLuint; program: GLuint; texUint: GLint; s
   glBindTexture(GL_TEXTURE_2D, texture)
   var samplerLoc = glGetUniformLocation(program, sampler.cstring)
   glUniform1i(samplerLoc, texUint)
-proc BindMaterial
+
+proc CreateUniformBuffer*(arr: openarray): GLuint =
+  glGenBuffers(1, addr result)
+  glBindBuffer(GL_UNIFORM_BUFFER, result)
+  glBufferData(GL_UNIFORM_BUFFER, sizeof(openarray.T) * arr.len, addr arr[0], GL_STATIC_DRAW)
+  glBindBuffer(GL_UNIFORM_BUFFER, 0)
+
+
 proc AdjustViewMatrix*(mat: TMat4f): TMat4f =
   result = mat
   result.mat(0,3) *= -1

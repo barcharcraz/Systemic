@@ -4,6 +4,7 @@ import typetraits
 import exceptions
 import macros
 import ecs.entity
+import utils.algo
 import unittest
 
 var EntityMapping: seq[SceneId] = @[]
@@ -135,6 +136,18 @@ iterator walk*(scene: SceneId; typ1, typ2, typ3: typedesc): auto {.inline.} =
 iterator walk*(scene: SceneId; typ1, typ2, typ3, typ4: typedesc): auto {.inline.} =
   for a,b,c,d in matchEntsComponents(scene, typ1, typ2, typ3):
     yield (a.id, addr a[].data, addr b[].data, addr c[].data, addr d[].data)
+proc set*(ent: EntityId, val: auto, start: EntityId = -1.EntityId) =
+  var comps = addr components(getScene(ent), TComponent[type(val)])
+  var pos = 0
+  var newVal: TComponent[type(val)]
+  newVal.id = ent
+  newVal.data = val
+  if start == -1.EntityId:
+    pos = lowerBound(comps[], newVal) do (a,b)->auto: system.cmp(a.id, b.id)
+  else:
+    while (pos < comps.len) and (comps[pos].id.int < ent.int): inc(pos)
+  if pos.id == ent: comps[pos] = newVal
+  else: comps.insert(newVal, pos)
 
 proc entComponets*(scene: SceneId, typ1: typedesc): auto =
   for a in walk(scene, typ1):

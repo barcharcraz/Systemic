@@ -32,7 +32,9 @@ in vec3 norm_out;
 in vec3 view_pos;
 in vec2 uv_out;
 out vec4 outputColor;
-uniform directionalLight_t dlights[NUM_DIRECTIONAL];
+layout(std140) uniform dlightBlock {
+  directionalLight_t dlights[NUM_DIRECTIONAL];
+};
 uniform material_t mat;
 uniform sampler2D tex;
 void main() {
@@ -51,17 +53,29 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   var program {.global.}: GLuint
   var ps {.global.}: GLuint
   var vs {.global.}: GLuint
+  var lightsUniform {.global.}: GLuint
   var dlights = addr components(scene, TComponent[TDirectionalLight)
+
   if vs == 0 or ps == 0:
     var def = genDefine("NUM_DIRECTIONAL", dlights.len)
     vs = CompileShader(GL_VERTEX_SHADER, def & defVS)
     ps = CompileShader(GL_FRAGMENT_SHADER, def & defPS)
     program = CreateProgram(vs, ps)
+  var lightsIdx = glGetUniformBlockIndex(program, "dlightBlock")
+  if lightsUniform == 0:
+    lightsUniform = CreateUniformBuffer(dlights)
+    glUniformBlockBinding(program, lightsUniform, 0)
+  if lightsIdx == GL_INVALID_INDEX:
+    warn("dlights is an invalid index")
+  
+  glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightsUniform)
+
   var (cam, camTrans) = entComponents(scene, TCamera, TTransform)
   var viewMatrix = camTrans.GenMatrix().AdjustViewMatrix()
   var projMatrix = cam.AdjustProjMatrix()
   glUseProgram(program)
   BindViewProjMatrix(program, view, proj)
+  BindMaterial(program, mat)
   for id,mesh,trans,tex,mat in scene.walk(TMesh,TTransform,TImage,TMaterial):
     var buffers = mEntFirstOpt[TObjectBuffers(id)
     if buffers == nil:

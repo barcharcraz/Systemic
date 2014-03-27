@@ -18,13 +18,9 @@ struct material_t {
     float shine;
 };
 
-#endif
 
 """
 let ForwardLighting = """
-#include "LightStructs.glslh"
-#ifndef GLSL_FORWARDLIGHTING_H
-#define GLSL_FORWARDLIGHTING_H
 vec4 phongLight(in material_t mat,
                 in vec4 viewDir,
                 in vec4 lvec,
@@ -63,7 +59,6 @@ vec4 directionalLight(in directionalLight_t light,
     return phongLight(mat, normalize(-viewPos), normalize(light.direction), normalize(norm), light.diffuse, light.specular);
 }
 
-#endif
 
 """
 
