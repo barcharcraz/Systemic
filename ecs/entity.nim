@@ -6,7 +6,9 @@ type TComponent*[T] = object
 proc initComponent*[T](id: EntityId; data: T): TComponent[T] =
   result.id = id
   result.data = data
+var id: int = 0
 proc genEntity*(): EntityId = 
-  var id {.global.}: int = 0
   result = cast[EntityId](id)
   inc(id)
+proc getNumIds*() int =
+  result = id

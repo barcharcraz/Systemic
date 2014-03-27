@@ -1,10 +1,10 @@
 type SceneId* = distinct int
 proc `==`*(a,b: SceneId): bool {.borrow.}
 type TCallbackInfo* = object
-  init: proc(id: SceneId)
-  update: proc(id: SceneId)
-  destroy: proc(id: SceneId)
-  initialized: set[int]
+  init*: proc(id: SceneId)
+  update*: proc(id: SceneId)
+  destroy*: proc(id: SceneId)
+  initialized*: set[int]
 proc initCallbackInfo*(update: proc(id: SceneId)): TCallbackInfo =
   result.init = nil
   result.update = update
