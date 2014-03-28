@@ -1,6 +1,5 @@
-let LightStructs = """
-#ifndef GLSL_LIGHT_STRUCTS_H
-#define GLSL_LIGHT_STRUCTS_H
+const LightStructs* = """
+
 struct pointLight_t {
     vec4 diffuse;
     vec4 specular;
@@ -20,7 +19,8 @@ struct material_t {
 
 
 """
-let ForwardLighting = """
+const ForwardLighting* = """
+
 vec4 phongLight(in material_t mat,
                 in vec4 viewDir,
                 in vec4 lvec,

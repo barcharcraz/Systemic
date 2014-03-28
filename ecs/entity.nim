@@ -10,5 +10,5 @@ var id: int = 0
 proc genEntity*(): EntityId = 
   result = cast[EntityId](id)
   inc(id)
-proc getNumIds*() int =
+proc getNumIds*(): int =
   result = id

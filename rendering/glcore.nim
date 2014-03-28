@@ -72,7 +72,7 @@ proc CompileShader*(stype: GLenum; source: string): GLuint =
   glCompileShader(result)
   var err = GetCompileErrors(result)
   if err != "":
-    error(err)
+    logging.error(err)
   if GetIsCompiled(result) == false:
     raise newException(EGraphicsAPI, err)
 
@@ -121,7 +121,7 @@ proc CreateMeshBuffers*(mesh: var TMesh): tuple[vert: GLuint, index: GLuint] =
   var vertSize = sizeof(TVertex) * mesh.verts.len
   var indexSize = sizeof(uint32) * mesh.indices.len
   glBufferData(GL_ARRAY_BUFFER, vertSize.GLsizeiptr, addr mesh.verts[0], GL_STATIC_DRAW)
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertSize.GLsizeiptr, addr mesh.indices[0], GL_STATIC_DRAW)
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize.GLsizeiptr, addr mesh.indices[0], GL_STATIC_DRAW)
 
 proc BindModelMatrix*(program: GLuint; model: var TMat4f) =
   var modelIdx = glGetUniformLocation(program, "mvp.model")
@@ -175,13 +175,13 @@ proc AttachTextureToProgram*(texture: GLuint; program: GLuint; texUint: GLint; s
   var samplerLoc = glGetUniformLocation(program, sampler.cstring)
   glUniform1i(samplerLoc, texUint)
 
-proc CreateUniformBuffer*(arr: openarray): GLuint =
+proc CreateUniformBuffer*[T](arr: var openarray[T]): GLuint =
   glGenBuffers(1, addr result)
   glBindBuffer(GL_UNIFORM_BUFFER, result)
-  glBufferData(GL_UNIFORM_BUFFER, sizeof(openarray.T) * arr.len, addr arr[0], GL_STATIC_DRAW)
+  glBufferData(GL_UNIFORM_BUFFER, (sizeof(T) * arr.len).GLsizeiptr, cast[PGLvoid](addr arr[0]), GL_STATIC_DRAW)
   glBindBuffer(GL_UNIFORM_BUFFER, 0)
 
-
+proc BindBuffBackedUniform*(
 proc AdjustViewMatrix*(mat: TMat4f): TMat4f =
   result = mat
   result.mat(0,3) *= -1
