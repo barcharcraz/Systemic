@@ -17,5 +17,9 @@ proc VelocitySystem*(scene: SceneId; vels: openarray[TComponent[TVelocity]]) {.p
 proc MovementSystem*(scene: SceneId; cam: var TComponent[TCamera]) {.procvar.} =
   var inpSys = mEntFirstOpt[TInputMapping](cam.id)
   var pos = mEntFirstOpt[TTransform](cam.id)
+  var newVel: TVec3f
+  block:
+    using inpSys
+    if Action("left"): newVel
 
 

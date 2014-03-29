@@ -3,7 +3,7 @@ import macros
 import typetraits
 import strutils
 import ecs.entity
-import utils.algo
+import algorithm
 type TSceneNode*[T] = object
   sceneList*: seq[seq[T]]
 proc initSceneNode*[T](): TSceneNode[T] = 
@@ -31,8 +31,8 @@ proc addToNode*(node: var TSceneNode, scene: SceneId, item: TComponent) =
     result = system.cmp(a.id, b.id)
 macro concatName(name: static[string]): expr =
   var resultString: string = name & "SceneNode"
-  resultString = resultString.replace("[", "_")
-  resultString = resultString.replace("]", "_")
+  resultString = resultString.replace("[", "")
+  resultString = resultString.replace("]", "")
   result = newIdentNode(!resultString)
 proc GetDefaultNode*[T](): var TSceneNode[T] =
   result = concatName(typetraits.name(T))
@@ -40,8 +40,8 @@ proc GetDefaultNode*[T](name: static[string]): var TSceneNode[T] =
   result = concatName(name)
 macro MakeComponentNode*(typ: expr): stmt =
   var nodeName = repr(typ) & "SceneNode"
-  nodeName = nodeName.replace("[", "_")
-  nodeName = nodeName.replace("]", "_")
+  nodeName = nodeName.replace("[", "")
+  nodeName = nodeName.replace("]", "")
   var brackets = newNimNode(nnkBracketExpr)
   brackets.add(newIdentNode(!"initSceneNode"))
   brackets.add(typ)
@@ -73,9 +73,15 @@ template getComponent*(scene: TScene, typ: expr): expr =
 
 #iterator components*[T](scene: SceneId): T {.inline.} = GetDefaultNode[T]().sceneList[scene.int]().items
 #iterator components*[T](scene: TScene): T {.inline.} = components[T](scene.id)
-template components*(scene: SceneId, typ: expr): expr = 
-  GetDefaultNode[typ]().sceneList[scene.int]
+#template components*(scene: SceneId, typ: expr): expr = GetDefaultNode[typ]().sceneList[scene.int]
 template components*(scene: TScene, typ: expr): expr = components(scene.id, typ)
+proc components*(scene: SceneId; typ: typedesc): var seq[typ] = 
+  result = GetDefaultNode[typ]().sceneList[scene.int]
+  if result.isnil:
+    var toinst: seq[typ]
+    newSeq(toInst, 4)
+    GetDefaultNode[typ]().sceneList.insert(toInst, scene.int)
+    result = GetDefaultNode[typ]().sceneList[scene.int]
 ##functions to deal with adding systems to scenes, these
 ##are designed so that you can add a proc with the signature
 ##`proc(id: SceneId; comps: openarray[T])` or `proc(id: SceneId; x: T)` can be added to a

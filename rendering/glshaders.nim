@@ -35,7 +35,7 @@ vec4 phongLight(in material_t mat,
         vec4 refvec = reflect(lvec, norm);
         float phong = dot(refvec, viewDir);
         //phong = clamp(phong, 0.0, 1.0);
-        phong = pow(max(phong,0.0), 50);
+        phong = pow(max(phong,0.0), mat.shine);
         vec4 spec = mat.specular * phong * lspec;
         spec = clamp(spec, 0.0, 1.0);
         rv += spec;
@@ -49,7 +49,9 @@ vec4 pointLight(in pointLight_t light,
                 in material_t mat)
 {
     vec4 lvec = normalize(light.position) * -1;
-    return phongLight(mat, normalize(viewPos), lvec, normalize(normal), light.diffuse, light.specular);
+    vec4 rv = phongLight(mat, normalize(-viewPos), lvec, normalize(normal), light.diffuse, light.specular);
+    //rv = rv * (1 / pow(distance(light.position, viewPos), 2));
+    return rv;
 }
 vec4 directionalLight(in directionalLight_t light,
                       in vec4 norm,

@@ -64,8 +64,9 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   var vs {.global.}: GLuint
   var dlightsUniform {.global.}: GLuint
   var plightsUniform {.global.}: GLuint
-  var dlights = TDirectionalLightSceneNode.sceneList[scene.int]
-  var plights = TPointLightSceneNode.sceneList[scene.int]
+  #var dlights = GetDefaultNode[TDirectionalLight]().sceneList[scene.int]
+  var dlights = components(scene, TDirectionalLight)
+  var plights = components(scene, TPointLight)
   if vs == 0 or ps == 0:
     var def = genDefine("NUM_DIRECTIONAL", dlights.len)
     var pdef = genDefine("NUM_POINT", plights.len)
@@ -80,9 +81,12 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   if dlightsUniform == 0:
     dlightsUniform = CreateUniformBuffer(dlights)
     glUniformBlockBinding(program, dlightsIdx, 0)
-  
+  if plightsUniform == 0:
+    plightsUniform = CreateUniformBuffer(plights)
+    glUniformBlockBinding(program, plightsIdx, 1)
   CheckError()
-  glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightsUniform)
+  glBindBufferBase(GL_UNIFORM_BUFFER, 0, dlightsUniform)
+  glBindBufferBase(GL_UNIFORM_BUFFER, 1, plightsUniform)
   CheckError()
   var (cam, camTrans) = entComponents(scene, TCamera, TTransform)
   var viewMatrix = camTrans[].GenMatrix().AdjustViewMatrix()

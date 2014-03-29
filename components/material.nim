@@ -10,4 +10,4 @@ proc initMaterial*(): TMaterial =
   result.ambiant = [0.0'f32, 0.0'f32, 0.0'f32, 1.0'f32]
   result.diffuse = [1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32]
   result.specular = [1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32]
-  result.shine = 1.0'f32
+  result.shine = 20.0'f32

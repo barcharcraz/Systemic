@@ -4,7 +4,7 @@ import typetraits
 import exceptions
 import macros
 import ecs.entity
-import utils.algo
+import algorithm
 import unittest
 
 var EntityMapping: seq[SceneId] = @[]

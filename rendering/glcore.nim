@@ -181,7 +181,6 @@ proc CreateUniformBuffer*[T](arr: var openarray[T]): GLuint =
   glBufferData(GL_UNIFORM_BUFFER, (sizeof(T) * arr.len).GLsizeiptr, cast[PGLvoid](addr arr[0]), GL_STATIC_DRAW)
   glBindBuffer(GL_UNIFORM_BUFFER, 0)
 
-proc BindBuffBackedUniform*(
 proc AdjustViewMatrix*(mat: TMat4f): TMat4f =
   result = mat
   result.mat(0,3) *= -1
