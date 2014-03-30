@@ -14,10 +14,10 @@ type TDirectionalLight* = object
 type TLight* = TPointLight | TDirectionalLight
 
 proc initDirectionalLight*(dir: TVec3f): TDirectionalLight =
-  result.diffuse = [1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32]
-  result.specular = [1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32]
-  result.direction = [dir[0], dir[1], dir[2], 0.0'f32]
+  result.diffuse.data = [1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32]
+  result.specular.data = [1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32]
+  result.direction = initVec4f(dir[1], dir[2], dir[3], 0.0'f32)
 proc initPointLight*(pos: TVec3f): TPointLight =
-  result.diffuse = [1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32]
-  result.specular = [1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32]
-  result.position = [pos[0], pos[1], pos[2], 0.0'f32]
+  result.diffuse = initVec4f(1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32)
+  result.specular = initVec4f(1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32)
+  result.position = initVec4f(pos[1], pos[2], pos[3], 0.0'f32)

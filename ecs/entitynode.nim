@@ -45,7 +45,7 @@ template MakeEntityComponent*(typ: expr) =
 
 
 
-proc add*[T](ent: EntityId, elm: T) =
+proc add*[T](ent: EntityId, elm: T) {.discardable.} =
   var component = initComponent(ent, elm)
   var scene: SceneId = ent.getScene
   scene.addComponent(component)
@@ -72,7 +72,7 @@ proc hasEnt(comps: seq[pointer], ent: EntityId): bool =
   return false
 
 proc mEntFirstOpt*[T: HasEntComponent](ent: EntityId): ptr T =
-  var defNode = GetDefaultNode[TComponent[T]]()
+  var defNode = addr GetDefaultNode[TComponent[T]]()
   if defNode.sceneList.len <= ent.getScene().int:
     return nil
   if defNode.sceneList[ent.getScene().int].isnil:
@@ -107,9 +107,9 @@ iterator matchEntsComponents*(scene: SceneId; typ1: typedesc): auto {.inline.} =
   for i in comps.low..comps.high:
     yield (addr comps[i])
 iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto {.inline.} =
-  var comps = components(scene, TComponent[typ2])
+  var comps = addr components(scene, TComponent[typ2])
   for elm in matchEntsComponents(scene, typ1):
-    for i1 in 0..comps.high:
+    for i1 in 0..comps[].high:
       if comps[i1].id == elm.id:
         yield (elm, addr comps[i1])
         break
@@ -117,17 +117,17 @@ iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc): a
         break
 
 iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): auto {.inline.} =
-  var comps = components(scene, TComponent[typ3])
+  var comps = addr components(scene, TComponent[typ3])
   for a,b in matchEntsComponents(scene, typ1, typ2):
-    for i in 0..comps.high:
+    for i in 0..comps[].high:
       if comps[i].id == a.id:
         yield (a, b, addr comps[i])
       if comps[i].id.int > a.id.int:
         break
 iterator matchEntsComponents*(scene: SceneId; typ1,typ2,typ3,typ4: typedesc): auto {.inline.} =
-  var comps = components(scene, TComponent[typ4])
+  var comps = addr components(scene, TComponent[typ4])
   for a,b,c in matchEntsComponents(scene, typ1, typ2, typ3):
-    for i in 0..comps.high:
+    for i in 0..comps[].high:
       if comps[i].id == a.id:
         yield (a,b,c, addr comps[i])
       if comps[i].id.int > a.id.int:
@@ -140,6 +140,7 @@ iterator walk*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto {.inline.} 
     yield (a.id, addr a[].data, addr b[].data)
 iterator walk*(scene: SceneId; typ1, typ2, typ3: typedesc): auto {.inline.} =
   for a,b,c in matchEntsComponents(scene, typ1, typ2, typ3):
+    echo a.id.int, b.id.int, c.id.int
     yield (a.id, addr a[].data, addr b[].data, addr c[].data)
 iterator walk*(scene: SceneId; typ1, typ2, typ3, typ4: typedesc): auto {.inline.} =
   for a,b,c,d in matchEntsComponents(scene, typ1, typ2, typ3,typ4):

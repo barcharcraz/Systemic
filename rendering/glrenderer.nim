@@ -64,17 +64,8 @@ proc RenderUntextured*(scene: SceneId; meshEnt: var TComponent[TMesh]) {.procvar
   var diffuseTex = EntFirst[TImage](meshEnt.id)
   var viewMatrix = camTrans.GenMatrix()
   var projMatrix = cam
-  #the camera uses the convention where
-  #a transform along +Z is toward the camera
-  #but GL uses the opposite convention, so we
-  #need this multiplication
-  viewMatrix.mat(0, 3) *= -1
-  viewMatrix.mat(1, 3) *= -1
-  viewMatrix.mat(2, 3) *= -1
-  #we want clip space to be from -1 to 1
-  #but the camera uses the directX convention of
-  #0 to 1
-  projMatrix.mat(2, 3) *=  2
+  viewMatrix = viewMatrix.AdjustViewMatrix()
+  projMatrix = projMatrix.AdjustProjMatrix()
   if vs == 0: vs = CompileShader(GL_VERTEX_SHADER, defVS)
   if ps == 0: ps = CompileShader(GL_FRAGMENT_SHADER, defPS)
   if program == 0: program = CreateProgram(vs, ps)

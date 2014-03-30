@@ -89,7 +89,7 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   glBindBufferBase(GL_UNIFORM_BUFFER, 1, plightsUniform)
   CheckError()
   var (cam, camTrans) = entComponents(scene, TCamera, TTransform)
-  var viewMatrix = camTrans[].GenMatrix().AdjustViewMatrix()
+  var viewMatrix = camTrans[].GenRotTransMatrix().AdjustViewMatrix()
   var projMatrix = cam[].AdjustProjMatrix()
   glUseProgram(program)
   BindViewProjMatrix(program, viewMatrix, projMatrix)

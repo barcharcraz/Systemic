@@ -128,7 +128,7 @@ proc BindModelMatrix*(program: GLuint; model: var TMat4f) =
   CheckError()
   if modelIdx == -1:
     warn("glGetUniformLocation returned -1 for modelidx")
-  glUniformMatrix4fv(modelIdx, 1.GLsizei, false, cast[PGLfloat](addr model[0]))
+  glUniformMatrix4fv(modelIdx, 1.GLsizei, false, cast[PGLfloat](addr model.data[0]))
   CheckError()
 proc BindViewProjMatrix*(program: GLuint, view, proj: var TMat4f) =
   var viewIdx = glGetUniformLocation(program, "mvp.view")
@@ -138,8 +138,8 @@ proc BindViewProjMatrix*(program: GLuint, view, proj: var TMat4f) =
     warn("glGetUniformLocation returned -1 for projIdx")
   if viewidx == -1:
     warn("glGetUniformLocation returned -1 for viewIdx")
-  glUniformMatrix4fv(viewIdx, 1.GLsizei, false, cast[PGLfloat](addr view[0]))
-  glUniformMatrix4fv(projidx, 1.GLsizei, false, cast[PGLfloat](addr proj[0]))
+  glUniformMatrix4fv(viewIdx, 1.GLsizei, false, cast[PGLfloat](addr view.data[0]))
+  glUniformMatrix4fv(projidx, 1.GLsizei, false, cast[PGLfloat](addr proj.data[0]))
   CheckError()
 
 proc BindTransforms*(program: GLuint; model, view, proj: var TMat4f) =
@@ -154,9 +154,9 @@ proc BindMaterial*(program: GLuint; mat: var TMaterial) =
   if diffuseIdx == -1: warn("glGetUniformLocation returned -1 for mat.diffuse")
   if specularIdx == -1: warn("glGetUniformLocation returned -1 for mat.specular")
   if shineIdx == -1: warn("glGetUniformLocation returned -1 for mat.shine")
-  glUniform4fv(ambiantIdx, 1, addr mat.ambiant[0])
-  glUniform4fv(diffuseIdx, 1, addr mat.diffuse[0])
-  glUniform4fv(specularIdx, 1, addr mat.specular[0])
+  glUniform4fv(ambiantIdx, 1, addr mat.ambiant.data[0])
+  glUniform4fv(diffuseIdx, 1, addr mat.diffuse.data[0])
+  glUniform4fv(specularIdx, 1, addr mat.specular.data[0])
   glUniform1fv(shineIdx, 1, addr mat.shine)
   CheckError()
 proc CreateTexture*(data: GLvoid; width, height: int): GLuint =
@@ -183,9 +183,9 @@ proc CreateUniformBuffer*[T](arr: var openarray[T]): GLuint =
 
 proc AdjustViewMatrix*(mat: TMat4f): TMat4f =
   result = mat
-  result.mat(0,3) *= -1
-  result.mat(1,3) *= -1
-  result.mat(2,3) *= -1
+  result[1,4] = result[1,4] * -1
+  result[2,4] = result[2,4] * -1
+  result[3,4] = result[3,4] * -1
 proc AdjustProjMatrix*(mat: TMat4f): TMat4f =
   result = mat
-  result.mat(2,3) *= 2
+  result[3,4] = result[3,4] * 2

@@ -9,7 +9,9 @@ type TSceneNode*[T] = object
 proc initSceneNode*[T](): TSceneNode[T] = 
   newSeq(result.sceneList, 10)
 
-proc addToNode*[T](node: var TSceneNode[T], scene: SceneId, item: T) =
+type notComponent = generic x
+  not (x is TComponent)
+proc addToNode*[T: notComponent](node: var TSceneNode[T], scene: SceneId, item: T) =
   if node.sceneList.len <= scene.int:
     #we need to use this version of newseq to work
     #around a compiler bug
@@ -28,11 +30,14 @@ proc addToNode*(node: var TSceneNode, scene: SceneId, item: TComponent) =
     newSeq(node.sceneList[scene.int], 0)
   var list = addr node.sceneList[scene.int]
   var insertPos = lowerBound(list[], item) do (a,b)->auto:
-    result = system.cmp(a.id, b.id)
+    result = system.cmp(a.id.int, b.id.int)
+  node.sceneList[scene.int].insert(item, insertPos)
 macro concatName(name: static[string]): expr =
   var resultString: string = name & "SceneNode"
   resultString = resultString.replace("[", "")
   resultString = resultString.replace("]", "")
+  resultString = resultString.replace(" ", "")
+  echo(resultString)
   result = newIdentNode(!resultString)
 proc GetDefaultNode*[T](): var TSceneNode[T] =
   result = concatName(typetraits.name(T))
@@ -42,6 +47,7 @@ macro MakeComponentNode*(typ: expr): stmt =
   var nodeName = repr(typ) & "SceneNode"
   nodeName = nodeName.replace("[", "")
   nodeName = nodeName.replace("]", "")
+  nodeName = nodeName.replace(" ", "")
   var brackets = newNimNode(nnkBracketExpr)
   brackets.add(newIdentNode(!"initSceneNode"))
   brackets.add(typ)

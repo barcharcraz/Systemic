@@ -22,8 +22,8 @@ proc loadMesh*(filename: string): cmesh.TMesh =
   for i in 0..scene[].meshes[][].vertexCount-1:
     result.verts[i].pos = verts[i]
     result.verts[i].norm = norms[i]
-    result.verts[i].uv[0] = tex[i][0].float32
     result.verts[i].uv[1] = tex[i][1].float32
+    result.verts[i].uv[2] = tex[i][2].float32
   var faces = cast[ptr array[0..50000, TFace]](scene[].meshes[][].faces)
   for i in 0..scene.meshes[].faceCount-1:
     var findex = cast[ptr array[0..50000, cint]](faces[i].indices)
