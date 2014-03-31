@@ -10,9 +10,13 @@ type TMatrix*[N: static[int]; M: static[int]; T; O: Options] = object
   data*: array[0..M*N-1, T]
 type 
   SquareMatrix[N: static[int]; T] = TMatrix[N,N,T,ColMajor]
+type SquareMatGT[T: static[int]] = generic x
+  x is SquareMatrix
+  x.N > T
 type
   TVec*[N: static[int]; T] = TMatrix[N, 1, T, ColMajor]
   TVecf*[N: static[int]] = TMatrix[N, 1, float32, ColMajor]
+  TMat2*[T] = TMatrix[2,2,T, ColMajor]
   TMat3*[T] = TMatrix[3,3,T, ColMajor]
   TMat4*[T] = TMatrix[4,4,T, ColMajor]
   TMat4f* = TMatrix[4, 4, float32, ColMajor]
@@ -28,10 +32,16 @@ type
   TAlignedBox3f* = object
     min: array[3, float32]
     max: array[3, float32]
+proc initVec2f*(x,y: float32): TVec2f =
+  result.data = [x,y]
 proc initVec3f*(x,y,z: float32): TVec3f =
   result.data = [x,y,z]
 proc initVec4f*(x,y,z,w: float32): TVec4f =
   result.data = [x,y,z,w]
+proc initVec4*[T](x,y,z,w: T): TVec4[T] =
+  result.data = [x,y,z,w]
+proc initVec4*[T](v: TVec3[T], w: T): TVec4[T] =
+  result.data = [v[1], v[2], v[3], w]
 proc `[]=`*(self: var TMatrix; i,j: int; val: TMatrix.T) =
   when TMatrix.O is RowMajor:
     var idx = (TMatrix.M * (i-1)) + (j-1)
@@ -68,10 +78,45 @@ proc col*(a: TMatrix; j: int): auto =
   result = TVec[TMatrix.N, TMatrix.T]()
   for idx in 1..TMatrix.N:
     result[idx] = a[idx, j]
+proc sub*(self: TMatrix; r,c: int): auto =
+  ## returns a submatrix of `self`, that is
+  ## we delete the ith row and jth column
+  ## and return the resulting matrix
+  result = TMatrix[TMatrix.N - 1, TMatrix.M - 1, TMatrix.T, TMatrix.O]()
+  for i in 1..TMatrix.N-1:
+    for j in 1..TMatrix.M-1:
+      #we just handle the four cases here
+      #we could be in any one of the four quadrents
+      #defined by the row and col we are removing
+      if i >= r and j >= c: result[i,j] = self[i+1,j+1]
+      elif i >= r: result[i,j] = self[i+1, j]
+      elif j >= c: result[i,j] = self[i, j+1]
+      else: result[i,j] = self[i,j]
 proc transpose*(a: TMatrix): TMatrix =
   for i in 1..TMatrix.N:
     for j in 1..TMatrix.M:
       result[i,j] = a[j,i]
+proc det*(a: SquareMatrix): float =
+  static: echo SquareMatrix.N
+  when SquareMatrix.N == 2:
+    result = (a[1,1] * a[2,2]) - (a[1,2] * a[2,1])
+  else:
+    for i in 1..SquareMatrix.N:
+      var sgn = pow((-1).float,(i + 1).float)
+      result += sgn * a[i,1] * det(a.sub(i,1))
+proc adj*(a: SquareMatrix): SquareMatrix =
+  for i in 1..SquareMatrix.N:
+    for j in 1..SquareMatrix.N:
+      var sgn = pow((-1).float, (i+j).float)
+      result[i,j] = sgn * det(a.sub(j,i))
+proc inverse*(a: SquareMatrix): SquareMatrix =
+  result = adj(a)/det(a)
+proc initMat3f*(arrs: array[0..8, float32]): TMat3f = 
+  result.data = arrs
+  result = transpose(result)
+proc initMat2f*(arrs: array[0..3, float32]): TMat2f =
+  result.data = arrs
+  result = transpose(result)
 proc mul*(a: TMat4f; b: TMat4f): TMat4f =
   for i in 1..4:
     for j in 1..4:
@@ -85,15 +130,15 @@ proc mul*(a: TMat3f; b: TMat3f): TMat3f =
     for j in 1..3:
       result[i,j] = dot(row(a,i), col(b,j))
 """
-proc `==`*(a: TMatrix; b: TMatrix): bool =
-  for i in a.N:
-    for j in a.M:
-      if a[i,j] != b[i,j]: return false
-  return true
+proc `==`*(a: distinct TMatrix; b: distinct TMatrix): bool =
+  result = a.data == b.data
 proc identity4f(): TMat4f =
   for i in 1..4:
     result[i,i] = 1'f32
 #vector only code
+proc x*(a: TVec): TVec.T = a[1]
+proc y*(a: TVec): TVec.T = a[2]
+proc z*(a: TVec): TVec.T = a[3]
 proc norm*(a: TVec): float =
   sqrt(dot(a,a))
 proc `+`*(a, b: TVec): TVec =
@@ -110,7 +155,7 @@ proc `/`*(a: TVec; b: float): TVec =
 proc `*`*(a: TVec, b: float): TVec =
   for i in 1..TVec.N:
     result[i] = a[i] * b
-proc `$`*(a: TVec3f): string =
+proc `$`*(a: TVec3f): string {.noSideEffect.} =
   result  =  "x: " & $a[1]
   result &= " y: " & $a[2]
   result &= " z: " & $a[3]
@@ -125,6 +170,16 @@ proc toTranslationMatrix*(v: TVec3f): TMat4f =
   result[1,4] = v[1]
   result[2,4] = v[2]
   result[3,4] = v[3]
+proc unProject*(win: TVec3; view, proj: TMat4f; viewport: TVec4f): TVec3f =
+  var inversevp = inverse(mul(proj, view))
+  var tmp = initVec4(win, 1'f32)
+  tmp[1] = (tmp[1] - (viewport[1] / viewport[3]))
+  tmp[2] = (tmp[2] - (viewport[2] / viewport[4]))
+  tmp = (tmp * 2'f32) - 1'f32
+
+  var obj = mul(inversevp, tmp)
+  obj = obj / obj[4]
+  result = initVec3f(obj[1], obj[2], obj[3])
 #quaternion related code
 proc `[]`*(self: TQuatf; i: int): float32 = array[1..4, float32](self)[i]
 proc `[]=`*(self: var TQuatf; i: int; val: float32) = array[1..4,float32](self)[i] = val
@@ -216,7 +271,6 @@ when isMainModule:
     ta[1,1] = 1.0'f32
     var tc = ta.col(1)
     check(tc.data == [1.0'f32, 0.0'f32, 0.0'f32, 0.0'f32])
-  echo("foo" & $TMat2f.N)
   test "TMul":
     var ta: TMat4f
     ta[1,2] = 2.0'f32
@@ -231,6 +285,35 @@ when isMainModule:
     #I actually had a bug where constructors just stopped working
     var vec4: TVec4f = initVec4f(1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32)
     check(vec4.data == [1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32])
+  test "TSub":
+    var a = initMat3f([1'f32,2'f32,3'f32,
+                       4'f32,5'f32,6'f32,
+                       7'f32,8'f32,9'f32])
+    var c = initMat2f([1'f32, 3'f32,
+                       7'f32, 9'f32])
+    var b:TMat2f = a.sub(2,2)
+    var e:bool = b == c
+    check(e)
+  test "TDet2x2":
+    var a = initMat2f([1'f32,2'f32,3'f32,4'f32])
+    var da = det(a)
+    check(da == -2'f32)
+  test "TDet3x3f":
+    var a = initMat3f([1'f32, 2'f32, 3'f32, 
+                       4'f32, 5'f32, 6'f32,
+                       7'f32, 8'f32, 9'f32])
+    var da = det(a)
+    check(da == 0.0)
+  test "TAdj3x3":
+    var a = initMat3f([1'f32, 2'f32, 3'f32, 
+                       4'f32, 5'f32, 6'f32,
+                       7'f32, 8'f32, 9'f32])
+    var aj = adj(a)
+    var b = initMat3f([-3'f32, 6'f32, -3'f32,
+                        6'f32, -12'f32, 6'f32,
+                        -3'f32, 6'f32, -3'f32])
+    var e = aj == b
+    check(e)
   discard """ 
   test "TSwizzle":
     var ta: TVec3f = TVec3f(data: [1.0'f32, 2.0'f32, 3.0'f32])

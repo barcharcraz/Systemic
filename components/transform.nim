@@ -9,7 +9,7 @@ type TTransform* = object
   rotation*: TQuatf
 type TAcceleration* = object
   lin*: TVec3f
-  rot*: TVec3f
+  rot*: TQuatf
 type TOrbit* = object
   around*: EntityId
   vel*: float
@@ -19,6 +19,9 @@ proc initVelocity*(): TVelocity =
 proc initVelocity*(rot: TQuatf): TVelocity =
   result.rot = rot
   result.lin.data = [0.0'f32, 0.0'f32, 0.0'f32]
+proc initVelocity*(lin: TVec3f): TVelocity =
+  result.rot = identityQuatf()
+  result.lin = lin
 proc initAcceleration*(): TAcceleration =
   result.lin = initVec3f(0,0,0)
   result.rot = identityQuatf()

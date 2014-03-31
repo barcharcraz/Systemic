@@ -10,7 +10,7 @@ proc VelocitySystem*(scene: SceneId) {.procvar.} =
   for id, elm in walk(scene, TVelocity):
     var trans = addr mEntFirst[TTransform](id)
     trans.position = trans[].position + elm[].lin
-    echo "VelSys ", cast[int](elm)
+    
     trans.rotation = mul(trans[].rotation, elm[].rot)
   for id, elm in walk(scene, TPremulVelocity):
     var trans = addr mEntFirst[TTransform](id)
@@ -19,8 +19,11 @@ proc VelocitySystem*(scene: SceneId) {.procvar.} =
 
 proc AccelerationSystem*(scene: SceneId) {.procvar.} =
   for id, vel, acc in walk(scene, TVelocity, TAcceleration):
+    echo "run acceleration"
+    #echo ((vecmath.`$`)(acc.lin))
     vel.lin = vel.lin + acc.lin
-    rel.rot = mul(vel.rot, acc.rot)
+    echo((vecmath.`$`)(vel[].lin))
+    vel.rot = mul(vel.rot, acc.rot)
 proc MovementSystem*(scene: SceneId; cam: var TComponent[TCamera]) {.procvar.} =
   var pInpSys = mEntFirstOpt[ptr TInputMapping](cam.id)
   if pInpSys == nil: return

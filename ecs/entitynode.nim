@@ -103,8 +103,8 @@ proc getAny*[T](scene: SceneId): T =
 
 
 iterator matchEntsComponents*(scene: SceneId; typ1: typedesc): auto {.inline.} =
-  var comps = components(scene, TComponent[typ1])
-  for i in comps.low..comps.high:
+  var comps = addr components(scene, TComponent[typ1])
+  for i in comps[].low..comps[].high:
     yield (addr comps[i])
 iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto {.inline.} =
   var comps = addr components(scene, TComponent[typ2])
@@ -140,7 +140,6 @@ iterator walk*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto {.inline.} 
     yield (a.id, addr a[].data, addr b[].data)
 iterator walk*(scene: SceneId; typ1, typ2, typ3: typedesc): auto {.inline.} =
   for a,b,c in matchEntsComponents(scene, typ1, typ2, typ3):
-    echo a.id.int, b.id.int, c.id.int
     yield (a.id, addr a[].data, addr b[].data, addr c[].data)
 iterator walk*(scene: SceneId; typ1, typ2, typ3, typ4: typedesc): auto {.inline.} =
   for a,b,c,d in matchEntsComponents(scene, typ1, typ2, typ3,typ4):

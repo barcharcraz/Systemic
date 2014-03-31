@@ -159,12 +159,15 @@ proc BindMaterial*(program: GLuint; mat: var TMaterial) =
   glUniform4fv(specularIdx, 1, addr mat.specular.data[0])
   glUniform1fv(shineIdx, 1, addr mat.shine)
   CheckError()
+
+proc InitializeTexture*(width,height: int): GLuint =
+  glGenTextures(1 addr result)
+  glBindTexture(GL_TEXTURE_2D, result)
+  glTexStorage2D(GL_TEXTURE_2D, 6, GL_RGBA8, width.GLsizei, height.GLsizei)
 proc CreateTexture*(data: GLvoid; width, height: int): GLuint =
   ## creates a texture using immutable texture storage and 
   ## uploads `data` to it.
-  glGenTextures(1, addr result)
-  glBindTexture(GL_TEXTURE_2D, result)
-  glTexStorage2D(GL_TEXTURE_2D, 6, GL_RGBA8, width.GLsizei, height.GLsizei)
+  result = InitializeTexture(width, height)
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width.GLsizei, height.GLsizei, GL_BGRA, cGL_UNSIGNED_BYTE, data)
   glGenerateMipmap(GL_TEXTURE_2D)
   glBindTexture(GL_TEXTURE_2D, 0)
