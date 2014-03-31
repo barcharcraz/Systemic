@@ -35,7 +35,7 @@ defQuad[1].uv = initVec2f(1,0)
 defQuad[2].uv = initVec2f(0,1)
 defQuad[3].uv = initVec2f(1,1)
 var defIndex: array[0..5, uint32] = [0,1,2,1,3,2]
-proc RenderUI*(scene: SceneId) {.procvar.} =
+proc RenderUI*(context: PContext) {.procvar.} =
   var program {.global.}: GLuint
   var vs {.global.}: GLuint
   var ps {.global.}: GLuint
@@ -64,6 +64,9 @@ proc RenderUI*(scene: SceneId) {.procvar.} =
     glEnableVertexAttribArray(uvLoc.GLuint)
     glVertexAttribPointer(posLoc.GLuint, 3, cGL_FLOAT, false, sizeof(TUIObj).GLsizei, nil)
     glVertexAttribPointer(uvLoc.GLuint, 2, cGL_FLOAT, false, sizeof(TUIObj).GLsizei, cast[ptr GLvoid](sizeof(TVec3f)))
-
+  var surf = get_group_target(context)
+  var height = get_height(surf)
+  var width = get_width(surf)
+  if tex == 0:
+    tex = InitializeTexture(
   glUseProgram(program)
-  for ctx in components(scene, PContext):
