@@ -22,16 +22,17 @@ import gui.widgetcomps
 import rendering.glcore
 var log = newConsoleLogger()
 handlers.add(log)
-
+const winw = 640
+const winh = 480
 #cairo code
-var cairo_surface = image_surface_create(FORMAT_ARGB32, 1920, 1080)
+var cairo_surface = image_surface_create(FORMAT_ARGB32, winw, winh)
 var cairo_ctx = create(cairo_surface)
 
 
 glfw.init()
 var api = initGL_API(glv31, false, false, glpAny, glrNone)
 var winhints = initHints(GL_API = api)
-var wnd = newWnd(dim = (w: 1920, h: 1080), title = "GL test", hints = winhints)
+var wnd = newWnd(dim = (w: winw, h: winh), title = "GL test", hints = winhints)
 makeContextCurrent(wnd)
 #loadExtensions()
 var done = false
