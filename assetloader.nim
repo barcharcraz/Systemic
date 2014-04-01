@@ -36,6 +36,12 @@ FreeImage_Initialise(0)
 addQuitProc do {.noconv.}:
   FreeImage_DeInitialise()
 var textureCache = initTable[string, ptr FIBITMAP]()
+proc freeAllTextures*() =
+  for key,elm in textureCache.pairs:
+    FreeImage_Unload(elm)
+    textureCache.del(key)
+addQuitProc do {.noconv.}:
+  freeAllTextures()
 proc loadTexture*(filename: string) =
   if textureCache.hasKey(filename):
     warn(filename & " is already in the texture cache")
