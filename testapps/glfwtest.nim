@@ -10,6 +10,7 @@ import components.camera
 import components.transform
 import systems.movement
 import systems.orbit
+import systems.selection
 import glfwinput
 import components
 import logging
@@ -42,7 +43,7 @@ var camEnt = genEntity()
 var meshEnt = genEntity()
 #mainscene.id.addComponent(initDirectionalLight([0.0'f32,0.0'f32,1.0'f32]))
 mainscene.id.addComponent(initPointLight(vec3f(4.0'f32, 0.0'f32, -3.0'f32)))
-mainscene.id.addComponent(initButton(vec2f(20,20)))
+mainscene.id.addComponent(initButton(vec2f(20,20), "test"))
 mainscene.id.add(camEnt)
 mainscene.id.add(meshEnt)
 camEnt.add(initCamera())
@@ -51,6 +52,9 @@ camEnt.add(initVelocity().TPremulVelocity)
 var inp = initShooterKeys()
 camEnt.add(addr inp)
 AttachInput(wnd, inp)
+wnd.mouseBtnCb = proc(wnd: PWnd, btn: TMouseBtn, pressed: bool, modKeys: TModifierKeySet) =
+  var mouseInfo = pollMouse(wnd)
+  handleSelectionAttempt(mainscene.id, mouseInfo.x, mouseInfo.y)
 meshEnt.add(tmesh)
 meshEnt.add(initMaterial())
 meshEnt.add(initAcceleration())

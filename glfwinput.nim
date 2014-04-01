@@ -98,7 +98,7 @@ proc DetachInput*(wnd: PWnd; inp: var input.TInputMapping) =
 proc pollMouse*(self: PWnd): input.TMouse =
   var (x,y) = self.cursorPos
   result.x = x
-  result.y = self.size.h.float - y
+  result.y = y
   # TODO: include all the mouse buttons
   #       here, not just L and R
   if self.mouseBtnDown(mbLeft):

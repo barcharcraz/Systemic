@@ -70,9 +70,12 @@ proc identity*[T](): T =
   for i in 1..rows(result):
     result[i,i] = 1.float32
 proc dot*(a, b: TVec): TVec.T =
+  #FIXME: perhaps this should return a float
   #assert(a.data.len == b.data.len)
   for i in 1..a.data.len:
     result += a[i] * b[i]
+proc length*(a: TVec): float =
+  result = sqrt(dot(a,a).float)
 proc row*(a: TMatrix; i: int): auto =
   result = TVec[TMatrix.M, TMatrix.T]()
   for idx in 1..TMatrix.M:
@@ -81,6 +84,10 @@ proc col*(a: TMatrix; j: int): auto =
   result = TVec[TMatrix.N, TMatrix.T]()
   for idx in 1..TMatrix.N:
     result[idx] = a[idx, j]
+proc `/`*(a: TMatrix, c: float): TMatrix =
+  for i in 1..TMatrix.N:
+    for j in 1..TMatrix.M:
+      result[i,j] = a[i,j] / c
 proc sub*(self: TMatrix; r,c: int): auto =
   ## returns a submatrix of `self`, that is
   ## we delete the ith row and jth column
@@ -107,12 +114,12 @@ proc det*(a: SquareMatrix): float =
     for i in 1..SquareMatrix.N:
       var sgn = pow((-1).float,(i + 1).float)
       result += sgn * a[i,1] * det(a.sub(i,1))
-proc adj*(a: SquareMatrix): SquareMatrix =
-  for i in 1..SquareMatrix.N:
-    for j in 1..SquareMatrix.N:
+proc adj*(a: TMat4f): TMat4f =
+  for i in 1..4:
+    for j in 1..4:
       var sgn = pow((-1).float, (i+j).float)
       result[i,j] = sgn * det(a.sub(j,i))
-proc inverse*(a: SquareMatrix): SquareMatrix =
+proc inverse*(a: TMat4f): TMat4f =
   result = adj(a)/det(a)
 proc initMat3f*(arrs: array[0..8, float32]): TMat3f = 
   result.data = arrs
@@ -133,7 +140,7 @@ proc mul*(a: TMat3f; b: TMat3f): TMat3f =
     for j in 1..3:
       result[i,j] = dot(row(a,i), col(b,j))
 """
-proc `==`*(a: distinct TMatrix; b: distinct TMatrix): bool =
+proc `==`*(a: TMatrix; b: TMatrix): bool =
   result = a.data == b.data
 proc identity4f(): TMat4f =
   for i in 1..4:
@@ -152,12 +159,11 @@ proc `+=`*(a: var TVec, b: TVec) =
 proc `-`*(a, b: TVec): TVec =
   for i in 1..TVec.N:
     result[i] = a[i] - b[i]
-proc `/`*(a: TVec; b: float): TVec =
-  for i in 1..TVec.N:
-    result[i] = a[i] / b
 proc `*`*(a: TVec, b: float): TVec =
   for i in 1..TVec.N:
     result[i] = a[i] * b
+proc dist*(a,b: TVec): float =
+  result = length(a - b)
 proc `$`*(a: TVec3f): string {.noSideEffect.} =
   result  =  "x: " & $a[1]
   result &= " y: " & $a[2]
@@ -173,8 +179,8 @@ proc toTranslationMatrix*(v: TVec3f): TMat4f =
   result[1,4] = v[1]
   result[2,4] = v[2]
   result[3,4] = v[3]
-proc unProject*(win: TVec3; view, proj: TMat4f; viewport: TVec4f): TVec3f =
-  var inversevp = inverse(mul(proj, view))
+proc unProject*(win: TVec3; mtx: TMat4f, viewport: TVec4f): TVec3f =
+  var inversevp = inverse(mtx)
   var tmp = vec4(win, 1'f32)
   tmp[1] = (tmp[1] - (viewport[1] / viewport[3]))
   tmp[2] = (tmp[2] - (viewport[2] / viewport[4]))
@@ -183,6 +189,8 @@ proc unProject*(win: TVec3; view, proj: TMat4f; viewport: TVec4f): TVec3f =
   var obj = mul(inversevp, tmp)
   obj = obj / obj[4]
   result = vec3f(obj[1], obj[2], obj[3])
+proc unProject*(win: TVec3; view, proj: TMat4f; viewport: TVec4f): TVec3f =
+  unProject(win, mul(proj, view), viewport)
 #quaternion related code
 proc `[]`*(self: TQuatf; i: int): float32 = array[1..4, float32](self)[i]
 proc `[]=`*(self: var TQuatf; i: int; val: float32) = array[1..4,float32](self)[i] = val
@@ -286,7 +294,7 @@ when isMainModule:
     check(tm4[4,4] == 1.0'f32)
   test "Test Construct":
     #I actually had a bug where constructors just stopped working
-    var vec4: TVec4f = initVec4f(1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32)
+    var vec4: TVec4f = vec4f(1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32)
     check(vec4.data == [1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32])
   test "TSub":
     var a = initMat3f([1'f32,2'f32,3'f32,

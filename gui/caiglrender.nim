@@ -35,10 +35,10 @@ defQuad[0].pos = vec3f(-1, -1, 0)
 defQuad[1].pos = vec3f(1, -1, 0)
 defQuad[2].pos = vec3f(-1, 1, 0)
 defQuad[3].pos = vec3f(1, 1, 0)
-defQuad[0].uv = vec2f(0,0)
-defQuad[1].uv = vec2f(1,0)
-defQuad[2].uv = vec2f(0,1)
-defQuad[3].uv = vec2f(1,1)
+defQuad[0].uv = vec2f(0,1)
+defQuad[1].uv = vec2f(1,1)
+defQuad[2].uv = vec2f(0,0)
+defQuad[3].uv = vec2f(1,0)
 var defIndex: array[0..5, uint32] = [0.uint32,1.uint32,2.uint32,1.uint32,3.uint32,2.uint32]
 proc RenderUI*(context: PContext) {.procvar.} =
   var program {.global.}: GLuint
