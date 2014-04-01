@@ -117,12 +117,20 @@ proc addSystem*[T: notArray](scene: var TScene, func: proc(id: SceneId; t: var T
 proc addSystem*[T](scene: var TScene, func: proc(ts: openarray[T])) =
   scene.addSystem do (id: SceneId):
     func(GetDefaultNode[T]().sceneList[id.int])
-
+proc addSystem*[T](scene: var TScene, func: proc(ts: var openarray[T])) =
+  scene.addSystem do (id: SceneId):
+    func(GetDefaultNode[T]().sceneList[id.int])
 proc addSystem*[T: notArray](scene: var TScene; func: proc(t: T)) =
   scene.addSystem do (id: SceneId):
     for elm in components(id, T):
       func(elm)
 
+proc addSystem*(scene: var TScene; func: proc()) =
+  ## adds a system to scene that is run once per frame
+  ## and does not need to know anything at all about
+  ## the scene
+  scene.addSystem do (id: SceneId):
+    func()
 
 type HasComponent = generic x
   compiles(GetDefaultNode[x]())

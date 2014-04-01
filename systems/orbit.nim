@@ -6,5 +6,4 @@ proc OrbitSystem*(scene: SceneId) {.procvar.} =
     var transform = entFirst[TTransform](o[].around)
     var newVel = trans[].position - transform.position
     newVel = (newVel / newVel.norm()) * o[].vel
-    echo "orbit run"
     acc[].lin = newVel * -1

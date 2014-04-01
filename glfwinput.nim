@@ -94,3 +94,14 @@ proc DetachInput*(wnd: PWnd; inp: var input.TInputMapping) =
   wnd.wndCloseCb = nil
   #wnd.cursorEnterCb = nil
   winDat.del(wnd)
+
+proc pollMouse*(self: PWnd): input.TMouse =
+  var (x,y) = self.cursorPos
+  result.x = x
+  result.y = self.size.h.float - y
+  # TODO: include all the mouse buttons
+  #       here, not just L and R
+  if self.mouseBtnDown(mbLeft):
+    result.buttons.incl(input.mbLeft)
+  if self.mouseBtnDown(mbRight):
+    result.buttons.incl(input.mbRight)

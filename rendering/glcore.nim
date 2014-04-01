@@ -160,10 +160,10 @@ proc BindMaterial*(program: GLuint; mat: var TMaterial) =
   glUniform1fv(shineIdx, 1, addr mat.shine)
   CheckError()
 
-proc InitializeTexture*(width,height: int): GLuint =
-  glGenTextures(1 addr result)
+proc InitializeTexture*(width,height: int; levels: int = 6): GLuint =
+  glGenTextures(1, addr result)
   glBindTexture(GL_TEXTURE_2D, result)
-  glTexStorage2D(GL_TEXTURE_2D, 6, GL_RGBA8, width.GLsizei, height.GLsizei)
+  glTexStorage2D(GL_TEXTURE_2D, levels.GLsizei, GL_RGBA8, width.GLsizei, height.GLsizei)
 proc CreateTexture*(data: GLvoid; width, height: int): GLuint =
   ## creates a texture using immutable texture storage and 
   ## uploads `data` to it.

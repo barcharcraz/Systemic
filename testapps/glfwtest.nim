@@ -15,9 +15,18 @@ import components
 import logging
 import assetloader
 import vecmath
+import cairo
+import gui.caiglrender
+import gui.button
+import gui.widgetcomps
 import rendering.glcore
 var log = newConsoleLogger()
 handlers.add(log)
+
+#cairo code
+var cairo_surface = image_surface_create(FORMAT_ARGB32, 1920, 1080)
+var cairo_ctx = create(cairo_surface)
+
 
 glfw.init()
 var api = initGL_API(glv31, false, false, glpAny, glrNone)
@@ -31,7 +40,8 @@ var tmesh = loadMesh("assets/testobj.obj")
 var camEnt = genEntity()
 var meshEnt = genEntity()
 #mainscene.id.addComponent(initDirectionalLight([0.0'f32,0.0'f32,1.0'f32]))
-mainscene.id.addComponent(initPointLight(initVec3f(4.0'f32, 0.0'f32, -3.0'f32)))
+mainscene.id.addComponent(initPointLight(vec3f(4.0'f32, 0.0'f32, -3.0'f32)))
+mainscene.id.addComponent(initButton(vec2f(20,20)))
 mainscene.id.add(camEnt)
 mainscene.id.add(meshEnt)
 camEnt.add(initCamera())
@@ -43,13 +53,16 @@ AttachInput(wnd, inp)
 meshEnt.add(tmesh)
 meshEnt.add(initMaterial())
 meshEnt.add(initAcceleration())
-meshEnt.add(initTransform(initVec3f(0.0'f32, 0.0'f32, -10.0'f32)))
+meshEnt.add(initTransform(vec3f(0.0'f32, 0.0'f32, -10.0'f32)))
 meshEnt.add(getTexture("assets/diffuse.tga"))
-meshEnt.add(initVelocity((initVec3f(0.005'f32, 0.0'f32, 0.0'f32))))
+meshEnt.add(initVelocity((vec3f(0.005'f32, 0.0'f32, 0.0'f32))))
 mainscene.addSystem(MovementSystem)
 mainscene.addSystem(OrbitSystem)
 mainscene.addSystem(AccelerationSystem)
 mainscene.addSystem(movement.VelocitySystem)
+mainscene.addSystem do (ts: var openarray[TBUtton]): doButtonCollision(pollMouse(wnd), ts)
+mainscene.addSystem do (ts: openarray[TButton]): drawButtons(cairo_ctx, ts)
+mainscene.addSystem do: RenderUI(cairo_ctx)
 mainscene.addSystem(RenderPhongLit)
 initOpenGLRenderer()
 glViewport(0,0,1920,1080)

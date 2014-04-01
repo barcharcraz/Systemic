@@ -89,7 +89,7 @@ type TKey* = enum
   keyNumpad8 = 96,
   keyNumpad9 = 97,
   keyNumpad0 = 98,
-type TMouseButton = enum
+type TMouseButton* = enum
   mbNone = 0
   mbLeft = 1,
   mbRight = 2,
@@ -104,8 +104,8 @@ type TInputMapping* = object
   axisActions: TTable[string, TAxis]
   actions: TTable[string, TKeyCombination]
 type TMouse* = object
-  x*: TAxis
-  y*: TAxis
+  x*: TAxis ##defined as being from 0-width
+  y*: TAxis ##defined as being from 0-height going up
   buttons*: set[TMouseButton]
 type TKeyboard* = object
   keys*: TKeyCombination

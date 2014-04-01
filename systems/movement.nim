@@ -10,7 +10,6 @@ proc VelocitySystem*(scene: SceneId) {.procvar.} =
   for id, elm in walk(scene, TVelocity):
     var trans = addr mEntFirst[TTransform](id)
     trans.position = trans[].position + elm[].lin
-    
     trans.rotation = mul(trans[].rotation, elm[].rot)
   for id, elm in walk(scene, TPremulVelocity):
     var trans = addr mEntFirst[TTransform](id)
@@ -19,10 +18,7 @@ proc VelocitySystem*(scene: SceneId) {.procvar.} =
 
 proc AccelerationSystem*(scene: SceneId) {.procvar.} =
   for id, vel, acc in walk(scene, TVelocity, TAcceleration):
-    echo "run acceleration"
-    #echo ((vecmath.`$`)(acc.lin))
     vel.lin = vel.lin + acc.lin
-    echo((vecmath.`$`)(vel[].lin))
     vel.rot = mul(vel.rot, acc.rot)
 proc MovementSystem*(scene: SceneId; cam: var TComponent[TCamera]) {.procvar.} =
   var pInpSys = mEntFirstOpt[ptr TInputMapping](cam.id)
@@ -34,19 +30,19 @@ proc MovementSystem*(scene: SceneId; cam: var TComponent[TCamera]) {.procvar.} =
   var newVel: TVec3f
   var rotX = inpSys.AxisAction("mouseX")
   var rotY = inpSys.AxisAction("mouseY")
-  var newRotX = quatFromAngleAxis(rotX, initVec3f(0,1,0))
-  var newRotY = quatFromAngleAxis(rotY, initVec3f(1,0,0))
+  var newRotX = quatFromAngleAxis(rotX, vec3f(0,1,0))
+  var newRotY = quatFromAngleAxis(rotY, vec3f(1,0,0))
   var newRot = identityQuatf()
   newRot = mul(newRot, newRotX)
   newRot = mul(newRot, newRotY)
   block:
     using inpSys
-    if Action("left"): newVel += initVec3f(-1,0,0)
-    if Action("right"): newVel += initVec3f(1,0,0)
-    if Action("up"): newVel += initVec3f(0,1,0)
-    if Action("down"): newVel += initVec3f(0,-1,0)
-    if Action("forward"): newVel += initVec3f(0,0,-1)
-    if Action("backward"): newVel += initVec3f(0,0,1)
+    if Action("left"): newVel += vec3f(-1,0,0)
+    if Action("right"): newVel += vec3f(1,0,0)
+    if Action("up"): newVel += vec3f(0,1,0)
+    if Action("down"): newVel += vec3f(0,-1,0)
+    if Action("forward"): newVel += vec3f(0,0,-1)
+    if Action("backward"): newVel += vec3f(0,0,1)
   #we are multiplying by the inverse of the current rotation
   #but since the rotation matrix is orthogonal we just transpose
   #it

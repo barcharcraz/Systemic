@@ -15,6 +15,8 @@ type SquareMatGT[T: static[int]] = generic x
   x.N > T
 type
   TVec*[N: static[int]; T] = TMatrix[N, 1, T, ColMajor]
+  TVec3*[T] = TVec[3, T]
+  TVec4*[T] = TVec[4, T]
   TVecf*[N: static[int]] = TMatrix[N, 1, float32, ColMajor]
   TMat2*[T] = TMatrix[2,2,T, ColMajor]
   TMat3*[T] = TMatrix[3,3,T, ColMajor]
@@ -32,16 +34,17 @@ type
   TAlignedBox3f* = object
     min: array[3, float32]
     max: array[3, float32]
-proc initVec2f*(x,y: float32): TVec2f =
+proc vec2f*(x,y: float32): TVec2f =
   result.data = [x,y]
-proc initVec3f*(x,y,z: float32): TVec3f =
+proc vec3f*(x,y,z: float32): TVec3f =
   result.data = [x,y,z]
-proc initVec4f*(x,y,z,w: float32): TVec4f =
+proc vec4f*(x,y,z,w: float32): TVec4f =
   result.data = [x,y,z,w]
-proc initVec4*[T](x,y,z,w: T): TVec4[T] =
+proc vec4*[T](x,y,z,w: T): TVec4[T] =
   result.data = [x,y,z,w]
-proc initVec4*[T](v: TVec3[T], w: T): TVec4[T] =
+proc vec4*[T](v: TVec3[T], w: T): TVec4[T] =
   result.data = [v[1], v[2], v[3], w]
+
 proc `[]=`*(self: var TMatrix; i,j: int; val: TMatrix.T) =
   when TMatrix.O is RowMajor:
     var idx = (TMatrix.M * (i-1)) + (j-1)
@@ -172,14 +175,14 @@ proc toTranslationMatrix*(v: TVec3f): TMat4f =
   result[3,4] = v[3]
 proc unProject*(win: TVec3; view, proj: TMat4f; viewport: TVec4f): TVec3f =
   var inversevp = inverse(mul(proj, view))
-  var tmp = initVec4(win, 1'f32)
+  var tmp = vec4(win, 1'f32)
   tmp[1] = (tmp[1] - (viewport[1] / viewport[3]))
   tmp[2] = (tmp[2] - (viewport[2] / viewport[4]))
   tmp = (tmp * 2'f32) - 1'f32
 
   var obj = mul(inversevp, tmp)
   obj = obj / obj[4]
-  result = initVec3f(obj[1], obj[2], obj[3])
+  result = vec3f(obj[1], obj[2], obj[3])
 #quaternion related code
 proc `[]`*(self: TQuatf; i: int): float32 = array[1..4, float32](self)[i]
 proc `[]=`*(self: var TQuatf; i: int; val: float32) = array[1..4,float32](self)[i] = val
