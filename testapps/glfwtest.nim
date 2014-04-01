@@ -66,7 +66,7 @@ mainscene.addSystem do (ts: openarray[TButton]): drawButtons(cairo_ctx, ts)
 mainscene.addSystem do: RenderUI(cairo_ctx)
 mainscene.addSystem(RenderPhongLit)
 initOpenGLRenderer()
-glViewport(0,0,1920,1080)
+glViewport(0,0,winw,winh)
 glClearColor(1.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
 while not done and not wnd.shouldClose:
   mainscene.update()
