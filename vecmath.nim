@@ -1,6 +1,7 @@
 import macros
 import typetraits
 import math
+import strutils
 type ColMajor = object
 type RowMajor = object
 type Options = generic x
@@ -34,16 +35,6 @@ type
   TAlignedBox3f* = object
     min: array[3, float32]
     max: array[3, float32]
-proc vec2f*(x,y: float32): TVec2f =
-  result.data = [x,y]
-proc vec3f*(x,y,z: float32): TVec3f =
-  result.data = [x,y,z]
-proc vec4f*(x,y,z,w: float32): TVec4f =
-  result.data = [x,y,z,w]
-proc vec4*[T](x,y,z,w: T): TVec4[T] =
-  result.data = [x,y,z,w]
-proc vec4*[T](v: TVec3[T], w: T): TVec4[T] =
-  result.data = [v[1], v[2], v[3], w]
 
 proc `[]=`*(self: var TMatrix; i,j: int; val: TMatrix.T) =
   when TMatrix.O is RowMajor:
@@ -64,6 +55,21 @@ proc `[]`*(self: TVec; i: int): TVec.T =
   result = self[i, 1]
 proc `[]=`*(self: var TVec; i: int; val: TVec.T) =
   self[i, 1] = val
+
+proc vec2f*(x,y: float32): TVec2f =
+  result.data = [x,y]
+proc vec3f*(x,y,z: float32): TVec3f =
+  result.data = [x,y,z]
+proc vec4f*(x,y,z,w: float32): TVec4f =
+  result.data = [x,y,z,w]
+proc vec4f*(v: TVec3f, w: float32): TVec4f =
+  result.data = [v[1], v[2], v[3], w]
+proc vec4*[T](x,y,z,w: T): TVec4[T] =
+  result.data = [x,y,z,w]
+proc vec4*[T](v: TVec3[T], w: T): TVec4[T] =
+  result.data = [v[1], v[2], v[3], w]
+
+
 proc rows*(mtx: TMatrix): int = TMatrix.N
 proc cols*(mtx: TMatrix): int = TMatrix.M
 proc identity*[T](): T =
@@ -106,6 +112,7 @@ proc transpose*(a: TMatrix): TMatrix =
   for i in 1..TMatrix.N:
     for j in 1..TMatrix.M:
       result[i,j] = a[j,i]
+discard """
 proc det*(a: SquareMatrix): float =
   static: echo SquareMatrix.N
   when SquareMatrix.N == 2:
@@ -114,6 +121,13 @@ proc det*(a: SquareMatrix): float =
     for i in 1..SquareMatrix.N:
       var sgn = pow((-1).float,(i + 1).float)
       result += sgn * a[i,1] * det(a.sub(i,1))
+"""
+proc det2*(a: TMat2f): float =
+  result = (a[1,1] * a[2,2]) - (a[1,2] * a[2,1])
+proc det*(a: TMat3f): float =
+  for i in 1..3:
+    var sgn = pow((-1).float, (i + 1).float)
+    result += sgn * a[i,1] * det2(a.sub(i,1))
 proc adj*(a: TMat4f): TMat4f =
   for i in 1..4:
     for j in 1..4:
@@ -159,15 +173,18 @@ proc `+=`*(a: var TVec, b: TVec) =
 proc `-`*(a, b: TVec): TVec =
   for i in 1..TVec.N:
     result[i] = a[i] - b[i]
+proc `-`*(a: TVec, c: float): TVec =
+  for i in 1..TVec.N:
+    result[i] = a[i] - c
 proc `*`*(a: TVec, b: float): TVec =
   for i in 1..TVec.N:
     result[i] = a[i] * b
 proc dist*(a,b: TVec): float =
   result = length(a - b)
 proc `$`*(a: TVec3f): string {.noSideEffect.} =
-  result  =  "x: " & $a[1]
-  result &= " y: " & $a[2]
-  result &= " z: " & $a[3]
+  result  =  "x: " & formatFloat(a[1])
+  result &= " y: " & formatFloat(a[2])
+  result &= " z: " & formatFloat(a[3])
 #transform related code
 proc toAffine*(a: TMat3f): TMat4f =
   for i in 1..TMat3f.N:
@@ -179,9 +196,9 @@ proc toTranslationMatrix*(v: TVec3f): TMat4f =
   result[1,4] = v[1]
   result[2,4] = v[2]
   result[3,4] = v[3]
-proc unProject*(win: TVec3; mtx: TMat4f, viewport: TVec4f): TVec3f =
+proc unProject*(win: TVec3f; mtx: TMat4f, viewport: TVec4f): TVec3f =
   var inversevp = inverse(mtx)
-  var tmp = vec4(win, 1'f32)
+  var tmp = vec4f(win, 1'f32)
   tmp[1] = (tmp[1] - (viewport[1] / viewport[3]))
   tmp[2] = (tmp[2] - (viewport[2] / viewport[4]))
   tmp = (tmp * 2'f32) - 1'f32
@@ -189,7 +206,7 @@ proc unProject*(win: TVec3; mtx: TMat4f, viewport: TVec4f): TVec3f =
   var obj = mul(inversevp, tmp)
   obj = obj / obj[4]
   result = vec3f(obj[1], obj[2], obj[3])
-proc unProject*(win: TVec3; view, proj: TMat4f; viewport: TVec4f): TVec3f =
+proc unProject*(win: TVec3f; view, proj: TMat4f; viewport: TVec4f): TVec3f =
   unProject(win, mul(proj, view), viewport)
 #quaternion related code
 proc `[]`*(self: TQuatf; i: int): float32 = array[1..4, float32](self)[i]
