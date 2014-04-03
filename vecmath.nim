@@ -148,6 +148,9 @@ proc mul*(a: TMat4f; b: TMat4f): TMat4f =
 proc mulv*(a: TMat3f, b: TVec3f): TVec3f =
   for i in 1..3:
     result[i] = dot(a.row(i), b)
+proc mul4v(a: TMat4f, v: TVec4f): TVec4f =
+  for i in 1..4:
+    result[i] = dot(a.row(i), v)
 discard """
 proc mul*(a: TMat3f; b: TMat3f): TMat3f =
   for i in 1..3:
@@ -203,7 +206,7 @@ proc unProject*(win: TVec3f; mtx: TMat4f, viewport: TVec4f): TVec3f =
   tmp[2] = (tmp[2] - (viewport[2] / viewport[4]))
   tmp = (tmp * 2'f32) - 1'f32
 
-  var obj = mul(inversevp, tmp)
+  var obj = mul4v(inversevp, tmp)
   obj = obj / obj[4]
   result = vec3f(obj[1], obj[2], obj[3])
 proc unProject*(win: TVec3f; view, proj: TMat4f; viewport: TVec4f): TVec3f =
