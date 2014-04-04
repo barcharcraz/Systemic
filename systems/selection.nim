@@ -8,6 +8,10 @@ import strutils
 const selectionDbg = true
 loggingWrapper(selectionDbg)
 
+type TSelected* = object
+  oldDiffuse*: TVec4f
+
+MakeEntityComponent(TSelected)
 
 proc findSelected(transforms: openarray[TComponent[TTransform]], x,y: float, mtx: TMat4f): EntityId =
   var color: TVec4[GLByte]
@@ -22,10 +26,11 @@ proc findSelected(transforms: openarray[TComponent[TTransform]], x,y: float, mtx
   glReadPixels(x.GLint, (viewport[4] - y).GLint, 1, 1, GL_DEPTH_COMPONENT, cGL_FLOAT, addr depth)
   glReadPixels(x.GLint, (viewport[4] - y).GLint, 1, 1, GL_STENCIL_INDEX, cGL_UNSIGNED_INT, addr index)
   #if depth >= 0.99999'f32: return (-1).EntityId
+  debug("mtx is: "& repr(mtx))
   var selectedPos = unProject(vec3f(x,y,depth), mtx, viewport)
   debug("Selected: " & vecmath.`$`(selectedPos))
   debug("Depth Value: " & formatFloat(depth))
-  var maxDist = 10.0
+  var maxDist = 4.0
   for elm in transforms:
     var sdist = dist(selectedPos, elm.data.position)
     debug("Distance to ent: " & $elm.id.int & " is: " & formatFloat(sdist))
@@ -34,8 +39,24 @@ proc findSelected(transforms: openarray[TComponent[TTransform]], x,y: float, mtx
   return (-1).EntityId
 proc handleSelectionAttempt*(scene: SceneId, x,y: float) =
   var (cam, camTrans) = entComponents(scene, TCamera, TTransform)
-  var viewMtx = camTrans[].GenMatrix().AdjustViewMatrix()
+  var viewMtx = camTrans[].GenRotTransMatrix().AdjustViewMatrix()
   var projMtx = cam[].AdjustProjMatrix()
   var transfms = addr components(scene, TComponent[TTransform])
   var selected = findSelected(transfms[], x, y, mul(projMtx, viewMtx))
   debug("Selected Entity: " & $selected.int)
+  
+  var ids: seq[EntityId] = @[]
+  for id, sel in walk(scene, TSelected):
+    var material = mEntFirstOpt[TMaterial](id)
+    if material == nil: continue
+    material.diffuse = sel[].oldDiffuse
+    ids.add(id)
+  for elm in ids:
+    elm.del(TSelected)
+  if selected == (-1).EntityId: return
+  var mat = mEntFirstOpt[TMaterial](selected)
+  if mat == nil: return
+  selected.add(TSelected(oldDiffuse: mat[].diffuse))
+  mat[].diffuse = vec4f(0,1,0,1)
+    
+  

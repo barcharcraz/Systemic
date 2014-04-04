@@ -78,7 +78,7 @@ proc identity*[T](): T =
 proc dot*(a, b: TVec): TVec.T =
   #FIXME: perhaps this should return a float
   #assert(a.data.len == b.data.len)
-  for i in 1..a.data.len:
+  for i in 1..TVec.N:
     result += a[i] * b[i]
 proc length*(a: TVec): float =
   result = sqrt(dot(a,a).float)
@@ -162,11 +162,15 @@ proc `==`*(a: TMatrix; b: TMatrix): bool =
 proc identity4f(): TMat4f =
   for i in 1..4:
     result[i,i] = 1'f32
+proc identity3f(): TMat3f =
+  for i in 1..3:
+    result[i,i] = 1'f32
 #vector only code
 proc x*(a: TVec): TVec.T = a[1]
 proc y*(a: TVec): TVec.T = a[2]
 proc z*(a: TVec): TVec.T = a[3]
 proc norm*(a: TVec): float =
+  static: echo(TVec.N)
   sqrt(dot(a,a))
 proc `+`*(a, b: TVec): TVec =
   for i in 1..TVec.N:
@@ -183,7 +187,7 @@ proc `*`*(a: TVec, b: float): TVec =
   for i in 1..TVec.N:
     result[i] = a[i] * b
 proc dist*(a,b: TVec): float =
-  result = length(a - b)
+  result = norm(a - b)
 proc `$`*(a: TVec3f): string {.noSideEffect.} =
   result  =  "x: " & formatFloat(a[1])
   result &= " y: " & formatFloat(a[2])
@@ -202,8 +206,8 @@ proc toTranslationMatrix*(v: TVec3f): TMat4f =
 proc unProject*(win: TVec3f; mtx: TMat4f, viewport: TVec4f): TVec3f =
   var inversevp = inverse(mtx)
   var tmp = vec4f(win, 1'f32)
-  tmp[1] = (tmp[1] - (viewport[1] / viewport[3]))
-  tmp[2] = (tmp[2] - (viewport[2] / viewport[4]))
+  tmp[1] = (tmp[1] - viewport[1]) / viewport[3]
+  tmp[2] = (tmp[2] - viewport[2]) / viewport[4]
   tmp = (tmp * 2'f32) - 1'f32
 
   var obj = mul4v(inversevp, tmp)
@@ -230,6 +234,8 @@ proc mul*(p: TQuatf; q: TQuatf): TQuatf =
   result[3] = p.w * q.y + p.y * q.w + p.z * q.x - p.x * q.z;
   result[4] = p.w * q.z + p.z * q.w + p.x * q.y - p.y * q.x;
 proc toRotMatrix*(q: TQuatf): TMat3f =
+  if array[1..4, float32](q) == [1.0'f32, 0.0'f32, 0.0'f32, 0.0'f32]:
+    return identity3f()
   #this code is ported from Eigen
   #pretty much directly
   assert(norm(q) <= 1.1'f32 and norm(q) >= 0.9'f32)
@@ -263,6 +269,9 @@ proc quatFromAngleAxis*(angle: float; axis: TVec3f): TQuatf =
 
 proc identityQuatf*(): TQuatf =
   result[1] = 1.0'f32
+  result[2] = 0.0'f32
+  result[3] = 0.0'f32
+  result[4] = 0.0'f32
 discard """
 const XSwiz = {'x', 'r', 'u' }
 const YSwiz = {'y', 'g', 'v' }

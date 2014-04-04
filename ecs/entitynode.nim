@@ -50,7 +50,15 @@ proc add*[T](ent: EntityId, elm: T) {.discardable.} =
   var scene: SceneId = ent.getScene
   scene.addComponent(component)
 
-
+proc del*[T](ent: EntityId, typ: typedesc[T]) =
+  var scene = ent.getScene()
+  var comps = addr components(scene, TComponent[T])
+  var idx = 0
+  for i,elm in comps[].pairs():
+    if elm.id == ent:
+      idx = i
+      break
+  comps[].del(idx)
 
 iterator components*[T](ent: EntityId): T {.inline.} =
   var scene = EntityMapping[ent.int]

@@ -72,6 +72,8 @@ proc addComponent*[T](scene: TScene, item: T) =
 proc addComponent*[T](scene: SceneId; item: T) =
   echo name(T)
   GetDefaultNode[T]().addToNode(scene, item)
+proc deleteComponent*[T](scene: SceneId; typ: typedesc[T]; idx: int) =
+  GetDefaultNode[T]().sceneList[scene.int].del(idx)
 ##gets the sequence of typ components in the given scene
 template getComponent*(scene: TScene, typ: expr): expr = 
   GetDefaultNode[typ]().sceneList[scene.id]
