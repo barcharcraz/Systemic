@@ -53,7 +53,6 @@ proc MovementSystem*(scene: SceneId; cam: var TComponent[TCamera]) {.procvar.} =
     vel[].lin = newVel
     vel[].rot = newRot
   
-
 proc OrbitMovementSystem*(scene: SceneId, dx, dy: float, pos: TVec3f) =
   var xrot = quatFromAngleAxis(dx * 0.005, vec3f(0,1,0))
   var yrot = quatFromAngleAxis(dy * 0.005, vec3f(-1,0,0))

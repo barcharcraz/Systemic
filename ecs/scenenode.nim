@@ -4,6 +4,7 @@ import typetraits
 import strutils
 import ecs.entity
 import algorithm
+import tables
 type TSceneNode*[T] = object
   sceneList*: seq[seq[T]]
 proc initSceneNode*[T](): TSceneNode[T] = 
@@ -43,6 +44,10 @@ proc GetDefaultNode*[T](): var TSceneNode[T] =
   result = concatName(typetraits.name(T))
 proc GetDefaultNode*[T](name: static[string]): var TSceneNode[T] =
   result = concatName(name)
+
+#this is pretty crazy, but it should work OK
+#think of it as a mini scripting language
+var typeMapping: TTable[string, proc(v: pointer)]
 macro MakeComponentNode*(typ: expr): stmt =
   var nodeName = repr(typ) & "SceneNode"
   nodeName = nodeName.replace("[", "")

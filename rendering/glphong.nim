@@ -26,6 +26,9 @@ void main() {
     mat4 modelview = mvp.view * mvp.model;
     gl_Position = modelviewproj * vec4(pos, 1);
     view_pos = (modelview * vec4(pos,1)).xyz;
+    //taking the transpose on the GPU like this is likely NOT
+    //a very good idea, it is in the VS so meh but still.
+    //also this breaks for non-uniform scaleing.
     norm_out = mat3(modelview) * norm;
 }
 """
