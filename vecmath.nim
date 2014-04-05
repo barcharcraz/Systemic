@@ -112,7 +112,7 @@ proc transpose*(a: TMatrix): TMatrix =
   for i in 1..TMatrix.N:
     for j in 1..TMatrix.M:
       result[i,j] = a[j,i]
-discard """
+
 proc det*(a: SquareMatrix): float =
   static: echo SquareMatrix.N
   when SquareMatrix.N == 2:
@@ -121,13 +121,15 @@ proc det*(a: SquareMatrix): float =
     for i in 1..SquareMatrix.N:
       var sgn = pow((-1).float,(i + 1).float)
       result += sgn * a[i,1] * det(a.sub(i,1))
-"""
+
+discard """
 proc det2*(a: TMat2f): float =
   result = (a[1,1] * a[2,2]) - (a[1,2] * a[2,1])
 proc det*(a: TMat3f): float =
   for i in 1..3:
     var sgn = pow((-1).float, (i + 1).float)
     result += sgn * a[i,1] * det2(a.sub(i,1))
+"""
 proc adj*(a: TMat4f): TMat4f =
   for i in 1..4:
     for j in 1..4:
@@ -135,6 +137,9 @@ proc adj*(a: TMat4f): TMat4f =
       result[i,j] = sgn * det(a.sub(j,i))
 proc inverse*(a: TMat4f): TMat4f =
   result = adj(a)/det(a)
+proc trace*(a: SquareMatrix): float =
+  for i in 1..SquareMatrix.N:
+    result += a[i,i]
 proc initMat3f*(arrs: array[0..8, float32]): TMat3f = 
   result.data = arrs
   result = transpose(result)
@@ -170,7 +175,6 @@ proc x*(a: TVec): TVec.T = a[1]
 proc y*(a: TVec): TVec.T = a[2]
 proc z*(a: TVec): TVec.T = a[3]
 proc norm*(a: TVec): float =
-  static: echo(TVec.N)
   sqrt(dot(a,a))
 proc `+`*(a, b: TVec): TVec =
   for i in 1..TVec.N:
@@ -186,30 +190,44 @@ proc `-`*(a: TVec, c: float): TVec =
 proc `*`*(a: TVec, b: float): TVec =
   for i in 1..TVec.N:
     result[i] = a[i] * b
+proc `*`*(b: float, a: TVec): TVec = a * b
 proc dist*(a,b: TVec): float =
   result = norm(a - b)
 proc `$`*(a: TVec3f): string {.noSideEffect.} =
   result  =  "x: " & formatFloat(a[1])
   result &= " y: " & formatFloat(a[2])
   result &= " z: " & formatFloat(a[3])
+proc formatVec4f*(a: TVec4f): string {.noSideEffect.} =
+  result  =  "x: " & formatFloat(a[1])
+  result &= " y: " & formatFloat(a[2])
+  result &= " z: " & formatFloat(a[3])
+  result &= " w: " & formatFloat(a[4])
+
 #transform related code
 proc toAffine*(a: TMat3f): TMat4f =
   for i in 1..TMat3f.N:
     for j in 1..TMat3f.M:
       result[i,j] = a[i,j]
   result[4,4] = 1'f32
+proc fromAffine*(a: TMat4f): TMat3f =
+  for i in 1..3:
+    for j in 1..3:
+      result[i,j] = a[i,j]
 proc toTranslationMatrix*(v: TVec3f): TMat4f =
   result = identity4f()
   result[1,4] = v[1]
   result[2,4] = v[2]
   result[3,4] = v[3]
+proc fromTranslationMtx*(m: TMat4f): TVec3f =
+  result[1] = m[1,4]
+  result[2] = m[2,4]
+  result[3] = m[3,4]
 proc unProject*(win: TVec3f; mtx: TMat4f, viewport: TVec4f): TVec3f =
   var inversevp = inverse(mtx)
   var tmp = vec4f(win, 1'f32)
   tmp[1] = (tmp[1] - viewport[1]) / viewport[3]
   tmp[2] = (tmp[2] - viewport[2]) / viewport[4]
   tmp = (tmp * 2'f32) - 1'f32
-
   var obj = mul4v(inversevp, tmp)
   obj = obj / obj[4]
   result = vec3f(obj[1], obj[2], obj[3])
@@ -218,10 +236,15 @@ proc unProject*(win: TVec3f; view, proj: TMat4f; viewport: TVec4f): TVec3f =
 #quaternion related code
 proc `[]`*(self: TQuatf; i: int): float32 = array[1..4, float32](self)[i]
 proc `[]=`*(self: var TQuatf; i: int; val: float32) = array[1..4,float32](self)[i] = val
+proc `==`*(a,b: TQuatf): bool {.borrow.}
 proc i*(q: TQuatf): float32 = q[2]
 proc j*(q: TQuatf): float32 = q[3]
 proc k*(q: TQuatf): float32 = q[4]
 proc w*(q: TQuatf): float32 = q[1]
+proc `i=`*(q: var TQuatf, val: float32) = q[2] = val
+proc `j=`*(q: var TQuatf, val: float32) = q[3] = val
+proc `k=`*(q: var TQuatf, val: float32) = q[4] = val
+proc `w=`*(q: var TQuatf, val: float32) = q[1] = val
 proc x*(q: TQuatf): float32 = q[2]
 proc y*(q: TQuatf): float32 = q[3]
 proc z*(q: TQuatf): float32 = q[4]
@@ -234,8 +257,6 @@ proc mul*(p: TQuatf; q: TQuatf): TQuatf =
   result[3] = p.w * q.y + p.y * q.w + p.z * q.x - p.x * q.z;
   result[4] = p.w * q.z + p.z * q.w + p.x * q.y - p.y * q.x;
 proc toRotMatrix*(q: TQuatf): TMat3f =
-  if array[1..4, float32](q) == [1.0'f32, 0.0'f32, 0.0'f32, 0.0'f32]:
-    return identity3f()
   #this code is ported from Eigen
   #pretty much directly
   assert(norm(q) <= 1.1'f32 and norm(q) >= 0.9'f32)
@@ -260,6 +281,38 @@ proc toRotMatrix*(q: TQuatf): TMat3f =
   result[3,1] = txz-twy
   result[3,2] = tyz+twx
   result[3,3] = float32(1)-(txx+tyy)
+proc fromRotMatrix*(m: TMat3f): TQuatf =
+  ## convert a rotation matrix into a quaternion
+  ## this algorithm comes from the Eigen linear algebra
+  ## library which in turn credits it to Ken Shoemake
+  var t = trace(m)
+  if t > 0:
+    t = sqrt(t + 1.0)
+    result.w = 0.5 * t
+    t = 0.5/t
+    result.i = (m[3,2] - m[2,3]) * t
+    result.j = (m[1,3] - m[3,1]) * t
+    result.k = (m[2,1] - m[1,2]) * t
+  else:
+    var i = 1
+    if m[2,2] > m[1,1]:
+      i = 2
+    if m[3,3] > m[i,i]:
+      i = 3
+    var j = (i+1) mod 3
+    var k = (j+1) mod 3
+    inc(j)
+    inc(k)
+    t = sqrt(m[i,i] - m[j,j] - m[k,k] + 1.0)
+    result[i] = 0.5 * t
+    t = 0.5 / t
+    result.w = (m[k,j] - m[j,k]) * t
+    result[j] = (m[j,i] + m[i,j]) * t
+    result[k] = (m[k,i] + m[i,k]) * t
+proc toOrbitRotMatrix*(q: TQuatf, pos: TVec3f): TMat4f =
+  result = toTranslationMatrix(-1 * pos)
+  result = mul(result, toAffine(toRotMatrix(q)))
+  result = mul(result, toTranslationMatrix(pos))
 proc quatFromAngleAxis*(angle: float; axis: TVec3f): TQuatf =
   var vecScale = sin(0.5 * angle)
   result[2] = axis[1] * vecScale
@@ -272,6 +325,9 @@ proc identityQuatf*(): TQuatf =
   result[2] = 0.0'f32
   result[3] = 0.0'f32
   result[4] = 0.0'f32
+
+
+
 discard """
 const XSwiz = {'x', 'r', 'u' }
 const YSwiz = {'y', 'g', 'v' }
@@ -354,6 +410,11 @@ when isMainModule:
                         -3'f32, 6'f32, -3'f32])
     var e = aj == b
     check(e)
+  test "TMatToQuat1":
+    var rot = quatFromAngleAxis(0.5, vec3f(1,0,0))
+    var mtx = toRotMatrix(rot)
+    var newRot = fromRotMatrix(mtx)
+    check(newRot == rot)
   discard """ 
   test "TSwizzle":
     var ta: TVec3f = TVec3f(data: [1.0'f32, 2.0'f32, 3.0'f32])

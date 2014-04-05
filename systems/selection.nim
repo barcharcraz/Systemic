@@ -5,13 +5,10 @@ import rendering/glcore
 import ecs
 import components
 import strutils
+import components/selectDat
 const selectionDbg = true
 loggingWrapper(selectionDbg)
 
-type TSelected* = object
-  oldDiffuse*: TVec4f
-
-MakeEntityComponent(TSelected)
 
 proc findSelected(transforms: openarray[TComponent[TTransform]], x,y: float, mtx: TMat4f): EntityId =
   var color: TVec4[GLByte]
@@ -48,10 +45,11 @@ proc handleSelectionAttempt*(scene: SceneId, x,y: float) =
   var ids: seq[EntityId] = @[]
   for id, sel in walk(scene, TSelected):
     var material = mEntFirstOpt[TMaterial](id)
-    if material == nil: continue
-    material.diffuse = sel[].oldDiffuse
+    if material != nil:
+      material.diffuse = sel[].oldDiffuse
     ids.add(id)
   for elm in ids:
+    debug("delete id: " & $elm.int)
     elm.del(TSelected)
   if selected == (-1).EntityId: return
   var mat = mEntFirstOpt[TMaterial](selected)

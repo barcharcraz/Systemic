@@ -17,6 +17,7 @@ import logging
 import assetloader
 import vecmath
 import cairo
+import strutils
 import gui.caiglrender
 import gui.button
 import gui.widgetcomps
@@ -39,22 +40,34 @@ makeContextCurrent(wnd)
 var done = false
 var mainscene = initScene()
 var tmesh = loadMesh("assets/sphere.obj")
+var torus = loadMesh("assets/testobj.obj")
 var camEnt = genEntity()
 var meshEnt = genEntity()
+var torusEnt = genEntity()
 #mainscene.id.addComponent(initDirectionalLight([0.0'f32,0.0'f32,1.0'f32]))
-mainscene.id.addComponent(initPointLight(vec3f(4.0'f32, 0.0'f32, -3.0'f32)))
+mainscene.id.addComponent(initPointLight(vec3f(0.0'f32, 0.0'f32, -3.0'f32)))
 mainscene.id.addComponent(initButton(vec2f(20,20), "test"))
 mainscene.id.add(camEnt)
 mainscene.id.add(meshEnt)
+mainscene.id.add(torusEnt)
 camEnt.add(initCamera())
 camEnt.add(initTransform(vec3f(0,0,0)))
 #camEnt.add(initVelocity().TPremulVelocity)
 var inp = initShooterKeys()
 camEnt.add(addr inp)
-AttachInput(wnd, inp)
 wnd.mouseBtnCb = proc(wnd: PWnd, btn: TMouseBtn, pressed: bool, modKeys: TModifierKeySet) =
   var mouseInfo = pollMouse(wnd)
-  handleSelectionAttempt(mainscene.id, mouseInfo.x, mouseInfo.y)
+  if input.mbLeft in mouseInfo.buttons:
+    handleSelectionAttempt(mainscene.id, mouseInfo.x, mouseInfo.y)
+wnd.cursorPosCb = proc(wnd: PWnd, pos: tuple[x,y: float64]) =
+  var lastPos {.global.}: TMouse
+  var mouseInfo = pollMouse(wnd)
+  var dx = mouseInfo.x - lastPos.x
+  var dy = mouseInfo.y - lastPos.y
+  lastPos = mouseInfo
+  if input.mbRight in mouseInfo.buttons:
+    OrbitSelectionMovement(mainscene.id, dx, dy)
+  
 meshEnt.add(tmesh)
 meshEnt.add(initMaterial())
 meshEnt.add(initAcceleration())

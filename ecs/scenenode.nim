@@ -16,7 +16,7 @@ proc addToNode*[T: notComponent](node: var TSceneNode[T], scene: SceneId, item: 
     #we need to use this version of newseq to work
     #around a compiler bug
     var toInst: seq[T]
-    newSeq(toInst, 4)
+    newSeq(toInst, 0)
     node.sceneList.insert(toInst, scene.int)
   if node.sceneList[scene.int].isnil:
     newSeq(node.sceneList[scene.int], 0)
@@ -24,7 +24,7 @@ proc addToNode*[T: notComponent](node: var TSceneNode[T], scene: SceneId, item: 
 proc addToNode*(node: var TSceneNode, scene: SceneId, item: TComponent) =
   if node.sceneList.len <= scene.int:
     var toInst: seq[type(item)]
-    newSeq(toInst, 4)
+    newSeq(toInst, 0)
     node.sceneList.insert(toInst, scene.int)
   if node.sceneList[scene.int].isnil:
     newSeq(node.sceneList[scene.int], 0)

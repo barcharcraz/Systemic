@@ -1,11 +1,13 @@
 import components
+import utils/log
 import ecs/entity
 import ecs/entitynode
 import ecs/scene
 import ecs/scenenode
 import input
 import vecmath
-
+const movementDbg = true
+loggingWrapper(movementDbg)
 proc VelocitySystem*(scene: SceneId) {.procvar.} =
   for id, elm in walk(scene, TVelocity):
     var trans = addr mEntFirst[TTransform](id)
@@ -52,5 +54,20 @@ proc MovementSystem*(scene: SceneId; cam: var TComponent[TCamera]) {.procvar.} =
     vel[].rot = newRot
   
 
-
-
+proc OrbitMovementSystem*(scene: SceneId, dx, dy: float, pos: TVec3f) =
+  var xrot = quatFromAngleAxis(dx * 0.0005, vec3f(0,1,0))
+  var yrot = quatFromAngleAxis(dy * 0.0005, vec3f(-1,0,0))
+  var rot = mul(xrot, yrot)
+  for id, cam, view in walk(scene, TCamera, TTransform):
+    var newPos = mulv(toRotMatrix(rot), (view[].position - pos))
+    newPos = newPos + pos
+    rot.i = -rot.i
+    rot.j = -rot.j
+    rot.k = -rot.k
+    view[].rotation = mul(view[].rotation, rot)
+    echo(vecmath.`$`(newPos))
+    view[].position = newPos
+  
+proc OrbitSelectionMovement*(scene: SceneId, dx, dy: float) =
+  for id, sel, transform in walk(scene, TSelected, TTransform):
+    OrbitMovementSystem(scene, dx, dy, transform[].position)
