@@ -22,6 +22,7 @@ import gui.caiglrender
 import gui.button
 import gui.widgetcomps
 import rendering.glcore
+import buildopts
 var log = newConsoleLogger()
 handlers.add(log)
 const winw = 640
@@ -74,6 +75,10 @@ meshEnt.add(initAcceleration())
 meshEnt.add(initTransform(vec3f(0.0'f32, 0.0'f32, -10.0'f32)))
 meshEnt.add(getTexture("assets/diffuse.tga"))
 meshEnt.add(initVelocity(quatFromAngleAxis(0.00, vec3f(1,0,0))))
+torusEnt.add(torus)
+torusEnt.add(initMaterial())
+torusEnt.add(initTransform(vec3f(3.0'f32, 0.0'f32, -5.0'f32)))
+torusEnt.add(getTexture("assets/diffuse.tga"))
 #mainscene.addSystem(MovementSystem)
 #mainscene.addSystem(OrbitSystem)
 #mainscene.addSystem(AccelerationSystem)

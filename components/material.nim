@@ -8,6 +8,6 @@ type TMaterial* = object
 
 proc initMaterial*(): TMaterial =
   result.ambiant.data = [0.0'f32, 0.0'f32, 0.0'f32, 1.0'f32]
-  result.diffuse.data = [1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32]
+  result.diffuse.data = [0'f32, 0.0'f32, 0.0'f32, 0.0'f32]
   result.specular.data = [1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32]
-  result.shine = 20.0'f32
+  result.shine = 10.0'f32
