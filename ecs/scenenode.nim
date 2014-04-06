@@ -48,6 +48,10 @@ proc GetDefaultNode*[T](name: static[string]): var TSceneNode[T] =
 #this is pretty crazy, but it should work OK
 #think of it as a mini scripting language
 var typeMapping: TTable[string, proc(v: pointer)]
+proc addToMapping(typ: expr, map: TTable[string, proc(scene: SceneId, elm: pointer)]): expr =
+  map.add(name(typ)) do (scene: SceneId, elm: pointer):
+    #what could go wrong?
+    scene.addComponent(cast[ptr typ](elm)[])
 macro MakeComponentNode*(typ: expr): stmt =
   var nodeName = repr(typ) & "SceneNode"
   nodeName = nodeName.replace("[", "")
@@ -67,6 +71,7 @@ macro MakeComponentNode*(typ: expr): stmt =
   identDefs.add(initCall)
   result = newNimNode(nnkStmtList)
   result.add(newNimNode(nnkVarSection).add(identDefs))
+  result.add(getAst(addToMapping(typ, typeMapping)))
 
 
 template MakeComponent*(typ: expr) {.immediate,dirty.} =
@@ -77,6 +82,8 @@ proc addComponent*[T](scene: TScene, item: T) =
 proc addComponent*[T](scene: SceneId; item: T) =
   echo name(T)
   GetDefaultNode[T]().addToNode(scene, item)
+proc addComponent*(scene: SceneId, typ: string, item: pointer) =
+  typeMapping[typ](scene, item)
 proc deleteComponent*[T](scene: SceneId; typ: typedesc[T]; idx: int) =
   GetDefaultNode[T]().sceneList[scene.int].del(idx)
 ##gets the sequence of typ components in the given scene
