@@ -39,3 +39,4 @@ proc GenRotTransMatrix*(trans: TTransform): TMat4f =
   var rotMtx = toAffine(trans.rotation.toRotMatrix())
   var transMtx = trans.position.toTranslationMatrix()
   result = mul(rotMtx, transMtx)
+

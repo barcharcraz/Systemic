@@ -10,8 +10,6 @@ import logging
 import exceptions
 import vecmath
 import unsigned
-type THasDrawn* = distinct bool
-MakeComponent(THasDrawn)
 ## structure that holds per-object
 ## OpenGL information
 type TObjectBuffers* = object

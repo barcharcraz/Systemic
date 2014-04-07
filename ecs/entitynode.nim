@@ -6,11 +6,13 @@ import macros
 import ecs.entity
 import algorithm
 import unittest
+import tables
 
 var EntityMapping: seq[SceneId] = @[]
 
 
-
+proc add*[T](ent: EntityId, elm: T)
+proc add*(ent: EntityId, typ: string, item: pointer)
 proc mgetScene*(ent: EntityId): var SceneId =
   if EntityMapping.high < ent.int:
     raise newException(ENoScene, $(ent.int))
@@ -40,15 +42,22 @@ proc add*(scene: SceneId; ent: EntityId) =
     
 
 
+
+
+var entTypeMapping = initTable[string, proc(ent: EntityId, elm: pointer)]()
+
 template MakeEntityComponent*(typ: expr) =
+  bind entTypeMapping
   MakeComponentNode(TComponent[typ])
-
-
-
-proc add*[T](ent: EntityId, elm: T) {.discardable.} =
+  entTypeMapping.add(name(typ)) do (ent: EntityId, elm: pointer):
+    add(ent, cast[ptr typ](elm)[])
+proc add*[T](ent: EntityId, elm: T) =
   var component = initComponent(ent, elm)
   var scene: SceneId = ent.getScene
   scene.addComponent(component)
+
+proc add*(ent: EntityId, typ: string, item: pointer) =
+  entTypeMapping[typ](ent, item)
 
 proc del*[T](ent: EntityId, typ: typedesc[T]) =
   var scene = ent.getScene()

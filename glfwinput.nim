@@ -45,6 +45,7 @@ proc keyCb(o: PWnd; key: glfw.TKey; scanCode: int; action: TKeyAction;
 
 var lastX: float64
 var lastY: float64
+var justEntered: bool = false
 proc handleMouse*(wnd: PWnd) =
   if not winDat.hasKey(wnd):
     return
@@ -58,43 +59,24 @@ proc handleMouse*(wnd: PWnd) =
   var dy = pos.y - lastY
   lastX = pos.x
   lastY = pos.y
-  input.SetAxis(winData[], "mouseX", dx / (size.w).float)
-  input.SetAxis(winData[], "mouseY", dy / (size.h).float)
-proc cursorEnterCb(wnd: PWnd; entered: bool) =
-  var pos = wnd.cursorPos()
-  if entered == true:
-    echo("set last X/Y to: " & $pos.x & " " & $pos.y)
-    lastX = pos.x
-    lastY = pos.y
+proc cursorEnterCb(self: PWnd, entered: bool) =
+  if entered:
+    var (x,y) = self.cursorPos
+    lastX = x
+    lastY = y
+    justEntered = true
+
 proc closeCb(wnd: PWnd) =
   winDat.del(wnd)
 
-proc AttachInput*(wnd: PWnd; inp: var input.TInputMapping) =
-  wnd.keyCb = keyCb
-  wnd.wndCloseCb = closeCb
-  #wnd.cursorEnterCb = cursorEnterCb
-  if not winDat.hasKey(wnd):
-    winDat.add(wnd, addr inp)
-  else:
-    winDat[wnd] = addr inp
-  echo("attached to: " & $wnd)
-  proc `$`(a: ptr input.TInputMapping): string = $cast[int](a)
-  echo winDat
-proc DetachInput*(wnd: PWnd; inp: var input.TInputMapping) =
-  if not winDat.hasKey(wnd):
-    info("window does not have any attached input maps")
-    return
-  if winDat.mget(wnd) == nil:
-    info("window does not have any attached input maps")
-    winDat.del(wnd)
-    return
-  if winDat[wnd] != addr inp:
-    warn("currently attched input map is different from map attempted to remove")
-  wnd.keyCb = nil
-  wnd.wndCloseCb = nil
-  #wnd.cursorEnterCb = nil
-  winDat.del(wnd)
-
+proc AttachInput*(wnd: PWnd) =
+  wnd.cursorEnterCb = cursorEnterCb
+proc pollKeyboard*(self: PWnd): input.TKeyCombination =
+  for elm in glfw.TKey:
+    if self.isKeyDown(elm):
+      result.incl(getKey(elm))
+    else:
+      result.excl(getKey(elm))
 proc pollMouse*(self: PWnd): input.TMouse =
   var (x,y) = self.cursorPos
   result.x = x
@@ -105,3 +87,18 @@ proc pollMouse*(self: PWnd): input.TMouse =
     result.buttons.incl(input.mbLeft)
   if self.mouseBtnDown(mbRight):
     result.buttons.incl(input.mbRight)
+
+proc pollInput*(self: PWnd): input.TInput =
+  result.keyboard = pollKeyboard(self)
+
+  var mouseInfo = pollMouse(self)
+  var dx = mouseInfo.x - lastx
+  var dy = mouseInfo.y - lasty
+  if justEntered:
+    justEntered = false
+    dx = 0
+    dy = 0
+  lastx = mouseInfo.x
+  lasty = mouseInfo.y
+  result.mouse.x = dx
+  result.mouse.y = dy

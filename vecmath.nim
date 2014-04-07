@@ -259,6 +259,8 @@ proc mul*(p: TQuatf; q: TQuatf): TQuatf =
 proc toRotMatrix*(q: TQuatf): TMat3f =
   #this code is ported from Eigen
   #pretty much directly
+  if not(norm(q) <= 1.1'f32 and norm(q) >= 0.9'f32):
+    echo("bad quat: " & repr(q))
   assert(norm(q) <= 1.1'f32 and norm(q) >= 0.9'f32)
   var tx: float32 = float32(2)*q.x()
   var ty: float32 = float32(2)*q.y()

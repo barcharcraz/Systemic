@@ -10,6 +10,8 @@ type TSceneNode*[T] = object
 proc initSceneNode*[T](): TSceneNode[T] = 
   newSeq(result.sceneList, 10)
 
+proc addComponent*[T](scene: SceneId, item: T)
+
 type notComponent = generic x
   not (x is TComponent)
 proc addToNode*[T: notComponent](node: var TSceneNode[T], scene: SceneId, item: T) =
@@ -47,11 +49,7 @@ proc GetDefaultNode*[T](name: static[string]): var TSceneNode[T] =
 
 #this is pretty crazy, but it should work OK
 #think of it as a mini scripting language
-var typeMapping: TTable[string, proc(v: pointer)]
-proc addToMapping(typ: expr, map: TTable[string, proc(scene: SceneId, elm: pointer)]): expr =
-  map.add(name(typ)) do (scene: SceneId, elm: pointer):
-    #what could go wrong?
-    scene.addComponent(cast[ptr typ](elm)[])
+var typeMapping = initTable[string, proc(scene: SceneId, elm: pointer)]()
 macro MakeComponentNode*(typ: expr): stmt =
   var nodeName = repr(typ) & "SceneNode"
   nodeName = nodeName.replace("[", "")
@@ -71,11 +69,15 @@ macro MakeComponentNode*(typ: expr): stmt =
   identDefs.add(initCall)
   result = newNimNode(nnkStmtList)
   result.add(newNimNode(nnkVarSection).add(identDefs))
-  result.add(getAst(addToMapping(typ, typeMapping)))
+  
 
 
-template MakeComponent*(typ: expr) {.immediate,dirty.} =
+template MakeComponent*(typ: expr) =
+  bind typeMapping
   MakeComponentNode(typ)
+  when false:
+    typeMapping.add(name(typ)) do (scene: SceneId, elm: pointer):
+      addComponent(scene, cast[ptr typ](elm)[])
 
 proc addComponent*[T](scene: TScene, item: T) = 
   GetDefaultNode[T]().addToNode(scene.id, item)

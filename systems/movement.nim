@@ -9,36 +9,34 @@ import vecmath
 const movementDbg = true
 loggingWrapper(movementDbg)
 proc VelocitySystem*(scene: SceneId) {.procvar.} =
-  for id, elm in walk(scene, TVelocity):
-    var trans = addr mEntFirst[TTransform](id)
-    trans.position = trans[].position + elm[].lin
-    trans.rotation = mul(trans[].rotation, elm[].rot)
+  when false:
+    for id, elm in walk(scene, TVelocity):
+      var trans = addr mEntFirst[TTransform](id)
+      trans[].position = trans[].position + elm[].lin
+      trans[].rotation = mul(trans[].rotation, elm[].rot)
   for id, elm in walk(scene, TPremulVelocity):
     var trans = addr mEntFirst[TTransform](id)
-    trans.position = trans.position + TVelocity(elm[]).lin
-    trans.rotation = mul(TVelocity(elm[]).rot, trans.rotation)
+    trans[].position = trans.position + TVelocity(elm[]).lin
+    trans[].rotation = mul(TVelocity(elm[]).rot, trans[].rotation)
 
 proc AccelerationSystem*(scene: SceneId) {.procvar.} =
   for id, vel, acc in walk(scene, TVelocity, TAcceleration):
     vel.lin = vel.lin + acc.lin
     vel.rot = mul(vel.rot, acc.rot)
-proc MovementSystem*(scene: SceneId; cam: var TComponent[TCamera]) {.procvar.} =
-  var pInpSys = mEntFirstOpt[ptr TInputMapping](cam.id)
-  if pInpSys == nil: return
-  var inpSys = pInpSys[][]
-
-  var pos = mEntFirstOpt[TTransform](cam.id)
-  var vel = (ptr TVelocity)(mEntFirstOpt[TPremulVelocity](cam.id))
+proc MovementSystem*(scene: SceneId; inp: TInputMapping; cam: EntityId) {.procvar.} =
+  
+  var pos = addr mEntFirst[TTransform](cam)
+  var vel = (ptr TVelocity)(addr mEntFirst[TPremulVelocity](cam))
   var newVel: TVec3f
-  var rotX = inpSys.AxisAction("mouseX")
-  var rotY = inpSys.AxisAction("mouseY")
+  var rotX = inp.mouse.x * 0.001
+  var rotY = inp.mouse.y * 0.001
   var newRotX = quatFromAngleAxis(rotX, vec3f(0,1,0))
   var newRotY = quatFromAngleAxis(rotY, vec3f(1,0,0))
   var newRot = identityQuatf()
   newRot = mul(newRot, newRotX)
   newRot = mul(newRot, newRotY)
   block:
-    using inpSys
+    using inp
     if Action("left"): newVel += vec3f(-1,0,0)
     if Action("right"): newVel += vec3f(1,0,0)
     if Action("up"): newVel += vec3f(0,1,0)
@@ -52,6 +50,7 @@ proc MovementSystem*(scene: SceneId; cam: var TComponent[TCamera]) {.procvar.} =
   if vel != nil:
     vel[].lin = newVel
     vel[].rot = newRot
+    assert(norm(vel[].rot) <= 1.1'f32 and norm(vel[].rot) >= 0.9'f32)
   
 proc OrbitMovementSystem*(scene: SceneId, dx, dy: float, pos: TVec3f) =
   var xrot = quatFromAngleAxis(dx * 0.005, vec3f(0,1,0))

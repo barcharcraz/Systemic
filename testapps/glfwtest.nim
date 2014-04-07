@@ -3,6 +3,7 @@ import os
 import glfw/glfw
 import opengl
 import input
+import prefabs
 import rendering.glrenderer
 import rendering.glphong
 import components.mesh
@@ -38,51 +39,48 @@ var winhints = initHints(GL_API = api)
 var wnd = newWnd(dim = (w: winw, h: winh), title = "GL test", hints = winhints)
 makeContextCurrent(wnd)
 #loadExtensions()
+AttachInput(wnd)
 var done = false
 var mainscene = initScene()
-var tmesh = loadMesh("assets/sphere.obj")
-var torus = loadMesh("assets/testobj.obj")
 var camEnt = genEntity()
-var meshEnt = genEntity()
-var torusEnt = genEntity()
 #mainscene.id.addComponent(initDirectionalLight(vec3f(0.0'f32,0.0'f32,-1.0'f32)))
 mainscene.id.addComponent(initPointLight(vec3f(0.0'f32, 0.0'f32, -30.0'f32)))
 mainscene.id.addComponent(initButton(vec2f(20,20), "test"))
 mainscene.id.add(camEnt)
-mainscene.id.add(meshEnt)
-mainscene.id.add(torusEnt)
 camEnt.add(initCamera())
 camEnt.add(initTransform(vec3f(0,0,0)))
-#camEnt.add(initVelocity().TPremulVelocity)
+camEnt.add(initVelocity().TPremulVelocity)
 var inp = initShooterKeys()
 camEnt.add(addr inp)
 wnd.mouseBtnCb = proc(wnd: PWnd, btn: TMouseBtn, pressed: bool, modKeys: TModifierKeySet) =
   var mouseInfo = pollMouse(wnd)
   if input.mbLeft in mouseInfo.buttons:
     handleSelectionAttempt(mainscene.id, mouseInfo.x, mouseInfo.y)
+discard """
 wnd.cursorPosCb = proc(wnd: PWnd, pos: tuple[x,y: float64]) =
   var lastPos {.global.}: TMouse
   var mouseInfo = pollMouse(wnd)
   var dx = mouseInfo.x - lastPos.x
   var dy = mouseInfo.y - lastPos.y
   lastPos = mouseInfo
-  if input.mbRight in mouseInfo.buttons:
-    OrbitSelectionMovement(mainscene.id, dx, dy)
-  
-meshEnt.add(tmesh)
-meshEnt.add(initMaterial())
-meshEnt.add(initAcceleration())
-meshEnt.add(initTransform(vec3f(0.0'f32, 0.0'f32, -10.0'f32)))
-meshEnt.add(getTexture("assets/diffuse.tga"))
-meshEnt.add(initVelocity(quatFromAngleAxis(0.00, vec3f(1,0,0))))
-torusEnt.add(torus)
-torusEnt.add(initMaterial())
-torusEnt.add(initTransform(vec3f(3.0'f32, 0.0'f32, -5.0'f32)))
-torusEnt.add(getTexture("assets/diffuse.tga"))
+  inp.mouse.x = dx
+  inp.mouse.y = dy
+  MovementSystem(mainscene.id, inp, camEnt)
+  #if input.mbRight in mouseInfo.buttons:
+  #  OrbitSelectionMovement(mainscene.id, dx, dy)
+wnd.keyCb = proc(wnd: PWnd, key: glfw.TKey, scan: int, action: TKeyAction, modKeys: TModifierKeySet) =
+  inp.pressed = pollKeyboard(wnd)
+  MovementSystem(mainscene.id, inp, camEnt)
+"""
+mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(0,0,-10))
+mainscene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.tga", vec3f(3,0,-5))
 #mainscene.addSystem(MovementSystem)
 #mainscene.addSystem(OrbitSystem)
 #mainscene.addSystem(AccelerationSystem)
-#mainscene.addSystem(movement.VelocitySystem)
+mainscene.addSystem do (scene: SceneId): 
+  inp.Update(pollInput(wnd))
+  MovementSystem(scene, inp, camEnt)
+mainscene.addSystem(movement.VelocitySystem)
 mainscene.addSystem do (ts: var openarray[TBUtton]): doButtonCollision(pollMouse(wnd), ts)
 mainscene.addSystem do (ts: openarray[TButton]): drawButtons(cairo_ctx, ts)
 mainscene.addSystem do: RenderUI(cairo_ctx)

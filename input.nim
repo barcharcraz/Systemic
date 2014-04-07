@@ -97,21 +97,24 @@ type TMouseButton* = enum
 const MaxNumAxis = 16
 type TKeyCombination* = set[TKey]
 type TAxis = float
-type TDeviceData = object
-  axes: array[0..MaxNumAxis, TAxis]
-type TInputMapping* = object
-  pressed: TKeyCombination
-  axisActions: TTable[string, TAxis]
-  actions: TTable[string, TKeyCombination]
+
 type TMouse* = object
   x*: TAxis ##defined as being from 0-width
   y*: TAxis ##defined as being from 0-height going up
   buttons*: set[TMouseButton]
+type TInput* = object
+  keyboard*: TKeyCombination
+  mouse*: TMouse
+type TInputMapping* = object
+  pressed*: TKeyCombination
+  mouse*: TMouse
+  actions: TTable[string, TKeyCombination]
+
 type TKeyboard* = object
   keys*: TKeyCombination
 proc initInputMapping*(): TInputMapping =
   result.pressed = {}
-  result.axisActions = initTable[string, TAxis]()
+  result.mouse.buttons = {}
   result.actions = initTable[string, TKeyCombination]()
 proc ActivateKey*(self: var TInputMapping, key: TKey) =
   self.pressed.incl(key)
@@ -119,15 +122,12 @@ proc DeactivateKey*(self: var TInputMapping, key: TKey) =
   self.pressed.excl(key)
 proc AddAction*(self: var TInputMapping, name: string, action: TKeyCombination) =
   self.actions.add(name, action)
-proc AddAxisAction*(self: var TInputMapping, name: string) =
-  self.axisActions.add(name, 0.0'f64)
-proc AxisAction*(self: TInputMapping, name: string): TAxis =
-  result = self.axisActions[name]
-proc SetAxis*(self: var TInputMapping, name: string, val: float) =
-  self.axisActions[name] = val
 proc Action*(self: TInputMapping, name: string): bool =
   result = self.actions[name] <= self.pressed
-  
+proc Update*(inp: var TInputMapping, newInfo: TInput) =
+  inp.pressed = newInfo.keyboard
+  inp.mouse = newInfo.mouse
+
 MakeEntityComponent(ptr TInputMapping)
 
 proc initShooterKeys*(): TInputMapping =
