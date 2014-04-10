@@ -1,5 +1,3 @@
-import macros
-import typetraits
 import math
 import strutils
 type ColMajor = object
@@ -146,6 +144,10 @@ proc initMat3f*(arrs: array[0..8, float32]): TMat3f =
 proc initMat2f*(arrs: array[0..3, float32]): TMat2f =
   result.data = arrs
   result = transpose(result)
+proc `$`(a: TMat3f): string =
+  result = formatFloat(a[1,1]) & " " & formatFloat(a[1,2]) & formatFloat(a[1,3]) & "\n" &
+           formatFloat(a[2,1]) & " " & formatFloat(a[2,2]) & formatFloat(a[2,3]) & "\n" &
+           formatFloat(a[3,1]) & " " & formatFloat(a[3,2]) & formatFloat(a[3,3])
 proc mul*(a: TMat4f; b: TMat4f): TMat4f =
   for i in 1..4:
     for j in 1..4:

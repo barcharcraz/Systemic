@@ -6,9 +6,6 @@ import input
 import prefabs
 import rendering.glrenderer
 import rendering.glphong
-import components.mesh
-import components.camera
-import components.transform
 import systems.movement
 import systems.orbit
 import systems.selection
@@ -23,7 +20,6 @@ import gui.caiglrender
 import gui.button
 import gui.widgetcomps
 import rendering.glcore
-import buildopts
 var log = newConsoleLogger()
 handlers.add(log)
 const winw = 640
@@ -56,22 +52,6 @@ wnd.mouseBtnCb = proc(wnd: PWnd, btn: TMouseBtn, pressed: bool, modKeys: TModifi
   var mouseInfo = pollMouse(wnd)
   if input.mbLeft in mouseInfo.buttons:
     handleSelectionAttempt(mainscene.id, mouseInfo.x, mouseInfo.y)
-discard """
-wnd.cursorPosCb = proc(wnd: PWnd, pos: tuple[x,y: float64]) =
-  var lastPos {.global.}: TMouse
-  var mouseInfo = pollMouse(wnd)
-  var dx = mouseInfo.x - lastPos.x
-  var dy = mouseInfo.y - lastPos.y
-  lastPos = mouseInfo
-  inp.mouse.x = dx
-  inp.mouse.y = dy
-  MovementSystem(mainscene.id, inp, camEnt)
-  #if input.mbRight in mouseInfo.buttons:
-  #  OrbitSelectionMovement(mainscene.id, dx, dy)
-wnd.keyCb = proc(wnd: PWnd, key: glfw.TKey, scan: int, action: TKeyAction, modKeys: TModifierKeySet) =
-  inp.pressed = pollKeyboard(wnd)
-  MovementSystem(mainscene.id, inp, camEnt)
-"""
 mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(0,0,-10))
 mainscene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.tga", vec3f(3,0,-5))
 #mainscene.addSystem(MovementSystem)
