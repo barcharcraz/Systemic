@@ -9,15 +9,12 @@ import vecmath
 const movementDbg = true
 loggingWrapper(movementDbg)
 proc VelocitySystem*(scene: SceneId) {.procvar.} =
-  when false:
-    for id, elm in walk(scene, TVelocity):
-      var trans = addr mEntFirst[TTransform](id)
-      trans[].position = trans[].position + elm[].lin
-      trans[].rotation = mul(trans[].rotation, elm[].rot)
-  for id, elm in walk(scene, TPremulVelocity):
+  for id, elm in walk(scene, TVelocity):
     var trans = addr mEntFirst[TTransform](id)
     trans[].position = trans.position + TVelocity(elm[]).lin
-    trans[].rotation = mul(TVelocity(elm[]).rot, trans[].rotation)
+    case elm[].kind
+    of vkPre: trans[].rotation = mul(elm[].rot, trans[].rotation)
+    of vkPost: trans[].rotation = mul(trans[].rotation, elm[].rot)
 
 proc AccelerationSystem*(scene: SceneId) {.procvar.} =
   for id, vel, acc in walk(scene, TVelocity, TAcceleration):
@@ -26,7 +23,7 @@ proc AccelerationSystem*(scene: SceneId) {.procvar.} =
 proc MovementSystem*(scene: SceneId; inp: TInputMapping; cam: EntityId) {.procvar.} =
   
   var pos = addr mEntFirst[TTransform](cam)
-  var vel = (ptr TVelocity)(addr mEntFirst[TPremulVelocity](cam))
+  var vel = addr mEntFirst[TVelocity](cam)
   var newVel: TVec3f
   var rotX = inp.mouse.x * 0.001
   var rotY = inp.mouse.y * 0.001

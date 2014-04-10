@@ -9,5 +9,11 @@ proc addStaticMesh*(scene: SceneId, model, texture: string, pos: TVec3f): Entity
   result.add(getTexture(texture))
   result.add(initMaterial())
   result.add(initTransform(pos))
+proc addCamera*(scene: SceneId, pos: TVec3f = vec3f(0,0,0)): EntityId {.discardable} =
+  result = genEntity()
+  scene.add(result)
+  result.add(initCamera())
+  result.add(initTransform(pos))
+  result.add(initVelocity(vkPre))
   
   

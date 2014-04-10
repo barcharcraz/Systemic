@@ -1,9 +1,12 @@
 import ecs/entity
 import vecmath
+type TVelocityKind* = enum
+  vkPost
+  vkPre
 type TVelocity* = object
+  kind*: TVelocityKind
   lin*: TVec3f
   rot*: TQuatf
-type TPremulVelocity* = distinct TVelocity
 type TTransform* = object
   position*: TVec3f
   rotation*: TQuatf
@@ -13,13 +16,16 @@ type TAcceleration* = object
 type TOrbit* = object
   around*: EntityId
   vel*: float
-proc initVelocity*(): TVelocity =
+proc initVelocity*(kind: TVelocityKind = vkPost): TVelocity =
+  result.kind = kind
   result.rot = identityQuatf()
   result.lin.data = [0.0'f32, 0.0'f32, 0.0'f32]
 proc initVelocity*(rot: TQuatf): TVelocity =
+  result.kind = vkPost
   result.rot = rot
   result.lin.data = [0.0'f32, 0.0'f32, 0.0'f32]
 proc initVelocity*(lin: TVec3f): TVelocity =
+  result.kind = vkPost
   result.rot = identityQuatf()
   result.lin = lin
 proc initAcceleration*(): TAcceleration =
