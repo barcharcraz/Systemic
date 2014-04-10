@@ -34,7 +34,6 @@ var api = initGL_API(glv31, false, false, glpAny, glrNone)
 var winhints = initHints(GL_API = api)
 var wnd = newWnd(dim = (w: winw, h: winh), title = "GL test", hints = winhints)
 makeContextCurrent(wnd)
-#loadExtensions()
 AttachInput(wnd)
 var done = false
 var mainscene = initScene()
