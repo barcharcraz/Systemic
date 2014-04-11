@@ -4,3 +4,4 @@ type ENoSuchComponent* = object of ESynch
 type EGraphicsAPI* = object of ESynch
 type ENoMesh* = object of ESynch
 type EUnsupportedFormat* = object of ESynch
+type EVertexAttributeNotFound* = object of ESynch

@@ -31,8 +31,7 @@ var cairo_ctx = create(cairo_surface)
 
 glfw.init()
 var api = initGL_API(glv31, false, false, glpAny, glrNone)
-var winhints = initHints(GL_API = api)
-var wnd = newWnd(dim = (w: winw, h: winh), title = "GL test", hints = winhints)
+var wnd = newWin(dim = (w: winw, h: winh), title = "GL test", GL_API=api, refreshRate = 1)
 makeContextCurrent(wnd)
 AttachInput(wnd)
 var done = false
@@ -43,14 +42,15 @@ mainscene.id.addComponent(initButton(vec2f(20,20), "test"))
 var camEnt = mainscene.id.addCamera()
 var inp = initShooterKeys()
 camEnt.add(addr inp)
-wnd.mouseBtnCb = proc(wnd: PWnd, btn: TMouseBtn, pressed: bool, modKeys: TModifierKeySet) =
+wnd.mouseBtnCb = proc(wnd: PWin, btn: TMouseBtn, pressed: bool, modKeys: TModifierKeySet) =
   var mouseInfo = pollMouse(wnd)
   if input.mbLeft in mouseInfo.buttons:
     handleSelectionAttempt(mainscene.id, mouseInfo.x, mouseInfo.y)
 mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(0,0,-10))
 mainscene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.tga", vec3f(3,0,-5))
-#mainscene.addSystem(MovementSystem)
-#mainscene.addSystem(OrbitSystem)
+for i in -100..100:
+  mainScene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.tga", 
+    vec3f(i.float32,i.float32,i.float32)).add(initVelocity(quatFromAngleAxis(0.005, vec3f(0,1,0))))
 #mainscene.addSystem(AccelerationSystem)
 mainscene.addSystem do (scene: SceneId): 
   inp.Update(pollInput(wnd))

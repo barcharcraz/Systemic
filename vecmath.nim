@@ -250,14 +250,25 @@ proc `w=`*(q: var TQuatf, val: float32) = q[1] = val
 proc x*(q: TQuatf): float32 = q[2]
 proc y*(q: TQuatf): float32 = q[3]
 proc z*(q: TQuatf): float32 = q[4]
+proc quatf*(w,i,j,k: float32): TQuatf = [w,i,j,k].TQuatf
 proc toVector(q: TQuatf): TVec4f =
   result.data = array[0..3, float32](q)
 proc norm*(q: TQuatf): float = norm(toVector(q))
+proc conj*(q: TQuatf): TQuatf =
+  result.i = -q.i
+  result.j = -q.j
+  result.k = -q.k
+  result.w = q.w
+
 proc mul*(p: TQuatf; q: TQuatf): TQuatf =
   result[1] = p.w * q.w - p.x * q.x - p.y * q.y - p.z * q.z;
   result[2] = p.w * q.x + p.x * q.w + p.y * q.z - p.z * q.y;
   result[3] = p.w * q.y + p.y * q.w + p.z * q.x - p.x * q.z;
   result[4] = p.w * q.z + p.z * q.w + p.x * q.y - p.y * q.x;
+proc mulv*(q: TQuatf; v: TVec3f): TVec3f =
+  var qv = quatf(0, v.x, v.y, v.z)
+  var prod = mul(q, mul(qv, conj(q)))
+  result = vec3f(prod.i, prod.j, prod.k)
 proc toRotMatrix*(q: TQuatf): TMat3f =
   #this code is ported from Eigen
   #pretty much directly

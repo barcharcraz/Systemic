@@ -4,15 +4,15 @@ import glfw/wrapper
 import tables
 import logging
 import hashes
-var winDat = initTable[PWnd, ptr input.TInputMapping]()
-proc hash(wnd: PWnd): THash = 
+var winDat = initTable[PWin, ptr input.TInputMapping]()
+proc hash(wnd: PWin): THash = 
   #the handle member is not exported
   #and we need a unique identifier for
   #each window, we are just extracting
   #that handle pointer here, in the most
   #insane way possible
   hash(cast[ptr pointer](wnd)[])
-proc `$`(wnd: PWnd): string =
+proc `$`(wnd: PWin): string =
   result = $cast[int](cast[ptr pointer](wnd)[])
 proc getKey(k: glfw.TKey): input.TKey =
   case k
@@ -24,12 +24,12 @@ proc getKey(k: glfw.TKey): input.TKey =
     return cast[input.TKey]((intVal - keyAVal) + inputKeyAVal)
   else:
     return input.keyUnknown
-proc keyCb(o: PWnd; key: glfw.TKey; scanCode: int; action: TKeyAction;
+proc keyCb(o: PWin; key: glfw.TKey; scanCode: int; action: TKeyAction;
            modKeys: TModifierKeySet) =
-  #this line is batshit, since PWnd.handle
+  #this line is batshit, since PWin.handle
   #is not exported and we need the user pointer
   #we exploit the fact that the first member
-  #of PWnd is a GLFWwindow* and use this
+  #of PWin is a GLFWwindow* and use this
   #to cast. OOP bitches
   if not winDat.hasKey(o):
     return
@@ -46,7 +46,7 @@ proc keyCb(o: PWnd; key: glfw.TKey; scanCode: int; action: TKeyAction;
 var lastX: float64
 var lastY: float64
 var justEntered: bool = false
-proc handleMouse*(wnd: PWnd) =
+proc handleMouse*(wnd: PWin) =
   if not winDat.hasKey(wnd):
     return
   var winData = winDat[wnd]
@@ -59,25 +59,25 @@ proc handleMouse*(wnd: PWnd) =
   var dy = pos.y - lastY
   lastX = pos.x
   lastY = pos.y
-proc cursorEnterCb(self: PWnd, entered: bool) =
+proc cursorEnterCb(self: PWin, entered: bool) =
   if entered:
     var (x,y) = self.cursorPos
     lastX = x
     lastY = y
     justEntered = true
 
-proc closeCb(wnd: PWnd) =
+proc closeCb(wnd: PWin) =
   winDat.del(wnd)
 
-proc AttachInput*(wnd: PWnd) =
+proc AttachInput*(wnd: PWin) =
   wnd.cursorEnterCb = cursorEnterCb
-proc pollKeyboard*(self: PWnd): input.TKeyCombination =
+proc pollKeyboard*(self: PWin): input.TKeyCombination =
   for elm in glfw.TKey:
     if self.isKeyDown(elm):
       result.incl(getKey(elm))
     else:
       result.excl(getKey(elm))
-proc pollMouse*(self: PWnd): input.TMouse =
+proc pollMouse*(self: PWin): input.TMouse =
   var (x,y) = self.cursorPos
   result.x = x
   result.y = y
@@ -88,7 +88,7 @@ proc pollMouse*(self: PWnd): input.TMouse =
   if self.mouseBtnDown(mbRight):
     result.buttons.incl(input.mbRight)
 
-proc pollInput*(self: PWnd): input.TInput =
+proc pollInput*(self: PWin): input.TInput =
   result.keyboard = pollKeyboard(self)
 
   var mouseInfo = pollMouse(self)
