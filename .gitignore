@@ -3,4 +3,5 @@ nimcache
 *.sln
 *.nimproj
 *.suo
+*.swp
 bin

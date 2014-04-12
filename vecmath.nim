@@ -178,6 +178,8 @@ proc y*(a: TVec): TVec.T = a[2]
 proc z*(a: TVec): TVec.T = a[3]
 proc norm*(a: TVec): float =
   sqrt(dot(a,a))
+proc normalized*(a: TVec): TVec =
+  result = a / norm(a)
 proc `+`*(a, b: TVec): TVec =
   for i in 1..TVec.N:
     result[i] = a[i] + b[i]

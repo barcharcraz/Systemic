@@ -44,7 +44,7 @@ proc initOpenGlRenderer*() =
   glDepthFunc(GL_LEQUAL)
   glDepthMask(true)
   glDepthRange(0.0'f32, 1.0'f32)
-  glEnable(cGL_CULL_FACE)
+  #glEnable(cGL_CULL_FACE)
   glFrontFace(GL_CCW)
 
 proc GetCompileErrors*(shader: GLuint): string =
@@ -121,14 +121,17 @@ proc CreateMeshBuffers*(mesh: var TMesh): tuple[vert: GLuint, index: GLuint] =
   glBufferData(GL_ARRAY_BUFFER, vertSize.GLsizeiptr, addr mesh.verts[0], GL_STATIC_DRAW)
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize.GLsizeiptr, addr mesh.indices[0], GL_STATIC_DRAW)
 
-proc BindModelMatrix*(program: GLuint; model: var TMat4f) =
+proc BindModelMatrix*(program: GLuint; model: TMat4f) =
+  var model = model
   var modelIdx = glGetUniformLocation(program, "mvp.model")
   CheckError()
   if modelIdx == -1:
     warn("glGetUniformLocation returned -1 for modelidx")
   glUniformMatrix4fv(modelIdx, 1.GLsizei, false, cast[PGLfloat](addr model.data[0]))
   CheckError()
-proc BindViewProjMatrix*(program: GLuint, view, proj: var TMat4f) =
+proc BindViewProjMatrix*(program: GLuint, view, proj: TMat4f) =
+  var proj = proj
+  var view = view
   var viewIdx = glGetUniformLocation(program, "mvp.view")
   var projidx = glGetUniformLocation(program, "mvp.proj")
   CheckError()
@@ -140,7 +143,7 @@ proc BindViewProjMatrix*(program: GLuint, view, proj: var TMat4f) =
   glUniformMatrix4fv(projidx, 1.GLsizei, false, cast[PGLfloat](addr proj.data[0]))
   CheckError()
 
-proc BindTransforms*(program: GLuint; model, view, proj: var TMat4f) =
+proc BindTransforms*(program: GLuint; model, view, proj: TMat4f) =
   BindViewProjMatrix(program, view, proj)
   BindModelMatrix(program, model)
 proc BindMaterial*(program: GLuint; mat: var TMaterial) = 

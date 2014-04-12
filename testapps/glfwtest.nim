@@ -6,6 +6,7 @@ import input
 import prefabs
 import rendering.glrenderer
 import rendering.glphong
+import rendering.glprims
 import systems.movement
 import systems.orbit
 import systems.selection
@@ -48,10 +49,7 @@ wnd.mouseBtnCb = proc(wnd: PWin, btn: TMouseBtn, pressed: bool, modKeys: TModifi
     handleSelectionAttempt(mainscene.id, mouseInfo.x, mouseInfo.y)
 mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(0,0,-10))
 mainscene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.tga", vec3f(3,0,-5))
-for i in -100..100:
-  mainScene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.tga", 
-    vec3f(i.float32,i.float32,i.float32)).add(initVelocity(quatFromAngleAxis(0.005, vec3f(0,1,0))))
-#mainscene.addSystem(AccelerationSystem)
+mainscene.addSystem(AccelerationSystem)
 mainscene.addSystem do (scene: SceneId): 
   inp.Update(pollInput(wnd))
   MovementSystem(scene, inp, camEnt)
@@ -59,11 +57,13 @@ mainscene.addSystem(movement.VelocitySystem)
 mainscene.addSystem do (ts: var openarray[TBUtton]): doButtonCollision(pollMouse(wnd), ts)
 mainscene.addSystem do (ts: openarray[TButton]): drawButtons(cairo_ctx, ts)
 mainscene.addSystem do: RenderUI(cairo_ctx)
+mainscene.addSystem(PrimitiveRenderSystem)
 mainscene.addSystem(RenderPhongLit)
 initOpenGLRenderer()
 glViewport(0,0,winw,winh)
 glClearColor(1.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
 while not done and not wnd.shouldClose:
+  PrimCone()
   mainscene.update()
   
   wnd.handleMouse()
