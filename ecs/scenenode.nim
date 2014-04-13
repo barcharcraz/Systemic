@@ -52,6 +52,7 @@ proc GetDefaultNode*[T](name: static[string]): var TSceneNode[T] =
 var typeMapping = initTable[string, proc(scene: SceneId, elm: pointer)]()
 macro MakeComponentNode*(typ: expr): stmt =
   var nodeName = repr(typ) & "SceneNode"
+  echo nodeName
   nodeName = nodeName.replace("[", "")
   nodeName = nodeName.replace("]", "")
   nodeName = nodeName.replace(" ", "")

@@ -34,6 +34,7 @@ glfw.init()
 var api = initGL_API(glv31, false, false, glpAny, glrNone)
 var wnd = newWin(dim = (w: winw, h: winh), title = "GL test", GL_API=api, refreshRate = 1)
 makeContextCurrent(wnd)
+wnd.cursorMode = cmDisabled
 AttachInput(wnd)
 var done = false
 var mainscene = initScene()
@@ -63,7 +64,7 @@ initOpenGLRenderer()
 glViewport(0,0,winw,winh)
 glClearColor(1.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
 while not done and not wnd.shouldClose:
-  PrimCone()
+  PrimCylinder()
   mainscene.update()
   
   wnd.handleMouse()

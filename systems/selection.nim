@@ -41,20 +41,7 @@ proc handleSelectionAttempt*(scene: SceneId, x,y: float) =
   var transfms = addr components(scene, TComponent[TTransform])
   var selected = findSelected(transfms[], x, y, mul(projMtx, viewMtx))
   debug("Selected Entity: " & $selected.int)
-  
-  var ids: seq[EntityId] = @[]
-  for id, sel in walk(scene, TSelected):
-    var material = mEntFirstOpt[TMaterial](id)
-    if material != nil:
-      material.diffuse = sel[].oldDiffuse
-    ids.add(id)
-  for elm in ids:
-    debug("delete id: " & $elm.int)
-    elm.del(TSelected)
   if selected == (-1).EntityId: return
-  var mat = mEntFirstOpt[TMaterial](selected)
-  if mat == nil: return
-  selected.add(TSelected(oldDiffuse: mat[].diffuse))
-  mat[].diffuse = vec4f(0,1,0,1)
-    
+  var callbck = mEntFirstOpt[onMouseDown](selected)
+  if callbck != nil: callbck[](x,y)
   

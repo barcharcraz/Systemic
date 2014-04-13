@@ -6,6 +6,7 @@ import components.mesh
 import components.transform
 import components.image
 import components.selectDat
+import components.events
 import ecs.Entity
 import ecs.EntityNode
 import ecs.SceneNode
@@ -16,6 +17,7 @@ export material
 export mesh
 export transform
 export image
+export events
 export selectDat
 MakeEntityComponent(TCamera)
 MakeComponentNode(TPointLight)

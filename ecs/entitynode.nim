@@ -49,8 +49,9 @@ var entTypeMapping = initTable[string, proc(ent: EntityId, elm: pointer)]()
 template MakeEntityComponent*(typ: expr) =
   bind entTypeMapping
   MakeComponentNode(TComponent[typ])
-  entTypeMapping.add(name(typ)) do (ent: EntityId, elm: pointer):
-    add(ent, cast[ptr typ](elm)[])
+  when false:
+    entTypeMapping.add(name(typ)) do (ent: EntityId, elm: pointer):
+      add(ent, cast[ptr typ](elm)[])
 proc add*[T](ent: EntityId, elm: T) =
   var component = initComponent(ent, elm)
   var scene: SceneId = ent.getScene

@@ -44,7 +44,7 @@ proc initOpenGlRenderer*() =
   glDepthFunc(GL_LEQUAL)
   glDepthMask(true)
   glDepthRange(0.0'f32, 1.0'f32)
-  #glEnable(cGL_CULL_FACE)
+  glEnable(cGL_CULL_FACE)
   glFrontFace(GL_CCW)
 
 proc GetCompileErrors*(shader: GLuint): string =

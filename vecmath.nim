@@ -176,6 +176,9 @@ proc identity3f(): TMat3f =
 proc x*(a: TVec): TVec.T = a[1]
 proc y*(a: TVec): TVec.T = a[2]
 proc z*(a: TVec): TVec.T = a[3]
+proc `x=`*(a: var TVec, val: TVec.T) = a[1] = val
+proc `y=`*(a: var TVec, val: TVec.T) = a[2] = val
+proc `z=`*(a: var TVec, val: TVec.T) = a[3] = val
 proc norm*(a: TVec): float =
   sqrt(dot(a,a))
 proc normalized*(a: TVec): TVec =
