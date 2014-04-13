@@ -1,4 +1,6 @@
 import ecs
 import button
 import macros
-MakeComponent(TButton)
+import listbox
+MakeComponent(ref TButton)
+MakeComponent(ref TListBox)
