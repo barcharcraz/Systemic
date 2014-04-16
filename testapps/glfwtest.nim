@@ -21,6 +21,7 @@ import gui.caiglrender
 import gui.button
 import gui.widgetcomps
 import gui.listbox
+import gui.layout
 import utils.memory
 import rendering.glcore
 var log = newConsoleLogger()
@@ -42,8 +43,15 @@ var done = false
 var mainscene = initScene()
 #mainscene.id.addComponent(initDirectionalLight(vec3f(0.0'f32,0.0'f32,-1.0'f32)))
 mainscene.id.addComponent(initPointLight(vec3f(0.0'f32, 0.0'f32, -30.0'f32)))
-mainscene.id.addComponent(new(initListBox(vec2f(20,20), vec2f(100,100))))
-mainscene.id.addComponent(new(initButton(vec2f(20,20), "test")))
+var box = new(initListBox(vec2f(20,20), vec2f(100,100)))
+var testbutton = new(initButton(vec2f(300,300), "test"))
+var testbutton2 = new(initButton(vec2f(500,500), "test2"))
+mainscene.id.addComponent(testbutton)
+mainscene.id.addComponent(testbutton2)
+box[].add(testbutton)
+box[].add(testbutton2)
+mainscene.id.addComponent(box)
+
 var camEnt = mainscene.id.addCamera()
 var inp = initShooterKeys()
 camEnt.add(addr inp)
@@ -59,6 +67,9 @@ mainscene.addSystem do (scene: SceneId):
   MovementSystem(scene, inp, camEnt)
 mainscene.addSystem(movement.VelocitySystem)
 mainscene.addSystem do (ts: var openarray[ref TButton]): doButtonCollision(pollMouse(wnd), ts)
+
+mainscene.addSystem(UpdateListBoxes)
+mainscene.addSystem do (ts: openarray[ref TListBox]): DrawListBoxes(cairo_ctx, ts)
 mainscene.addSystem do (ts: openarray[ref TButton]): drawButtons(cairo_ctx, ts)
 mainscene.addSystem do: RenderUI(cairo_ctx)
 mainscene.addSystem(PrimitiveRenderSystem)

@@ -2,6 +2,7 @@ import cairo
 import vecmath
 import colors
 import layout
+import button
 type TListBox* = object of TObject
   pos: TVec2f
   size: TVec2f
@@ -11,7 +12,10 @@ type TListBox* = object of TObject
 proc initListBox*(pos: TVec2f, size: TVec2f, color: TColor = colDarkRed): TListBox =
   result = TListBox(pos: pos, size: size, color: color, items: @[])
 
-
+proc add*(self: var TListBox, elm: TLayoutElm) = 
+  self.items.add(elm)
+proc add*(self: var TListBox, elm: string) =
+  self.add(new(initButton(vec2f(0,0), elm)))
 proc updateListBox*(box: TListBox) =
   var curPos = box.pos
   curPos.x = curPos.x + 2.0'f32
@@ -27,7 +31,7 @@ proc drawListBox*(ctx: PContext, box: TListBox) =
   ctx.fill
   restore(ctx)
 
-proc UpdateListBoxes*(lists: openarray[TListBox]) {.procvar.} =
-  for elm in lists: updateListBox(elm)
-proc drawListBoxes*(ctx: PContext, lists: openarray[TListBox]) {.procvar.} =
-  for elm in lists: drawListBox(ctx, elm)
+proc UpdateListBoxes*(lists: openarray[ref TListBox]) {.procvar.} =
+  for elm in lists: updateListBox(elm[])
+proc drawListBoxes*(ctx: PContext, lists: openarray[ref TListBox]) {.procvar.} =
+  for elm in lists: drawListBox(ctx, elm[])

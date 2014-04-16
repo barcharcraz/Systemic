@@ -70,9 +70,9 @@ proc del*[T](ent: EntityId, typ: typedesc[T]) =
       break
   comps[].del(idx)
 
-iterator components*[T](ent: EntityId): T {.inline.} =
+iterator components*(ent: EntityId, typ: typedesc): typ {.inline.} =
   var scene = EntityMapping[ent.int]
-  for elm in components(scene, TComponent[T]):
+  for elm in components(scene, TComponent[typ]):
     if elm.id == ent:
       yield elm.data
 
