@@ -5,7 +5,7 @@ type TWidget = object of TObject
 type TButton* = object of TWidget
   pos*: TVec2f
   size*: TVec2f
-  label*: string
+  label*: TLabel
   color: TColor
   ucolor: TColor
   acolor: TColor
@@ -17,18 +17,16 @@ type TListBox* = object of TWidget
   size*: TVec2f
   color*: TColor
   items: seq[ref TWidget]
-type TFrame* = object of TWidget
-  pos*: TVec2f
-  size* TVec2f
-  color*: TColor
-  items: seq[ref TWidget]
+
+method draw*(ctx: PContext, elm: ref TWidget)
 method draw*(ctx: PContext, btn: ref TButton)
 method draw*(ctx: PContext, lbl: ref TLabel)
 method draw*(ctx: PContext, lb: ref TListBox)
 proc initButton*(pos: TVec2f): TButton =
   result.pos = pos
   result.size = vec2f(100, 50)
-  result.label = ""
+  result.label.text = ""
+  result.label.pos = vec2f(0,0)
   # snazzy!
   result.ucolor = colAqua ##un-active color
   result.acolor = colDarkMagenta ##active-color
@@ -36,21 +34,21 @@ proc initButton*(pos: TVec2f): TButton =
 proc initButton*(pos: TVec2f, name: string): TButton =
   result = initButton(pos)
   result.label = name
+proc initListBox*(pos: TVec2f = vec2f(0,0),
+                  size: TVec2f = vec2f(100,100),
+                  color: TColor = colDarkRed): TListBox =
+  result.pos = pos
+  result.size = size
+  result.color = color
+  result.items = @[]
 
-
-proc drawOffset(ctx: PContext, itms: seq[ref TWidget], relTo: TVec2f) =
-  ## draw offset takes a sequence of GUI widgets and draws them all positioned
-  ## relitive to `relTo`. This is great for drawing the children of a container
-  using ctx
-  save()
-  translate(relTo.x, relTo.y)
-  for elm in itms: draw(ctx, elm)
-  restore()
+method draw*(ctx: PContext, elm: ref TWidget) =
+  quit("need to override draw")
 method draw*(ctx: PContext, btn: ref TButton) =
   using ctx
   var (r,g,b) = extractRGB(btn.color)
   set_source_rgb(r.float / 255.0, g.float / 255.0, b.float / 255.0)
-  rectangle(btn.pos.x, btn.pos.y, elm.size.x, elm.size.y)
+  rectangle(btn.pos.x, btn.pos.y, btn.size.x, btn.size.y)
   draw(btn.label)
   fill()
 
@@ -71,5 +69,6 @@ method draw*(ctx: PContext, lb: ref TListBox) =
   set_source_rgb(r.float/255.0, g.float/255.0, b.float/255.0)
   rectangle(lb.pos.x, lb.pos.y, lb.size.x, lb.size.y)
   fill()
-  drawOffset(ctx, lb.items, lb.pos)
+  translate(lb.pos.x, lb.pos.y)
+  for elm in lb.items: draw(elm)
   restore()
