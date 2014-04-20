@@ -34,8 +34,9 @@ var listBox = new(initListBox(vec2f(20,20)))
 listBox.add(new(initButton(vec2f(20,20))))
 listBox.add(new(initButton(vec2f(20,20))))
 frame.add(listBox)
+
 glfw.init()
-var api = initGL_API(glv31, false, false, glpAny, glrNone)
+var api = initGL_API(glv32, true, false, glpCore, glrNone)
 var wnd = newWin(dim = (w: winw, h: winh), title = "GL test", GL_API=api, refreshRate = 1)
 makeContextCurrent(wnd)
 wnd.cursorMode = cmDisabled
@@ -59,7 +60,8 @@ mainscene.addSystem do (scene: SceneId):
   inp.Update(pollInput(wnd))
   MovementSystem(scene, inp, camEnt)
 mainscene.addSystem(movement.VelocitySystem)
-mainscene.addSystem do: for elm in frame: draw(cairo_ctx, elm)
+mainscene.addSystem do: 
+  for elm in frame: draw(cairo_ctx, elm)
 mainscene.addSystem do: RenderUI(cairo_ctx)
 mainscene.addSystem(PrimitiveRenderSystem)
 mainscene.addSystem(RenderPhongLit)
