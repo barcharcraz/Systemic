@@ -1,23 +1,38 @@
 import vecmath
 import colors
 import cairo
-type TWidget* = object of TObject
-type TLabel* = object of TWidget
-  pos*: TVec2f
-  text*: string
-type TButton* = object of TWidget
-  pos*: TVec2f
-  size*: TVec2f
-  label*: ref TLabel
-  color*: TColor
-  ucolor*: TColor
-  acolor*: TColor
+type 
+  TWidget* = object of TObject
+  TLabel* = object of TWidget
+    pos*: TVec2f
+    text*: string
+  TButton* = object of TWidget
+    pos*: TVec2f
+    size*: TVec2f
+    label*: ref TLabel
+    color*: TColor
+    ucolor*: TColor
+    acolor*: TColor
 
-type TListBox* = object of TWidget
-  pos*: TVec2f
-  size*: TVec2f
-  color*: TColor
-  items*: seq[ref TWidget]
+  TListBox* = object of TWidget
+    pos*: TVec2f
+    size*: TVec2f
+    color*: TColor
+    items*: seq[TMovable]
+
+
+#{{{ forward declearations
+#{{{ initialization functions
+proc initButton*(pos: TVec2f): TButton
+proc initButton*(pos: TVec2f, name: string): TButton
+proc initListBox*(pos,size: TVec2f, color: TColor): TListBox
+#}}}
+#{{{ list layout
+proc layoutList(elms: var seq[ref TWidget], anchor: CMovable)
+#}}}
+
+
+#}}}
 
 proc initButton*(pos: TVec2f): TButton =
   result.pos = pos
@@ -43,7 +58,9 @@ proc initListBox*(pos: TVec2f = vec2f(0,0),
   result.size = size
   result.color = color
   result.items = @[]
-proc add*(self: ref TListBox, elm: ref TWidget) = self.items.add(elm)
+proc add*(self: ref TListBox, elm: TMovable) = 
+  self.items.add(elm)
+  layoutList(self.items, self)
 
 #-------- END LIST BOX NONVIRTUAL
 method draw*(ctx: PContext, elm: ref TWidget) =
@@ -76,3 +93,17 @@ method draw*(ctx: PContext, lb: ref TListBox) =
   translate(lb.pos.x, lb.pos.y)
   for elm in lb.items: draw(ctx, elm)
   restore()
+
+
+#{{{ layout functions for lists
+
+
+proc layoutList(elms: var seq[ref TWidget], anchor: CMovable) =
+  var ystep = anchor.size.y / elms.len
+  for i,elm in elms.pairs():
+    elm.size.x = anchor.size.x
+    elm.size.y = ystep
+    elm.pos.x = anchor.pos.x
+    elm.pos.y = anchor.pos.y + (i * ystep)
+
+#}}}
