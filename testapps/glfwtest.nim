@@ -18,7 +18,7 @@ import vecmath
 import cairo
 import strutils
 import gui.caiglrender
-import gui.widgets
+import widgets
 import utils.memory
 import rendering.glcore
 var log = newConsoleLogger()

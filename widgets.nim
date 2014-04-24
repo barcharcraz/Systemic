@@ -13,6 +13,7 @@ type
     color*: TColor
     ucolor*: TColor
     acolor*: TColor
+    onClick*: proc(btn: ref TButton)
 
   TListBox* = object of TWidget
     color*: TColor
@@ -129,7 +130,9 @@ method onMouseEnter*(self: ref TButton, mouse: TMouse) =
   self.color = self.acolor
 method onMouseLeave*(self: ref TButton, mouse: TMouse) =
   self.color = self.ucolor
-
+method onMouseButton*(self: ref TButton, mouse: TMouse) =
+  if self.onCLick != nil:
+    self.onClick(self)
 #}}}
 
 #{{{ layout functions for lists
