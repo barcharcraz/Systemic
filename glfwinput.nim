@@ -102,3 +102,6 @@ proc pollInput*(self: PWin): input.TInput =
   lasty = mouseInfo.y
   result.mouse.x = dx
   result.mouse.y = dy
+proc pollInputAbsolute*(self: PWin): input.TInput =
+  result.keyboard = pollKeyboard(self)
+  result.mouse = pollMouse(self)

@@ -39,7 +39,7 @@ glfw.init()
 var api = initGL_API(glv32, true, false, glpCore, glrNone)
 var wnd = newWin(dim = (w: winw, h: winh), title = "GL test", GL_API=api, refreshRate = 1)
 makeContextCurrent(wnd)
-wnd.cursorMode = cmDisabled
+#wnd.cursorMode = cmDisabled
 AttachInput(wnd)
 var done = false
 var mainscene = initScene()
@@ -60,6 +60,8 @@ mainscene.addSystem do (scene: SceneId):
   inp.Update(pollInput(wnd))
   MovementSystem(scene, inp, camEnt)
 mainscene.addSystem(movement.VelocitySystem)
+mainscene.addSystem do:
+  handleAllInput(frame, pollInputAbsolute(wnd))
 mainscene.addSystem do: 
   for elm in frame: draw(cairo_ctx, elm)
 mainscene.addSystem do: RenderUI(cairo_ctx)
@@ -71,7 +73,6 @@ glClearColor(1.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
 while not done and not wnd.shouldClose:
   PrimCylinder()
   mainscene.update()
-    
   wnd.handleMouse()
   wnd.update()
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT)
