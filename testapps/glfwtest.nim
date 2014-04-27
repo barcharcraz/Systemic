@@ -19,6 +19,7 @@ import cairo
 import strutils
 import gui.caiglrender
 import widgets
+import editor
 import utils.memory
 import rendering.glcore
 var log = newConsoleLogger()
@@ -31,8 +32,8 @@ var cairo_ctx = create(cairo_surface)
 
 var frame: seq[ref TWidget] = @[]
 var listBox = new(initListBox(vec2f(20,20)))
-listBox.add(new(initButton(vec2f(20,20))))
-listBox.add(new(initButton(vec2f(20,20))))
+#listBox.add(new(initButton(vec2f(20,20))))
+#listBox.add(new(initButton(vec2f(20,20))))
 frame.add(listBox)
 
 glfw.init()
@@ -55,6 +56,7 @@ wnd.mouseBtnCb = proc(wnd: PWin, btn: TMouseBtn, pressed: bool, modKeys: TModifi
     handleSelectionAttempt(mainscene.id, mouseInfo.x, mouseInfo.y)
 mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(0,0,-10))
 mainscene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.tga", vec3f(3,0,-5))
+populateAssets(listBox, "assets", "*.obj")
 mainscene.addSystem(AccelerationSystem)
 mainscene.addSystem do (scene: SceneId): 
   inp.Update(pollInput(wnd))
@@ -71,7 +73,7 @@ initOpenGLRenderer()
 glViewport(0,0,winw,winh)
 glClearColor(1.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
 while not done and not wnd.shouldClose:
-  PrimCylinder()
+  DrawPrimCylinder()
   mainscene.update()
   wnd.handleMouse()
   wnd.update()

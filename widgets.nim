@@ -22,7 +22,6 @@ type
 
 #{{{ forward declearations
 #{{{ initialization functions
-proc initButton*(pos: TVec2f): TButton
 proc initButton*(pos: TVec2f, name: string): TButton
 proc initListBox*(pos: TVec2f = vec2f(0,0),
                   size: TVec2f = vec2f(100,100),
@@ -35,21 +34,16 @@ proc layoutList(elms: var seq[ref TWidget], anchor: ref TWidget)
 
 #}}}
 
-proc initButton*(pos: TVec2f): TButton =
+proc initButton*(pos: TVec2f, name: string = ""): TButton =
   result.pos = pos
   result.size = vec2f(100, 50)
   new(result.label)
-  result.label.text = ""
+  result.label.text = name
   result.label.pos = vec2f(0,0)
   # snazzy!
   result.ucolor = colAqua ##un-active color
   result.acolor = colDarkMagenta ##active-color
   result.color = result.ucolor
-proc initButton*(pos: TVec2f, name: string): TButton =
-  result = initButton(pos)
-  new(result.label)
-  result.label.pos = vec2f(0,0)
-  result.label.text = ""
 
 #-------- LIST BOX NONVIRTUAL
 proc initListBox*(pos,size: TVec2f, color: TColor): TListBox =
@@ -60,17 +54,28 @@ proc initListBox*(pos,size: TVec2f, color: TColor): TListBox =
 proc add*(self: ref TListBox, elm: ref TWidget) = 
   self.items.add(elm)
   layoutList(self.items, self)
+proc add*(self: ref TListBox, name: string, action: proc()) =
+  var btn: ref TButton
+  new(btn)
+  btn[] = initButton(vec2f(0,0), name)
+  btn.onClick = proc(elm: ref TButton) = action()
+  self.items.add(btn)
+  layoutList(self.items, self)
+
 
 #-------- END LIST BOX NONVIRTUAL
 method draw*(ctx: PContext, elm: ref TWidget) =
   quit("need to override draw")
 method draw*(ctx: PContext, btn: ref TButton) =
   using ctx
+  save()
   var (r,g,b) = extractRGB(btn.color)
   set_source_rgb(r.float / 255.0, g.float / 255.0, b.float / 255.0)
   rectangle(btn.pos.x, btn.pos.y, btn.size.x, btn.size.y)
-  draw(ctx, btn.label)
   fill()
+  translate(btn.pos.x + 2, btn.pos.y + 10)
+  draw(ctx, btn.label)
+  restore()
 
 method draw*(ctx: PContext, lbl: ref TLabel) =
   using ctx
@@ -107,12 +112,10 @@ proc checkOverlap(self: ref TWidget, mouse: TMouse): bool =
   result = checkOverlap(self, vec2f(mouse.x, mouse.y))
 method handleInput*(self: ref TWidget, inp: TInput, last: TInput) =
   if checkOverlap(self, inp.mouse):
-    echo "overlap"
     if not checkOverlap(self, last.mouse):
       self.onMouseEnter(inp.mouse)
-      echo "mouse enter"
     self.onMouseMove(inp.mouse)
-    if mbNone notin inp.mouse.buttons:
+    if inp.mouse.buttons.card > 0:
       self.onMouseButton(inp.mouse)
   else:
     if checkOverlap(self, last.mouse):

@@ -90,7 +90,6 @@ type TKey* = enum
   keyNumpad9 = 97,
   keyNumpad0 = 98,
 type TMouseButton* = enum
-  mbNone = 0
   mbLeft = 1,
   mbRight = 2,
   mbMiddle = 3
