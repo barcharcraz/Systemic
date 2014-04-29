@@ -101,5 +101,5 @@ proc PrimitiveRenderSystem*(scene: SceneId) {.procvar.} =
   for elm in PrimitiveStack:
     RenderPrim(elm, view, projMatrix)
   PrimitiveStack.setLen(0)
-  for elm in components(sceme, TPrim):
+  for elm in components(scene, TPrim):
     RenderPrim(elm, view, projMatrix)

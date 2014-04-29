@@ -54,7 +54,7 @@ proc GetCompileErrors*(shader: GLuint): string =
   if status == GL_FALSE:
     glGetShaderiv(shader, GL_INFO_LOG_LENGTH.GLenum, addr infoLogLen)
     result = newString(infoLogLen)
-    glGetShaderInfoLog(shader, infoLogLen, cast[var GLint](nil), result.cstring)
+    glGetShaderInfoLog(shader, infoLogLen, nil, result.cstring)
   else:
     result = ""
 
@@ -80,7 +80,7 @@ proc CheckLinkStatus*(program: GLuint): tuple[status: GLint, err: string] =
     var errLen: GLint = 0
     glGetProgramiv(program, GL_INFO_LOG_LENGTH, addr errLen)
     result.err = newString(errLen)
-    glGetProgramInfoLog(program, errLen.GLsizei, cast[var GLint](nil), result.err.cstring)
+    glGetProgramInfoLog(program, errLen.GLsizei, nil, result.err.cstring)
 
 proc CreateProgram*(shaders: varargs[GLuint]): GLuint =
   result = glCreateProgram()

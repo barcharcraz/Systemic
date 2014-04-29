@@ -18,7 +18,9 @@ type
   TListBox* = object of TWidget
     color*: TColor
     items*: seq[ref TWidget]
-
+  TScrollBar* = object of TWidget
+    offset*: float ## how far down have we scrolled
+    span*: float ## how big is the area we are covering
 
 #{{{ forward declearations
 #{{{ initialization functions

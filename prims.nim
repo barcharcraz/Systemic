@@ -102,12 +102,12 @@ proc PrimHandle*(pos: TVec3f = vec3f(0,0,0),
   let xrot = quatFromAngleAxis(PI/2, vec3f(0,0,1))
   let yrot = identityQuatf()
   let zrot = quatFromAngleAxis(PI/2, vec3f(1,0,0))
-  proc moveCyl(rot: TQuatf, cyl: TPrimMesh) =
-    for v in cyl.mesh.verts:
-      v = v + transl
-      v = mulv(rot, v)
-  moveCyl(xrot, xcyl)
-  moveCyl(yrot, ycyl)
-  moveCyl(zrot, zcyl)
+  proc moveCyl(rot: TQuatf, cyl: var TPrimMesh) =
+    for i,v in cyl.verts:
+      cyl.verts[i] = v + transl
+      cyl.verts[i] = mulv(rot, v)
+  moveCyl(xrot, xcyl.mesh)
+  moveCyl(yrot, ycyl.mesh)
+  moveCyl(zrot, zcyl.mesh)
   result = @[xcyl, ycyl, zcyl]
   
