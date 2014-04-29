@@ -40,10 +40,12 @@ glfw.init()
 when defined(macosx):
   var glversion = glv32
   var forwardcompat = true
+  var profile = glpCore
 else:
   var glversion = glv31
   var forwardcompat = false
-var api = initGL_API(glversion, forwardcompat, false, glpCore, glrNone)
+  var profile = glpAny
+var api = initGL_API(glversion, forwardcompat, false, profile, glrNone)
 var wnd = newWin(dim = (w: winw, h: winh), title = "GL test", GL_API=api, refreshRate = 1)
 makeContextCurrent(wnd)
 #wnd.cursorMode = cmDisabled
