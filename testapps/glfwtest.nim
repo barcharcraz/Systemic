@@ -37,7 +37,13 @@ var listBox = new(initListBox(vec2f(20,20)))
 frame.add(listBox)
 
 glfw.init()
-var api = initGL_API(glv32, true, false, glpCore, glrNone)
+when defined(macosx):
+  var glversion = glv32
+  var forwardcompat = true
+else:
+  var glversion = glv31
+  var forwardcompat = false
+var api = initGL_API(glversion, forwardcompat, false, glpCore, glrNone)
 var wnd = newWin(dim = (w: winw, h: winh), title = "GL test", GL_API=api, refreshRate = 1)
 makeContextCurrent(wnd)
 #wnd.cursorMode = cmDisabled

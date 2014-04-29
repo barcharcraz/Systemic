@@ -4,4 +4,9 @@ nimcache
 *.nimproj
 *.suo
 *.swp
+*.exe
+*.ilk
+*.lib
+*.pdb
+*.exp
 bin
