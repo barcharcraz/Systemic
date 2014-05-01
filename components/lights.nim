@@ -20,4 +20,4 @@ proc initDirectionalLight*(dir: TVec3f): TDirectionalLight =
 proc initPointLight*(pos: TVec3f): TPointLight =
   result.diffuse = vec4f(1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32)
   result.specular = vec4f(1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32)
-  result.position = vec4f(pos[1], pos[2], pos[3], 0.0'f32)
+  result.position = vec4f(pos[1], pos[2], pos[3], 1.0'f32)

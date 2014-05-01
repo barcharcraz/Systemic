@@ -12,6 +12,7 @@ proc initCallbackInfo*(update: proc(id: SceneId)): TCallbackInfo =
 type TScene* = object
   id*: SceneId
   updateList: seq[TCallbackInfo]
+var sceneList: seq[TCallbackInfo] = @[]
 var curActiveScene: SceneId = (-1).SceneId
 proc initScene*(): TScene = 
   var id {.global.}: int = 0

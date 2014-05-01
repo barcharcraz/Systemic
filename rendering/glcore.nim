@@ -182,7 +182,7 @@ proc AttachTextureToProgram*(texture: GLuint; program: GLuint; texUint: GLint; s
 proc CreateUniformBuffer*[T](arr: var openarray[T]): GLuint =
   glGenBuffers(1, addr result)
   glBindBuffer(GL_UNIFORM_BUFFER, result)
-  glBufferData(GL_UNIFORM_BUFFER, (sizeof(T) * arr.len).GLsizeiptr, cast[PGLvoid](addr arr[0]), GL_STATIC_DRAW)
+  glBufferData(GL_UNIFORM_BUFFER, (sizeof(T) * arr.len).GLsizeiptr, cast[PGLvoid](addr arr), GL_STATIC_DRAW)
   glBindBuffer(GL_UNIFORM_BUFFER, 0)
 
 proc AdjustViewMatrix*(mat: TMat4f): TMat4f =

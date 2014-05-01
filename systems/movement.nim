@@ -65,3 +65,4 @@ proc OrbitMovementSystem*(scene: SceneId, dx, dy: float, pos: TVec3f) =
 proc OrbitSelectionMovement*(scene: SceneId, dx, dy: float) =
   for id, sel, transform in walk(scene, TSelected, TTransform):
     OrbitMovementSystem(scene, dx, dy, transform[].position)
+

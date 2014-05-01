@@ -16,4 +16,4 @@ proc addCamera*(scene: SceneId, pos: TVec3f = vec3f(0,0,0)): EntityId {.discarda
   result.add(initTransform(pos))
   result.add(initVelocity(vkPre))
   
-  
+

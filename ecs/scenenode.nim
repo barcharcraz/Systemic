@@ -97,13 +97,11 @@ template getComponent*(scene: TScene, typ: expr): expr =
 #iterator components*[T](scene: SceneId): T {.inline.} = GetDefaultNode[T]().sceneList[scene.int]().items
 #iterator components*[T](scene: TScene): T {.inline.} = components[T](scene.id)
 #template components*(scene: SceneId, typ: expr): expr = GetDefaultNode[typ]().sceneList[scene.int]
-template components*(scene: TScene, typ: expr): expr = components(scene.id, typ)
+#template components*(scene: TScene, typ: expr): expr = components(scene.id, typ)
 proc components*(scene: SceneId; typ: typedesc): var seq[typ] = 
   result = GetDefaultNode[typ]().sceneList[scene.int]
   if result.isnil:
-    var toinst: seq[typ]
-    newSeq(toInst, 4)
-    GetDefaultNode[typ]().sceneList.insert(toInst, scene.int)
+    GetDefaultNode[typ]().sceneList[scene.int] = @[]
     result = GetDefaultNode[typ]().sceneList[scene.int]
 ##functions to deal with adding systems to scenes, these
 ##are designed so that you can add a proc with the signature

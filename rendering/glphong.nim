@@ -29,7 +29,7 @@ void main() {
     //taking the transpose on the GPU like this is likely NOT
     //a very good idea, it is in the VS so meh but still.
     //also this breaks for non-uniform scaleing.
-    norm_out = mat3(modelview) * norm;
+    norm_out = transpose(mat3(modelview)) * norm;
 }
 """
 var version = "#version 140\n"
@@ -40,10 +40,10 @@ in vec3 view_pos;
 in vec2 uv_out;
 out vec4 outputColor;
 layout(std140) uniform dlightBlock {
-  directionalLight_t dlights[NUM_DIRECTIONAL];
+  directionalLight_t dlights[NUM_DIRECTIONAL + 1];
 };
 layout(std140) uniform plightBlock {
-  pointLight_t plights[NUM_POINT];
+  pointLight_t plights[NUM_POINT + 1];
 };
 uniform material_t mat;
 uniform sampler2D tex;
@@ -52,9 +52,11 @@ void main() {
   for(int i = 0; i < NUM_DIRECTIONAL; ++i) {
     outputColor += directionalLight(dlights[i], vec4(norm_out,1), vec4(view_pos,1), mat);
   }
+  
   for(int i = 0; i < NUM_POINT; ++i) {
     outputColor += pointLight(plights[i], vec4(norm_out, 1), vec4(view_pos,1), mat);
   }
+
   outputColor = clamp(outputColor, 0.0, 1.0);
   outputColor = outputColor * texture(tex, vec2(uv_out.x, 1 - uv_out.y));
 }
