@@ -52,7 +52,7 @@ vec4 pointLight(in pointLight_t light,
 {
     vec4 lvec = normalize(light.position) * -1;
     vec4 rv = phongLight(mat, normalize(viewPos), lvec, normalize(normal), light.diffuse, light.specular);
-    //rv = rv * (1 / pow(distance(light.position, viewPos), 2));
+    rv = rv * (1 / pow(distance(light.position, viewPos), 2));
     return rv;
 }
 vec4 directionalLight(in directionalLight_t light,
