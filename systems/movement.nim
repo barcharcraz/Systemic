@@ -20,6 +20,10 @@ proc AccelerationSystem*(scene: SceneId) {.procvar.} =
   for id, vel, acc in walk(scene, TVelocity, TAcceleration):
     vel.lin = vel.lin + acc.lin
     vel.rot = mul(vel.rot, acc.rot)
+
+proc AddMovementSystems*(scene: SceneId) = 
+  scene.addSystem()
+
 proc MovementSystem*(scene: SceneId; inp: TInputMapping; cam: EntityId) {.procvar.} =
   
   var pos = addr mEntFirst[TTransform](cam)

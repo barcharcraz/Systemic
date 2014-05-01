@@ -20,8 +20,8 @@ export image
 export events
 export selectDat
 MakeEntityComponent(TCamera)
-MakeComponentNode(TPointLight)
-MakeComponentNode(TDirectionalLight)
+MakeEntityComponent(TPointLight)
+MakeEntityComponent(TDirectionalLight)
 MakeEntityComponent(TMesh)
 MakeEntityComponent(TMaterial)
 MakeEntityComponent(TTransform)

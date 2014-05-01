@@ -15,5 +15,13 @@ proc addCamera*(scene: SceneId, pos: TVec3f = vec3f(0,0,0)): EntityId {.discarda
   result.add(initCamera())
   result.add(initTransform(pos))
   result.add(initVelocity(vkPre))
+proc addDirectionalLight*(scene: SceneId; dir: TVec3f): EntityId {.discardable.} =
+  result = genEntity()
+  scene.add(result)
+  result.add(initDirectionalLight(dir))
+proc addPointLight*(scene: SceneId; pos: TVec3f): EntityId {.discardable.} =
+  result = genEntity()
+  result.add(initPointLight())
+  result.add(initTransform(pos))
   
 
