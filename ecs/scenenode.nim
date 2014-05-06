@@ -35,11 +35,17 @@ proc addToNode*(node: var TSceneNode, scene: SceneId, item: TComponent) =
   var insertPos = lowerBound(list[], item) do (a,b)->auto:
     result = system.cmp(a.id.int, b.id.int)
   node.sceneList[scene.int].insert(item, insertPos)
+proc genIdentName*(name: string): string =
+  ## This procdeure takes a string and munges it
+  ## so that it is a valid identifier name
+  ## in particular it replaces [, ], and " " with
+  ## "" (nothing).
+  result = name.replace("[", "")
+  result = result.replace("]", "")
+  result = result.replace(" ", "")
 macro concatName(name: static[string]): expr =
   var resultString: string = name & "SceneNode"
-  resultString = resultString.replace("[", "")
-  resultString = resultString.replace("]", "")
-  resultString = resultString.replace(" ", "")
+  resultString = genIdentName(resultString)
   echo(resultString)
   result = newIdentNode(!resultString)
 proc GetDefaultNode*[T](): var TSceneNode[T] =
@@ -50,19 +56,14 @@ proc GetDefaultNode*[T](name: static[string]): var TSceneNode[T] =
 #this is pretty crazy, but it should work OK
 #think of it as a mini scripting language
 var typeMapping = initTable[string, proc(scene: SceneId, elm: pointer)]()
-macro MakeComponentNode*(typ: expr): stmt =
-  var nodeName = repr(typ) & "SceneNode"
-  echo nodeName
-  nodeName = nodeName.replace("[", "")
-  nodeName = nodeName.replace("]", "")
-  nodeName = nodeName.replace(" ", "")
+macro MakeComponentNode*(typ: expr, name: static[string]): stmt =
   var brackets = newNimNode(nnkBracketExpr)
   brackets.add(newIdentNode(!"initSceneNode"))
   brackets.add(typ)
   var identDefs = newNimNode(nnkIdentDefs)
   var postfix = newNimNode(nnkPostfix)
   postfix.add(newIdentNode(!"*"))
-  postfix.add(newIdentNode(nodeName))
+  postfix.add(newIdentNode(name))
   identDefs.add(postfix)
   identDefs.add(newNimNode(nnkEmpty))
   var initCall = newNimNode(nnkCall)
@@ -70,7 +71,13 @@ macro MakeComponentNode*(typ: expr): stmt =
   identDefs.add(initCall)
   result = newNimNode(nnkStmtList)
   result.add(newNimNode(nnkVarSection).add(identDefs))
-  
+
+macro MakeComponentNode*(typ: expr): stmt =
+  var nodeName = repr(typ) & "SceneNode"
+  echo nodeName
+  nodeName = genIdentName(nodeName)
+  result = MakeComponentNode(typ, nodeName)
+    
 
 
 template MakeComponent*(typ: expr) =

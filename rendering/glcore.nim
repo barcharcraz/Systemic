@@ -193,3 +193,5 @@ proc AdjustViewMatrix*(mat: TMat4f): TMat4f =
 proc AdjustProjMatrix*(mat: TMat4f): TMat4f =
   result = mat
   result[3,4] = result[3,4] * 2
+
+ 

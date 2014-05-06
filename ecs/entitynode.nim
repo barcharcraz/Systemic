@@ -40,18 +40,18 @@ proc add*(scene: SceneId; ent: EntityId) =
     raise newException(ESceneNotUnique, "Entity: " & $ent.int & " is already in scene " & $entscene.int)
   mgetScene(ent) = scene
     
-
-
-
-
 var entTypeMapping = initTable[string, proc(ent: EntityId, elm: pointer)]()
 
 template MakeEntityComponent*(typ: expr) =
   bind entTypeMapping
-  MakeComponentNode(TComponent[typ])
+  MakeComponentNode(typ)
+  MakeComponentNode(EntityId, genIdentName(typ.name() & "EntityIds")
   when false:
     entTypeMapping.add(name(typ)) do (ent: EntityId, elm: pointer):
       add(ent, cast[ptr typ](elm)[])
+
+proc entities*(scene: SceneId, typ: typedesc): var seq[EntityId] =
+  result = newIdnetNode(!genIdentName(typ.name() & "EntityIds"))
 proc add*[T](ent: EntityId, elm: T) =
   var component = initComponent(ent, elm)
   var scene: SceneId = ent.getScene
