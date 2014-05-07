@@ -45,17 +45,27 @@ var entTypeMapping = initTable[string, proc(ent: EntityId, elm: pointer)]()
 template MakeEntityComponent*(typ: expr) =
   bind entTypeMapping
   MakeComponentNode(typ)
-  MakeComponentNode(EntityId, genIdentName(typ.name() & "EntityIds")
+  MakeComponentNode(EntityId, genIdentName(typ.name() & "EntityIds"))
   when false:
     entTypeMapping.add(name(typ)) do (ent: EntityId, elm: pointer):
       add(ent, cast[ptr typ](elm)[])
 
-proc entities*(scene: SceneId, typ: typedesc): var seq[EntityId] =
-  result = newIdnetNode(!genIdentName(typ.name() & "EntityIds"))
+proc entities*(scene: SceneId; typ: typedesc): var seq[EntityId] =
+  macro getIdent(): expr =
+    result = newIdentNode(!genIdentName(name(typ) & "EntityIds"))
+  static: echo(name(typ))
+  result = getIdent().sceneList[scene.int]
+  if result.isnil:
+    getIdent().sceneList[scene.int] = @[]
+    result = getIdent().sceneList[scene.int]
 proc add*[T](ent: EntityId, elm: T) =
-  var component = initComponent(ent, elm)
   var scene: SceneId = ent.getScene
-  scene.addComponent(component)
+  static: echo(name(T))
+  var ents = addr entities(scene, type(elm))
+  var comps = addr components(scene, type(elm))
+  assert(ents[].len == comps[].len)
+  ents[].add(ent)
+  comps[].add(elm)
 
 proc add*(ent: EntityId, typ: string, item: pointer) =
   entTypeMapping[typ](ent, item)
@@ -162,20 +172,7 @@ iterator walk*(scene: SceneId; typ1, typ2, typ3: typedesc): auto {.inline.} =
 iterator walk*(scene: SceneId; typ1, typ2, typ3, typ4: typedesc): auto {.inline.} =
   for a,b,c,d in matchEntsComponents(scene, typ1, typ2, typ3,typ4):
     yield (a.id, addr a[].data, addr b[].data, addr c[].data, addr d[].data)
-discard """
-proc set*(ent: EntityId, val: auto, start: EntityId = (-1).EntityId) =
-  var comps = addr components(getScene(ent), TComponent[type(val)])
-  var pos = 0
-  var newVal: TComponent[type(val)]
-  newVal.id = ent
-  newVal.data = val
-  if start == -1.EntityId:
-    pos = lowerBound(comps[], newVal) do (a,b)->auto: system.cmp(a.id, b.id)
-  else:
-    while (pos < comps.len) and (comps[pos].id.int < ent.int): inc(pos)
-  if pos.id == ent: comps[pos] = newVal
-  else: comps.insert(newVal, pos)
-"""
+
 proc entComponents*(scene: SceneId, typ1: typedesc): auto =
   for id,a in walk(scene, typ1):
     return a

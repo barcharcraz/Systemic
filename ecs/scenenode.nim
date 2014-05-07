@@ -35,7 +35,7 @@ proc addToNode*(node: var TSceneNode, scene: SceneId, item: TComponent) =
   var insertPos = lowerBound(list[], item) do (a,b)->auto:
     result = system.cmp(a.id.int, b.id.int)
   node.sceneList[scene.int].insert(item, insertPos)
-proc genIdentName*(name: string): string =
+proc genIdentName*(name: string): string {.compileTime.}=
   ## This procdeure takes a string and munges it
   ## so that it is a valid identifier name
   ## in particular it replaces [, ], and " " with
@@ -73,10 +73,10 @@ macro MakeComponentNode*(typ: expr, name: static[string]): stmt =
   result.add(newNimNode(nnkVarSection).add(identDefs))
 
 macro MakeComponentNode*(typ: expr): stmt =
-  var nodeName = repr(typ) & "SceneNode"
+  var nodeName: string = repr(typ) & "SceneNode"
   echo nodeName
   nodeName = genIdentName(nodeName)
-  result = MakeComponentNode(typ, nodeName)
+  result = getAst(MakeComponentNode(typ, nodeName))
     
 
 
