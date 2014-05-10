@@ -98,7 +98,15 @@ proc hasEnt(comps: seq[pointer], ent: EntityId): bool =
     if baseComp.id == ent:
       return true
   return false
-
+proc `?`*(ent: EntityId, typ: typedesc): ptr typ =
+  var ents = entities(getScene(ent), typ)
+  var comps = components(getScene(ent), typ)
+  proc `<`(a: EntityId, b: EntityId): bool = a.int < b.int
+  var idx = binarySearch(ents, ent)
+  if idx == -1: return nil
+  return addr comps[idx]
+proc `@`*(ent: EntityId, typ: typedesc): var typ =
+  result = (ent?typ)[]
 proc mEntFirstOpt*[T: HasEntComponent](ent: EntityId): ptr T =
   var defNode = addr GetDefaultNode[TComponent[T]]()
   if defNode.sceneList.len <= ent.getScene().int:
@@ -130,68 +138,39 @@ proc getAny*[T](scene: SceneId): T =
   result = mgetAny[T](scene)
 
 
-iterator matchEntsComponents*(scene: SceneId; typ1: typedesc): auto {.inline.} =
-  var comps = addr components(scene, TComponent[typ1])
-  for i in comps[].low..comps[].high:
-    yield (addr comps[i])
-iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto {.inline.} =
-  var comps = addr components(scene, TComponent[typ2])
-  for elm in matchEntsComponents(scene, typ1):
-    for i1 in 0..comps[].high:
-      if comps[i1].id == elm.id:
-        yield (elm, addr comps[i1])
-        break
-      if comps[i1].id.int > elm.id.int:
-        break
 
-iterator matchEntsComponents*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): auto {.inline.} =
-  var comps = addr components(scene, TComponent[typ3])
-  for a,b in matchEntsComponents(scene, typ1, typ2):
-    for i in 0..comps[].high:
-      if comps[i].id == a.id:
-        yield (a, b, addr comps[i])
-      if comps[i].id.int > a.id.int:
-        break
-iterator matchEntsComponents*(scene: SceneId; typ1,typ2,typ3,typ4: typedesc): auto {.inline.} =
-  var comps = addr components(scene, TComponent[typ4])
-  for a,b,c in matchEntsComponents(scene, typ1, typ2, typ3):
-    for i in 0..comps[].high:
-      if comps[i].id == a.id:
-        yield (a,b,c, addr comps[i])
-      if comps[i].id.int > a.id.int:
-        break
 iterator walk*(scene: SceneId; typ1: typedesc): auto {.inline.} =
-  for a in matchEntsComponents(scene, typ1):
-    yield (a.id, addr a[].data)
-iterator walk*(scene: SceneId; typ1: typedesc; typ2: typedesc): auto {.inline.} =
-  for a,b in matchEntsComponents(scene, typ1, typ2):
-    yield (a.id, addr a[].data, addr b[].data)
+  var ents = addr entities(scene, typ1)
+  var comps = addr components(scene, typ1)
+  for i,elm in comps[]:
+    yield (ents[i], addr comps[i])
+iterator walk*(scene: SceneId; typ1, typ2: typedesc): auto {.inline.} =
+  var ents = addr entities(scene, typ2)
+  var comps = addr components(scene, typ2)
+  for id, a in walk(scene, typ1):
+    for i in 0..comps[].high:
+      if ents[i] == id:
+        yield (id, a, addr comps[i])
+      if ents[i].int > id.int:
+        break
 iterator walk*(scene: SceneId; typ1, typ2, typ3: typedesc): auto {.inline.} =
-  for a,b,c in matchEntsComponents(scene, typ1, typ2, typ3):
-    yield (a.id, addr a[].data, addr b[].data, addr c[].data)
+  var ents = addr entities(scene, typ3)
+  var comps = addr components(scene, typ3)
+  for id, a, b in walk(scene, typ1, typ2):
+    for i in 0..comps[].high:
+      if ents[i] == id:
+        yield (id, a, b, addr comps[i])
+      if ents[i].int > id.int:
+        break
 iterator walk*(scene: SceneId; typ1, typ2, typ3, typ4: typedesc): auto {.inline.} =
-  for a,b,c,d in matchEntsComponents(scene, typ1, typ2, typ3,typ4):
-    yield (a.id, addr a[].data, addr b[].data, addr c[].data, addr d[].data)
-
-proc entComponents*(scene: SceneId, typ1: typedesc): auto =
-  for id,a in walk(scene, typ1):
-    return a
-proc entComponents*(scene: SceneId, typ1: typedesc, typ2: typedesc): auto =
-  for id,a,b in walk(scene, typ1, typ2):
-    return (a,b)
-proc matchEnt*(scene: SceneId; typ1: typedesc): EntityId =
-  for elm in matchEntsComponents(scene, typ1):
-    return elm.id
-proc matchEnt*(scene: SceneId; typ1: typedesc; typ2: typedesc): EntityId =
-  result = EntityId(-1)
-  for a,b in matchEntsComponents(scene, typ1, typ2):
-    assert(a.id == b.id)
-    return a.id
-proc matchEnt*(scene: SceneId; typ1: typedesc; typ2: typedesc; typ3: typedesc): EntityId =
-  result = EntityId(-1)
-  for a,b,c in matchEntsComponents(scene, typ1, typ2, typ3):
-    assert(a.id == b.id and a.id == c.id)
-    return a.id
+  var ents = entities(scene, typ4)
+  var comps = components(scene, typ4)
+  for id, a, b, c in walk(scene, typ1, typ2):
+    for i in 0..comps[].high:
+      if ents[i] == id:
+        yield (id, a, b, c, addr comps[i])
+      if ents[i].int > id.int:
+        break
 #procs to add a system that takes a tuple of entities, these
 #are quite useful for more scripty code
 proc addSystem*[Ta](scene: SceneId; func: proc(id: SceneId; tup: tuple[a: ptr Ta])) =

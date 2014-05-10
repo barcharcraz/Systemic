@@ -13,6 +13,7 @@ import exceptions
 import vecmath
 import unsigned
 import glcore
+import utils.iterators
 
 var defVS = """
 #version 140
@@ -52,16 +53,13 @@ void main() {
 """
 
 
-proc RenderUntextured*(scene: SceneId; meshEnt: var TComponent[TMesh]) {.procvar.} =
+proc RenderUntextured*(scene: SceneId) {.procvar.} =
   var program {.global.}: GLuint
   var ps {.global.}: GLuint
   var vs {.global.}: GLuint
-  var element = meshEnt.data
-  var cameraEnt = matchEnt(scene, TCamera, TTransform)
+  var cameraEnt = first(walk(scene, TCamera, TTransform))[0]
   var camTrans = EntFirst[TTransform](cameraEnt)
-  var modelMatrix = EntFirst[TTransform](meshEnt.id).GenMatrix()
   var cam = EntFirst[TCamera](cameraEnt)
-  var diffuseTex = EntFirst[TImage](meshEnt.id)
   var viewMatrix = camTrans.GenMatrix()
   var projMatrix = cam
   viewMatrix = viewMatrix.AdjustViewMatrix()
@@ -72,27 +70,28 @@ proc RenderUntextured*(scene: SceneId; meshEnt: var TComponent[TMesh]) {.procvar
   CheckError()
   glUseProgram(program)
   CheckError()
-  BindTransforms(program, modelMatrix, viewMatrix, projMatrix)
-  var vertSize = sizeof(TVertex) * element.verts.len
-  var indexSize = sizeof(uint32) * element.indices.len 
-  var buffers = mEntFirstOpt[TObjectBuffers](meshEnt.id)
-  if buffers == nil:
-    meshEnt.id.add(initObjectBuffers())
-    buffers = mEntFirstOpt[TObjectBuffers](meshEnt.id)
-    var (vert, index) = CreateMeshBuffers(meshEnt.data)
-    buffers.vertex = vert
-    buffers.index = index
-    buffers.vao = CreateVertexAttribPtr(program)
-    buffers.tex = CreateTexture(diffuseTex.data, diffuseTex.width, diffuseTex.height)
-        
-  CheckError()
-  AttachTextureToProgram(buffers.tex, program, 0, "tex")
-  glBindVertexArray(buffers.vao)
-  CheckError()
-  glBindBuffer(GL_ARRAY_BUFFER.GLenum, buffers.vertex)
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER.GLenum, buffers.index)
-  CheckError()
+  for id, model, tex, pos in walk(scene, TMesh, TImage, TTransform):
+    BindTransforms(program, pos[].GenMatrix(), viewMatrix, projMatrix)
+    var vertSize = sizeof(TVertex) * model.verts.len
+    var indexSize = sizeof(uint32) * model.indices.len
+    var buffers = id?TObjectBuffers
+    if buffers == nil:
+      id.add(initObjectBuffers())
+      buffers = addr (id@TObjectBuffers)
+      var (vert, index) = CreateMeshBuffers(model[])
+      buffers.vertex = vert
+      buffers.index = index
+      buffers.vao = CreateVertexAttribPtr(program)
+      buffers.tex = CreateTexture(tex.data, tex.width, tex.height)
+          
+    CheckError()
+    AttachTextureToProgram(buffers.tex, program, 0, "tex")
+    glBindVertexArray(buffers.vao)
+    CheckError()
+    glBindBuffer(GL_ARRAY_BUFFER.GLenum, buffers.vertex)
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER.GLenum, buffers.index)
+    CheckError()
 
-  glDrawElements(GL_TRIANGLES, cast[GLSizei](element.indices.len), cGL_UNSIGNED_INT, nil)
-  CheckError()
+    glDrawElements(GL_TRIANGLES, cast[GLSizei](model[].indices.len), cGL_UNSIGNED_INT, nil)
+    CheckError()
 
