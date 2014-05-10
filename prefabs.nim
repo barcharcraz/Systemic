@@ -5,7 +5,8 @@ import vecmath
 proc addStaticMesh*(scene: SceneId, model, texture: string, pos: TVec3f): EntityId {.discardable.} =
   result = genEntity()
   scene.add(result)
-  result.add(loadMesh(model))
+  var mesh = loadMesh(model)
+  result.add(mesh)
   result.add(getTexture(texture))
   result.add(initMaterial())
   result.add(initTransform(pos))
@@ -21,6 +22,7 @@ proc addDirectionalLight*(scene: SceneId; dir: TVec3f): EntityId {.discardable.}
   result.add(initDirectionalLight(dir))
 proc addPointLight*(scene: SceneId; pos: TVec3f): EntityId {.discardable.} =
   result = genEntity()
+  scene.add(result)
   result.add(initPointLight())
   result.add(initTransform(pos))
   

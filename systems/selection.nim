@@ -6,15 +6,17 @@ import ecs
 import components
 import strutils
 import components/selectDat
+import utils/iterators
 const selectionDbg = true
 loggingWrapper(selectionDbg)
 
 
-proc findSelected(transforms: openarray[TComponent[TTransform]], x,y: float, mtx: TMat4f): EntityId =
+proc findSelected(scene: SceneId, x,y: float, mtx: TMat4f): EntityId =
   var color: TVec4[GLByte]
   var depth: GLfloat
   var index: GLuint
-  
+  var transforms = addr components(scene, TTransform)
+  var transformEnts = addr entities(scene, TTransform)
   var viewport: TVec4f
   glGetFloatv(cGL_VIEWPORT, addr viewport.data[0])
   debug("Click was at x: " & formatFloat(x) & " y: " & formatFloat(y))
@@ -28,20 +30,19 @@ proc findSelected(transforms: openarray[TComponent[TTransform]], x,y: float, mtx
   debug("Selected: " & vecmath.`$`(selectedPos))
   debug("Depth Value: " & formatFloat(depth))
   var maxDist = 4.0
-  for elm in transforms:
-    var sdist = dist(selectedPos, elm.data.position)
-    debug("Distance to ent: " & $elm.id.int & " is: " & formatFloat(sdist))
+  for i,elm in transforms[]:
+    var sdist = dist(selectedPos, elm.position)
+    debug("Distance to ent: " & $transformEnts[i].int & " is: " & formatFloat(sdist))
     if sdist <= maxDist:
-      return elm.id
+      return transformEnts[i]
   return (-1).EntityId
 proc handleSelectionAttempt*(scene: SceneId, x,y: float) =
-  var (cam, camTrans) = entComponents(scene, TCamera, TTransform)
+  var (camId, cam, camTrans) = first(walk(scene, TCamera, TTransform))
   var viewMtx = camTrans[].GenRotTransMatrix().AdjustViewMatrix()
   var projMtx = cam[].AdjustProjMatrix()
-  var transfms = addr components(scene, TComponent[TTransform])
-  var selected = findSelected(transfms[], x, y, mul(projMtx, viewMtx))
+  var selected = findSelected(scene, x, y, mul(projMtx, viewMtx))
   debug("Selected Entity: " & $selected.int)
   if selected == (-1).EntityId: return
-  var callbck = mEntFirstOpt[onMouseDown](selected)
+  var callbck = selected?onMouseDown
   if callbck != nil: callbck[](x,y)
   

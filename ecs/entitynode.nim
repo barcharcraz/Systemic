@@ -98,6 +98,7 @@ proc hasEnt(comps: seq[pointer], ent: EntityId): bool =
     if baseComp.id == ent:
       return true
   return false
+
 proc `?`*(ent: EntityId, typ: typedesc): ptr typ =
   var ents = entities(getScene(ent), typ)
   var comps = components(getScene(ent), typ)
@@ -107,35 +108,6 @@ proc `?`*(ent: EntityId, typ: typedesc): ptr typ =
   return addr comps[idx]
 proc `@`*(ent: EntityId, typ: typedesc): var typ =
   result = (ent?typ)[]
-proc mEntFirstOpt*[T: HasEntComponent](ent: EntityId): ptr T =
-  var defNode = addr GetDefaultNode[TComponent[T]]()
-  if defNode.sceneList.len <= ent.getScene().int:
-    return nil
-  if defNode.sceneList[ent.getScene().int].isnil:
-    return nil
-  var comps = addr components(ent.getScene(), TComponent[T])
-  for i in 0..high(comps[]):
-    if comps[][i].id == ent:
-      return addr comps[][i].data
-proc mEntFirst*[T: HasEntComponent](ent: EntityId): var T =
-  when compiles(GetDefaultNode[TComponent[T]]()):
-    var resPtr = mEntFirstOpt[T](ent)
-    if resPtr == nil:
-      raise newException(ENoSuchComponent, typetraits.name(T))
-    result = resPtr[]
-
-proc entFirst*[T: HasEntComponent](ent: EntityId): T =
-  when compiles(GetDefaultNode[TComponent[T]]()):
-    result = mEntFirst[T](ent)
-
-proc mgetAny*[T](scene: SceneId): var T =
-  when compiles(GetDefaultNode[T]()):
-    return SceneNode.mfirst[T](scene)
-  when compiles(GetDefaultNode[TComponent[T]]()):
-    return SceneNode.mfirst[TComponent[T]](scene).data
-
-proc getAny*[T](scene: SceneId): T =
-  result = mgetAny[T](scene)
 
 
 
@@ -163,9 +135,9 @@ iterator walk*(scene: SceneId; typ1, typ2, typ3: typedesc): auto {.inline.} =
       if ents[i].int > id.int:
         break
 iterator walk*(scene: SceneId; typ1, typ2, typ3, typ4: typedesc): auto {.inline.} =
-  var ents = entities(scene, typ4)
-  var comps = components(scene, typ4)
-  for id, a, b, c in walk(scene, typ1, typ2):
+  var ents = addr entities(scene, typ4)
+  var comps = addr components(scene, typ4)
+  for id, a, b, c in walk(scene, typ1, typ2, typ3):
     for i in 0..comps[].high:
       if ents[i] == id:
         yield (id, a, b, c, addr comps[i])

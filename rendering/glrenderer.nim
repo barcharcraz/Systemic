@@ -58,8 +58,8 @@ proc RenderUntextured*(scene: SceneId) {.procvar.} =
   var ps {.global.}: GLuint
   var vs {.global.}: GLuint
   var cameraEnt = first(walk(scene, TCamera, TTransform))[0]
-  var camTrans = EntFirst[TTransform](cameraEnt)
-  var cam = EntFirst[TCamera](cameraEnt)
+  var camTrans = cameraEnt@TTransform
+  var cam = cameraEnt@TCamera
   var viewMatrix = camTrans.GenMatrix()
   var projMatrix = cam
   viewMatrix = viewMatrix.AdjustViewMatrix()

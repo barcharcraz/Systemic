@@ -5,7 +5,8 @@ import ecs
 import components
 import unsigned
 import logging
-
+import vecmath
+import utils/iterators
 var defVS = """
 struct matrices_t {
     mat4 model;
@@ -71,7 +72,9 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   var plightsUniform {.global.}: GLuint
   #var dlights = GetDefaultNode[TDirectionalLight]().sceneList[scene.int]
   var dlights = components(scene, TDirectionalLight)
-  var plights = components(scene, TPointLight)
+  var plights: seq[TPointLightRaw] = @[]
+  for id, light, pos in walk(scene, TPointLight, TTransform):
+    plights.add(TPointLightRaw(diffuse: light.diffuse, specular: light.specular, position: vec4f(pos.position, 1)))
   if vs == 0 or ps == 0:
     var def = genDefine("NUM_DIRECTIONAL", dlights.len)
     var pdef = genDefine("NUM_POINT", plights.len)
@@ -93,19 +96,19 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   glBindBufferBase(GL_UNIFORM_BUFFER, 0, dlightsUniform)
   glBindBufferBase(GL_UNIFORM_BUFFER, 1, plightsUniform)
   CheckError()
-  var (cam, camTrans) = entComponents(scene, TCamera, TTransform)
+  var (camEnt, cam, camTrans) = first(walk(scene, TCamera, TTransform))
   var viewMatrix = camTrans[].GenRotTransMatrix().AdjustViewMatrix()
   var projMatrix = cam[].AdjustProjMatrix()
   glUseProgram(program)
   BindViewProjMatrix(program, viewMatrix, projMatrix)
   for id,mesh,trans,tex,mat in scene.walk(TMesh,TTransform,TImage,TMaterial):
     BindMaterial(program,mat[])
-    var buffers = mEntFirstOpt[TObjectBuffers](id)
+    var buffers = id?TObjectBuffers
     var modMatrix = trans[].GenMatrix()
     BindModelMatrix(program, modMatrix)
     if buffers == nil:
       id.add(initObjectBuffers())
-      buffers = mEntFirstOpt[TObjectBuffers](id)
+      buffers = id?TObjectBuffers
       var meshBuf = CreateMeshBuffers(mesh[])
       buffers.vertex = meshBuf.vert
       buffers.index = meshBuf.index

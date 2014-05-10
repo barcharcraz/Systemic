@@ -13,9 +13,11 @@ proc loadMesh*(filename: string): cmesh.TMesh =
   if scene.meshCount == 0:
     aiReleaseImport(scene)
     raise newException(ENoMesh, filename & " has no meshes")
-  newSeq(result.verts, scene.meshes.vertexCount)
+  result.verts = @[]
+  setLen(result.verts, scene.meshes.vertexCount)
   #we assume triangles FIXME: stop doing this
-  newSeq(result.indices, scene.meshes.faceCount * 3)
+  result.indices = @[]
+  setLen(result.indices, scene.meshes.faceCount * 3)
   var verts = cast[ptr array[0..50000, TVec3f]](scene[].meshes[][].vertices)
   var norms = cast[ptr array[0..50000, TVec3f]](scene[].meshes[][].normals)
   var tex = cast[ptr array[0..50000, TVec3f]](scene[].meshes[][].texCoords[0])

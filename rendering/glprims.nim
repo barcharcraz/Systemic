@@ -15,6 +15,7 @@ import ecs
 import unsigned
 import algorithm
 import sequtils
+import utils/iterators
 const primVS = """
 #version 140
 struct matrices_t {
@@ -93,9 +94,9 @@ proc RenderPrim*(elm: TPrim, view,proj: TMat4f) =
   glDrawElements(GL_TRIANGLES, cast[GLSizei](elm.mesh.indices.len), cGL_UNSIGNED_INT, nil)
   CheckError()
 proc PrimitiveRenderSystem*(scene: SceneId) {.procvar.} =
-  var cament = matchEnt(scene, TCamera, TTransform)
-  var camTrans = EntFirst[TTransform](cament)
-  var camera = EntFirst[TCamera](cament)
+  var cament = first(walk(scene, TCamera, TTransform))[0]
+  var camTrans = cament@TTransform
+  var camera = cament@TCamera
   var view = camTrans.GenRotTransMatrix().AdjustViewMatrix()
   var projMatrix = camera.AdjustProjMatrix()
   for elm in PrimitiveStack:
