@@ -14,13 +14,16 @@ type TScene* = object
   updateList: seq[TCallbackInfo]
 var sceneList: seq[TCallbackInfo] = @[]
 var curActiveScene: SceneId = (-1).SceneId
+
+var id: int = 0
 proc initScene*(): TScene = 
-  var id {.global.}: int = 0
   result.id = id.SceneId
   inc(id)
   result.updateList.newSeq(0)
   if curActiveScene == (-1).SceneId:
     curActiveScene = result.id
+proc resetSceneGen*() =
+  id = 0
 proc activeScene*(): SceneId =
   result = curActiveScene
 proc addSystem*(scene: var TScene, func: proc(id: SceneId)) =

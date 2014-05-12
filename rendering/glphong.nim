@@ -120,6 +120,7 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
     glBindBuffer(GL_ARRAY_BUFFER.GLenum, buffers.vertex)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER.GLenum, buffers.index)
     CheckError()
+    echo("id: " & $id.int)
     glDrawElements(GL_TRIANGLES, cast[GLSizei](mesh.indices.len), cGL_UNSIGNED_INT, nil)
     CheckError()
 

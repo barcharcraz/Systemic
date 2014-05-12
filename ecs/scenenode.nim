@@ -7,14 +7,27 @@ import algorithm
 import tables
 type TSceneNode*[T] = object
   sceneList*: seq[seq[T]]
+type TSceneNodeVtbl = object
+  clear: proc()
+
+var AllSceneNodes: seq[TSceneNodeVtbl] = @[]
+
+proc components*(scene: SceneId; typ: typedesc): var seq[typ]
+
+
+proc ClearAll*() =
+  for vtbl in AllSceneNodes:
+    vtbl.clear()
+    resetEntityGen()
+    resetSceneGen()
+    clearEntMapping()
+
 proc initSceneNode*[T](): TSceneNode[T] = 
   newSeq(result.sceneList, 10)
 
 proc addComponent*[T](scene: SceneId, item: T)
 
-type notComponent = generic x
-  not (x is TComponent)
-proc addToNode*[T: notComponent](node: var TSceneNode[T], scene: SceneId, item: T) =
+proc addToNode*[T](node: var TSceneNode[T], scene: SceneId, item: T) =
   if node.sceneList.len <= scene.int:
     #we need to use this version of newseq to work
     #around a compiler bug
@@ -24,17 +37,6 @@ proc addToNode*[T: notComponent](node: var TSceneNode[T], scene: SceneId, item: 
   if node.sceneList[scene.int].isnil:
     newSeq(node.sceneList[scene.int], 0)
   node.sceneList[scene.int].add(item)
-proc addToNode*(node: var TSceneNode, scene: SceneId, item: TComponent) =
-  if node.sceneList.len <= scene.int:
-    var toInst: seq[type(item)]
-    newSeq(toInst, 0)
-    node.sceneList.insert(toInst, scene.int)
-  if node.sceneList[scene.int].isnil:
-    newSeq(node.sceneList[scene.int], 0)
-  var list = addr node.sceneList[scene.int]
-  var insertPos = lowerBound(list[], item) do (a,b)->auto:
-    result = system.cmp(a.id.int, b.id.int)
-  node.sceneList[scene.int].insert(item, insertPos)
 proc genIdentName*(name: string): string {.compileTime.}=
   ## This procdeure takes a string and munges it
   ## so that it is a valid identifier name
@@ -53,9 +55,6 @@ proc GetDefaultNode*[T](): var TSceneNode[T] =
 proc GetDefaultNode*[T](name: static[string]): var TSceneNode[T] =
   result = concatName(name)
 
-#this is pretty crazy, but it should work OK
-#think of it as a mini scripting language
-var typeMapping = initTable[string, proc(scene: SceneId, elm: pointer)]()
 macro MakeComponentNode*(typ: expr, name: static[string]): stmt =
   var brackets = newNimNode(nnkBracketExpr)
   brackets.add(newIdentNode(!"initSceneNode"))
@@ -72,16 +71,23 @@ macro MakeComponentNode*(typ: expr, name: static[string]): stmt =
   result = newNimNode(nnkStmtList)
   result.add(newNimNode(nnkVarSection).add(identDefs))
 
+
+
+
 macro MakeComponentNode*(typ: expr): stmt =
   var nodeName: string = repr(typ) & "SceneNode"
   echo nodeName
   nodeName = genIdentName(nodeName)
+  
   result = getAst(MakeComponentNode(typ, nodeName))
-    
+  result.add(quote do:
+    var vtbl: TSceneNodeVtbl
+    vtbl.clear = proc() =
+      GetDefaultNode[`typ`]() = initSceneNode[`typ`]()
+    AllSceneNodes.add(vtbl))
 
 
 template MakeComponent*(typ: expr) =
-  bind typeMapping
   MakeComponentNode(typ)
   when false:
     typeMapping.add(name(typ)) do (scene: SceneId, elm: pointer):
@@ -92,8 +98,6 @@ proc addComponent*[T](scene: TScene, item: T) =
 proc addComponent*[T](scene: SceneId; item: T) =
   echo name(T)
   GetDefaultNode[T]().addToNode(scene, item)
-proc addComponent*(scene: SceneId, typ: string, item: pointer) =
-  typeMapping[typ](scene, item)
 proc deleteComponent*[T](scene: SceneId; typ: typedesc[T]; idx: int) =
   GetDefaultNode[T]().sceneList[scene.int].del(idx)
 ##gets the sequence of typ components in the given scene

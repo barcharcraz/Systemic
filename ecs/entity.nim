@@ -1,5 +1,7 @@
+import logging
 type EntityId* = distinct int
 proc `==`*(a, b: EntityId): bool {.borrow.}
+
 type TComponent*[T] = object
   id*: EntityId
   data*: T
@@ -10,5 +12,7 @@ var id: int = 0
 proc genEntity*(): EntityId = 
   result = cast[EntityId](id)
   inc(id)
+proc resetEntityGen*() =
+  id = 0
 proc getNumIds*(): int =
   result = id

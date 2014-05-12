@@ -54,6 +54,7 @@ wnd.cursorMode = cmDisabled
 AttachInput(wnd)
 var done = false
 var mainscene = initScene()
+mainscene.id.addDirectionalLight(vec3f(0.0'f32, 0.0'f32, -1.0'f32))
 #mainscene.id.addComponent(initDirectionalLight(vec3f(0.0'f32,0.0'f32,-1.0'f32)))
 mainscene.id.addPointLight(vec3f(0.0'f32, 0.0'f32, -30.0'f32))
 

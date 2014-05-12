@@ -5,7 +5,6 @@ import exceptions
 import macros
 import ecs.entity
 import algorithm
-import unittest
 import tables
 
 var EntityMapping: seq[SceneId] = @[]
@@ -13,6 +12,8 @@ var EntityMapping: seq[SceneId] = @[]
 
 proc add*[T](ent: EntityId, elm: T)
 proc add*(ent: EntityId, typ: string, item: pointer)
+proc clearEntMapping*() =
+  EntityMapping = @[]
 proc mgetScene*(ent: EntityId): var SceneId =
   if EntityMapping.high < ent.int:
     raise newException(ENoScene, $(ent.int))
@@ -158,64 +159,35 @@ proc addSystem*[Ta, Tb](scene: SceneId; func: proc(id: SceneId; tup: tuple[a: pt
     for a,b in walk(id, Ta, Tb):
       func(scene, (a,b))
 when isMainModule:
+  import unittest
+  import math
   MakeEntityComponent(int)
   MakeEntityComponent(char)
   MakeEntityComponent(float32)
   MakeEntityComponent(string)
   #var TComponent_int_SceneNode = initSceneNode[TComponent[int]]()
-  var entitytest = genEntity()
-  var otherEntity = genEntity()
-  var thirdEntity = genEntity()
-  var testScene = initScene()
-  testScene.id.add(entitytest)
-  testScene.id.add(otherEntity)
-  testScene.id.add(thirdEntity)
-  echo repr(EntityMapping)
-  entitytest.add(4)
-  entitytest.add(7)
-  entitytest.add(1.0'f32)
-  otherEntity.add(1)
-  otherEntity.add(2)
-  otherEntity.add('a')
-  otherEntity.add("foo")
-  thirdEntity.add(3)
-  thirdEntity.add('3')
+  suite "int basics":
+    setup:
+      var testScene = initScene()
+      var allents: seq[EntityId] = @[]
+      for i in 0..100:
+        allents.add(genEntity())
+        echo(allents[allents.high].int)
+        testScene.id.add(allents[allents.high])
+      randomize(0)
+      for i in 0..100:
+        allents[i].add(i)
+      var ents = entities(testScene.id, int)
+      var comps = components(testScene.id, int)
+    teardown:
+      clearAll()
+    test "tlen":
+      check(ents.high == comps.high)
+      check(ents.low == comps.low)
+      check(ents.len == comps.len)
+    test "tAligned":
+      for i in ents.low..ents.high:
+        check(ents[i].int == comps[i])
   
-  echo "all ints"
-  for elm in testScene.components(TComponent[int]):
-    echo elm.data
-  echo "test ent ints"
-  for elm in components[int](entitytest):
-    echo elm
-  echo "other ent ints"
-  for elm in components[int](otherEntity):
-    echo elm
-  echo "noncomponent mfirst test"
-  var testInt: int = mEntFirst[int](entitytest.EntityId)
-  echo($testInt)
-  echo "noncomponent first test"
-  var testInt1 = entFirst[int](entitytest.EntityId)
-  echo($testInt1)
-  echo "mget any test"
-  var testInt2 = mgetAny[int](testScene.id)
-  echo($testInt2)
-  echo "get any test"
-  var testInt3 = getAny[int](testScene.id)
-  echo($testInt3)
-  test("tEntSearchOne"): check(matchEnt(testScene.id, string).int == 1)
-  test("tEntSearch"): check(matchEnt(testScene.id, int, float32).int == 0)
-  test("tEntSearchInv"): check(matchEnt(testScene.id, char, float32).int == -1)
-  test("tEntSearchthree"): check(matchEnt(testScene.id, char, string, int).int == 1)
-  test("tMathcEntTuple"):
-    var got33: bool = false
-    for idx, intc, charc in testScene.id.walk(int, char):
-      if intc[] == 3 and charc[] == '3':
-        got33 = true
-    check(got33)
-  #test("tMwalkOpt"):
-  #  var walker = mWalkOpt(testScene.id, int, float32, string)
-  #  var comps = components(testScene.id, TComponent[int])
-  #  for elm in comps:
-  #    var (i, f, s) = walker(elm.id)
-  #    echo(i, f)
+  
 
