@@ -140,6 +140,10 @@ iterator walk*(scene: SceneId; typ1, typ2, typ3, typ4: typedesc): auto {.inline.
   for id, a, b, c in walk(scene, typ1, typ2, typ3):
     for i in 0..comps[].high:
       if ents[i] == id:
+        assert(a != nil)
+        assert(b != nil)
+        assert(c != nil)
+        assert(addr comps[i] != nil)
         yield (id, a, b, c, addr comps[i])
       if ents[i].int > id.int:
         break

@@ -22,6 +22,7 @@ import widgets
 import editor
 import utils.memory
 import rendering.glcore
+discard readLine(stdin)
 var log = newConsoleLogger()
 handlers.add(log)
 const winw = 640
@@ -42,13 +43,14 @@ when defined(macosx):
   var forwardcompat = true
   var profile = glpCore
 else:
-  var glversion = glv31
+  var glversion = glv42
   var forwardcompat = false
   var profile = glpAny
-var api = initGL_API(glversion, forwardcompat, false, profile, glrNone)
+var api = initGL_API(glversion, forwardcompat, true, profile, glrNone)
 var wnd = newWin(dim = (w: winw, h: winh), title = "GL test", GL_API=api, refreshRate = 1)
 makeContextCurrent(wnd)
 wnd.cursorMode = cmDisabled
+
 AttachInput(wnd)
 var done = false
 var mainscene = initScene()
@@ -78,6 +80,11 @@ mainscene.addSystem do: RenderUI(cairo_ctx)
 mainscene.addSystem(PrimitiveRenderSystem)
 mainscene.addSystem(RenderPhongLit)
 initOpenGLRenderer()
+proc glDebugProc(source: GLEnum, typ: GLenum, id: GLuint,
+                 severity: GLenum, len: GLsizei, message: PGLchar,
+                 userParam: PGLvoid) {.stdcall.} =
+  echo( "Debug call" & $message)
+glDebugMessageCallbackARB(glDebugProc, nil)
 glViewport(0,0,winw,winh)
 glClearColor(1.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
 while not done and not wnd.shouldClose:
