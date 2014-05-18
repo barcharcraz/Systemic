@@ -2,6 +2,7 @@ import ecs
 import os
 import glfw/glfw
 import opengl
+import math
 import input
 import prefabs
 import rendering.glrenderer
@@ -22,7 +23,6 @@ import widgets
 import editor
 import utils.memory
 import rendering.glcore
-discard readLine(stdin)
 var log = newConsoleLogger()
 handlers.add(log)
 const winw = 640
@@ -54,9 +54,13 @@ wnd.cursorMode = cmDisabled
 AttachInput(wnd)
 var done = false
 var mainscene = initScene()
-mainscene.id.addDirectionalLight(vec3f(0.0'f32, 0.0'f32, -1.0'f32))
+#mainscene.id.addDirectionalLight(vec3f(0.0'f32, 0.0'f32, -1.0'f32))
 #mainscene.id.addComponent(initDirectionalLight(vec3f(0.0'f32,0.0'f32,-1.0'f32)))
-mainscene.id.addPointLight(vec3f(0.0'f32, 0.0'f32, -30.0'f32))
+for i in 1..1000:
+  var x = random[float32](-5.0..5.0)
+  var y = random[float32](-5.0..5.0)
+  var z = random[float32](-10.0..0.0)
+  mainscene.id.addPointLight(vec3f(x,y,z))
 
 var camEnt = mainscene.id.addCamera()
 var inp = initShooterKeys()
@@ -82,12 +86,12 @@ mainscene.addSystem(PrimitiveRenderSystem)
 mainscene.addSystem(RenderPhongLit)
 initOpenGLRenderer()
 proc glDebugProc(source: GLEnum, typ: GLenum, id: GLuint,
-                 severity: GLenum, len: GLsizei, message: PGLchar,
-                 userParam: PGLvoid) {.stdcall.} =
+                 severity: GLenum, len: GLsizei, message: ptr GLchar,
+                 userParam: pointer) {.stdcall.} =
   echo( "Debug call" & $message)
 glDebugMessageCallbackARB(glDebugProc, nil)
 glViewport(0,0,winw,winh)
-glClearColor(1.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
+glClearColor(0.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
 while not done and not wnd.shouldClose:
   mainscene.update()
   wnd.handleMouse()

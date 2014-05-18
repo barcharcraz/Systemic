@@ -6,6 +6,10 @@ struct pointLight_t {
     vec4 diffuse;
     vec4 specular;
     vec4 position;
+    float cutoff;
+    float constant;
+    float linear;
+    float quadratic;
 };
 struct directionalLight_t {
     vec4 diffuse;
@@ -50,9 +54,15 @@ vec4 pointLight(in pointLight_t light,
                 in vec4 viewPos,
                 in material_t mat)
 {
-    vec4 lvec = normalize(light.position) * -1;
+    float distance = distance(viewPos, light.position);
+    if(distance > light.cutoff) {
+      return vec4(0,0,0,0);
+    }
+    vec4 lvec = normalize(viewPos - light.position);
     vec4 rv = phongLight(mat, normalize(viewPos), lvec, normalize(normal), light.diffuse, light.specular);
-    rv = rv * (1 / pow(distance(light.position, viewPos), 2));
+    float linear = light.linear * distance;
+    float quad = light.quadratic * pow(distance, 2);
+    rv = rv * 1 / (light.constant + linear + quad);
     return rv;
 }
 vec4 directionalLight(in directionalLight_t light,

@@ -45,4 +45,7 @@ proc GenRotTransMatrix*(trans: TTransform): TMat4f =
   var rotMtx = toAffine(trans.rotation.toRotMatrix())
   var transMtx = trans.position.toTranslationMatrix()
   result = mul(rotMtx, transMtx)
-
+proc GenViewMatrix*(trans: TTransform): TMat4f =
+  var rotMtx = toAffine(conj(trans.rotation).toRotMatrix())
+  var transMtx = trans.position.toTranslationMatrix()
+  result = mul(rotMtx, transMtx)

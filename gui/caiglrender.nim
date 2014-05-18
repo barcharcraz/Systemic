@@ -69,7 +69,7 @@ proc RenderUI*(context: PContext) {.procvar.} =
     glEnableVertexAttribArray(posLoc.GLuint)
     glEnableVertexAttribArray(uvLoc.GLuint)
     glVertexAttribPointer(posLoc.GLuint, 3, cGL_FLOAT, false, sizeof(TUIObj).GLsizei, nil)
-    glVertexAttribPointer(uvLoc.GLuint, 2, cGL_FLOAT, false, sizeof(TUIObj).GLsizei, cast[ptr GLvoid](sizeof(TVec3f)))
+    glVertexAttribPointer(uvLoc.GLuint, 2, cGL_FLOAT, false, sizeof(TUIObj).GLsizei, cast[pointer](sizeof(TVec3f)))
   var surf = get_group_target(context)
   var height = get_height(surf)
   var width = get_width(surf)
@@ -79,7 +79,7 @@ proc RenderUI*(context: PContext) {.procvar.} =
     glBindTexture(GL_TEXTURE_2D, tex)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
   glBindTexture(GL_TEXTURE_2D, tex)
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width.GLsizei, height.GLsizei, GL_BGRA, cGL_UNSIGNED_BYTE, cast[GLvoid](data))
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width.GLsizei, height.GLsizei, GL_BGRA, cGL_UNSIGNED_BYTE, cast[pointer](data))
   # we have copied our cairo memory buffer to openGL, we can not clear the cairo buffer
   context.set_operator(OPERATOR_CLEAR)
   context.paint()
@@ -90,5 +90,5 @@ proc RenderUI*(context: PContext) {.procvar.} =
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index)
   # we could probably use something smaller than an int here, but who the hell knows
   # MELOPT
-  glDrawElements(GL_TRIANGLES, cast[GLSizei](defIndex.len), cGL_UNSIGNED_INT, nil)
+  glDrawElements(GL_TRIANGLES, cast[GLSizei](defIndex.len), GL_UNSIGNED_INT, nil)
   CheckError()

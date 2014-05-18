@@ -92,6 +92,6 @@ proc RenderUntextured*(scene: SceneId) {.procvar.} =
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER.GLenum, buffers.index)
     CheckError()
 
-    glDrawElements(GL_TRIANGLES, cast[GLSizei](model[].indices.len), cGL_UNSIGNED_INT, nil)
+    glDrawElements(GL_TRIANGLES, cast[GLSizei](model[].indices.len), GL_UNSIGNED_INT, nil)
     CheckError()
 

@@ -155,7 +155,7 @@ proc mul*(a: TMat4f; b: TMat4f): TMat4f =
 proc mulv*(a: TMat3f, b: TVec3f): TVec3f =
   for i in 1..3:
     result[i] = dot(a.row(i), b)
-proc mul4v(a: TMat4f, v: TVec4f): TVec4f =
+proc mul4v*(a: TMat4f, v: TVec4f): TVec4f =
   for i in 1..4:
     result[i] = dot(a.row(i), v)
 discard """
@@ -255,6 +255,12 @@ proc `w=`*(q: var TQuatf, val: float32) = q[1] = val
 proc x*(q: TQuatf): float32 = q[2]
 proc y*(q: TQuatf): float32 = q[3]
 proc z*(q: TQuatf): float32 = q[4]
+proc mul*(p: TQuatf, q: TQuatf): TQuatf
+proc `/`(q: TQuatf, s: float32): TQuatf =
+  result.i = q.i / s
+  result.j = q.j / s
+  result.k = q.k / s
+  result.w = q.w / s
 proc quatf*(w,i,j,k: float32): TQuatf = [w,i,j,k].TQuatf
 proc toVector(q: TQuatf): TVec4f =
   result.data = array[0..3, float32](q)
@@ -264,7 +270,9 @@ proc conj*(q: TQuatf): TQuatf =
   result.j = -q.j
   result.k = -q.k
   result.w = q.w
-
+proc inverse*(q: TQuatf): TQuatf =
+  result = conj(q)
+  result = result / mul(q, conj(q)).w
 proc mul*(p: TQuatf; q: TQuatf): TQuatf =
   result[1] = p.w * q.w - p.x * q.x - p.y * q.y - p.z * q.z;
   result[2] = p.w * q.x + p.x * q.w + p.y * q.z - p.z * q.y;

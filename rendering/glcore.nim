@@ -106,10 +106,10 @@ proc CreateVertexAttribPtr*(program: GLuint): GLuint =
     glVertexAttribPointer(posLoc.GLuint, 3, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, nil)
   if normLoc != -1:
     glEnableVertexAttribArray(normLoc.GLuint)
-    glVertexAttribPointer(normLoc.GLuint, 3, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[ptr GLvoid](sizeof(TVec3f)))
+    glVertexAttribPointer(normLoc.GLuint, 3, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[pointer](sizeof(TVec3f)))
   if uvLoc != -1:
     glEnableVertexAttribArray(uvLoc.GLuint)
-    glVertexAttribPointer(uvLoc.GLuint, 2, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[ptr GLvoid]( 2 * sizeof(TVec3f)))
+    glVertexAttribPointer(uvLoc.GLuint, 2, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[pointer]( 2 * sizeof(TVec3f)))
 
 proc CreateMeshBuffers*(mesh: var TMesh): tuple[vert: GLuint, index: GLuint] =
   glGenBuffers(1, addr result.vert)
@@ -127,7 +127,7 @@ proc BindModelMatrix*(program: GLuint; model: TMat4f) =
   CheckError()
   if modelIdx == -1:
     warn("glGetUniformLocation returned -1 for modelidx")
-  glUniformMatrix4fv(modelIdx, 1.GLsizei, false, cast[PGLfloat](addr model.data[0]))
+  glUniformMatrix4fv(modelIdx, 1.GLsizei, false, cast[ptr GLfloat](addr model.data[0]))
   CheckError()
 proc BindViewProjMatrix*(program: GLuint, view, proj: TMat4f) =
   var proj = proj
@@ -139,8 +139,8 @@ proc BindViewProjMatrix*(program: GLuint, view, proj: TMat4f) =
     warn("glGetUniformLocation returned -1 for projIdx")
   if viewidx == -1:
     warn("glGetUniformLocation returned -1 for viewIdx")
-  glUniformMatrix4fv(viewIdx, 1.GLsizei, false, cast[PGLfloat](addr view.data[0]))
-  glUniformMatrix4fv(projidx, 1.GLsizei, false, cast[PGLfloat](addr proj.data[0]))
+  glUniformMatrix4fv(viewIdx, 1.GLsizei, false, cast[ptr GLfloat](addr view.data[0]))
+  glUniformMatrix4fv(projidx, 1.GLsizei, false, cast[ptr GLfloat](addr proj.data[0]))
   CheckError()
 
 proc BindTransforms*(program: GLuint; model, view, proj: TMat4f) =
@@ -165,7 +165,7 @@ proc InitializeTexture*(width,height: int; levels: int = 6): GLuint =
   glGenTextures(1, addr result)
   glBindTexture(GL_TEXTURE_2D, result)
   glTexStorage2D(GL_TEXTURE_2D, levels.GLsizei, GL_RGBA8, width.GLsizei, height.GLsizei)
-proc CreateTexture*(data: GLvoid; width, height: int): GLuint =
+proc CreateTexture*(data: pointer; width, height: int): GLuint =
   ## creates a texture using immutable texture storage and 
   ## uploads `data` to it.
   result = InitializeTexture(width, height)
@@ -182,7 +182,17 @@ proc AttachTextureToProgram*(texture: GLuint; program: GLuint; texUint: GLint; s
 proc CreateUniformBuffer*[T](arr: var openarray[T]): GLuint =
   glGenBuffers(1, addr result)
   glBindBuffer(GL_UNIFORM_BUFFER, result)
-  glBufferData(GL_UNIFORM_BUFFER, (sizeof(T) * arr.len).GLsizeiptr, cast[PGLvoid](addr arr), GL_STATIC_DRAW)
+  glBufferData(GL_UNIFORM_BUFFER, (sizeof(T) * arr.len).GLsizeiptr, cast[pointer](addr arr), GL_STATIC_DRAW)
+  glBindBuffer(GL_UNIFORM_BUFFER, 0)
+
+proc UpdateUniformBuffer*[T](buffer: GLuint, arr: var openarray[T]) =
+  var size: GLint
+  glBindBuffer(GL_UNIFORM_BUFFER, buffer)
+  glGetBufferParameteriv(GL_UNIFORM_BUFFER, GL_BUFFER_SIZE, addr size)
+  if (arr.len * sizeof(T)) > size:
+    glBufferData(GL_UNIFORM_BUFFER, (sizeof(T) * arr.len).GLsizeiptr, cast[pointer](addr arr), GL_STATIC_DRAW)
+  else:
+    glBufferSubData(GL_UNIFORM_BUFFER, 0.GLintPtr, (sizeof(T) * arr.len).GLsizeiptr, cast[pointer](addr arr))
   glBindBuffer(GL_UNIFORM_BUFFER, 0)
 
 proc AdjustViewMatrix*(mat: TMat4f): TMat4f =

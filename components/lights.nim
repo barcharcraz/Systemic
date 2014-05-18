@@ -5,6 +5,10 @@ type TLightKind = enum
 type TPointLight* = object
   diffuse*: TVec4f
   specular*: TVec4f
+  cutoff*: float32
+  constant*: float32
+  linear*: float32
+  quadratic*: float32
 type TDirectionalLight* = object
   diffuse*: TVec4f
   specular*: TVec4f
@@ -24,6 +28,10 @@ type TPointLightRaw* = object
   diffuse*: TVec4f
   specular*: TVec4f
   position*: TVec4f
+  cutoff*: float32
+  constant*: float32
+  linear*: float32
+  quadratic*: float32
 type TLight* = TPointLight | TDirectionalLight
 
 proc initDirectionalLight*(dir: TVec3f): TDirectionalLight =
@@ -32,5 +40,9 @@ proc initDirectionalLight*(dir: TVec3f): TDirectionalLight =
   result.direction = vec4f(dir[1], dir[2], dir[3], 0.0'f32)
 proc initPointLight*(): TPointLight =
   result.diffuse = vec4f(1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32)
-  result.specular = vec4f(1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32)
+  result.specular = vec4f(0.0'f32, 0.0'f32, 0.0'f32, 0.0'f32)
+  result.cutoff = 10'f32
+  result.constant = 0.0'f32
+  result.linear = 0.0'f32
+  result.quadratic = 3.53'f32
 

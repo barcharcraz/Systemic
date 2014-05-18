@@ -23,7 +23,7 @@ proc findSelected(scene: SceneId, x,y: float, mtx: TMat4f): EntityId =
   debug("viewport is w: " & $formatFloat(viewport[3]) & " h: " & formatFloat(viewport[4]))
   glReadPixels(x.GLint, (viewport[4] - y).GLint, 1, 1, GL_RGBA, cGL_UNSIGNED_BYTE, addr color.data[0])
   glReadPixels(x.GLint, (viewport[4] - y).GLint, 1, 1, GL_DEPTH_COMPONENT, cGL_FLOAT, addr depth)
-  glReadPixels(x.GLint, (viewport[4] - y).GLint, 1, 1, GL_STENCIL_INDEX, cGL_UNSIGNED_INT, addr index)
+  glReadPixels(x.GLint, (viewport[4] - y).GLint, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_INT, addr index)
   #if depth >= 0.99999'f32: return (-1).EntityId
   debug("mtx is: "& repr(mtx))
   var selectedPos = unProject(vec3f(x,y,depth), mtx, viewport)

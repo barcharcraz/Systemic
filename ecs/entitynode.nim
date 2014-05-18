@@ -7,39 +7,29 @@ import ecs.entity
 import algorithm
 import tables
 
-var EntityMapping: seq[SceneId] = @[]
-
-
 proc add*[T](ent: EntityId, elm: T)
 proc add*(ent: EntityId, typ: string, item: pointer)
-proc clearEntMapping*() =
-  EntityMapping = @[]
-proc mgetScene*(ent: EntityId): var SceneId =
-  if EntityMapping.high < ent.int:
-    raise newException(ENoScene, $(ent.int))
-  result = EntityMapping[ent.int]
-proc getScene*(ent: EntityId): SceneId =
-  result = mgetScene(ent)
-  if result == SceneId(-1):
-    raise newException(ENoScene, $(ent.int))
+#{{{ ----- debug verification functions -----------
+proc verifyNoDups[T](a: openarray[T]): bool =
+  var a: seq[T] = @a
+  sort(a) do (a,b: EntityId) -> int: system.cmp[int](a.int, b.int)
+  var dups: seq[T] = @[]
+  var i: int = a.low
+  while i < a.high:
+    if a[i] == a[i+1]:
+      dups.add(a[i])
+      while a[i] == a[i+1]:
+        inc(i)
+    inc(i)
+  if dups.len > 0:
+    return false
+  return true
+proc verifySorted(a: seq[EntityId]): bool =
+  var b = a
+  sort(b) do (a,b) -> auto: system.cmp(a.int, b.int)
+  result = a == b
+#}}}
 
-proc add*(scene: SceneId; ent: EntityId) =
-  #make sure that we have enough space in the entity mapping
-  #if we do not than add more space and set all the new elements
-  #to -1
-  if EntityMapping.high < ent.int:
-    var oldLen = EntityMapping.len
-    EntityMapping.setLen(ent.int + 1)
-    for elm in oldLen..EntityMapping.high:
-      EntityMapping[elm] = SceneId(-1)
-  var entscene = mgetScene(ent)
-  if entscene != SceneId(-1):
-    #this means that the entity is already in a scene
-    #now there is nothing preventing us from letting
-    #an entity be in more than one scene but it would mean
-    #another dimension in the EntityMapping
-    raise newException(ESceneNotUnique, "Entity: " & $ent.int & " is already in scene " & $entscene.int)
-  mgetScene(ent) = scene
     
 var entTypeMapping = initTable[string, proc(ent: EntityId, elm: pointer)]()
 
@@ -53,20 +43,24 @@ template MakeEntityComponent*(typ: expr) =
 
 proc entities*(scene: SceneId; typ: typedesc): var seq[EntityId] =
   macro getIdent(): expr =
-    result = newIdentNode(!genIdentName(name(typ) & "EntityIds"))
+    result = newIdentNode(!(genIdentName(name(typ) & "EntityIds")))
   static: echo(name(typ))
   result = getIdent().sceneList[scene.int]
   if result.isnil:
     getIdent().sceneList[scene.int] = @[]
     result = getIdent().sceneList[scene.int]
+  assert(verifyNoDups(result))
+  assert(verifySorted(result))
 proc add*[T](ent: EntityId, elm: T) =
   var scene: SceneId = ent.getScene
   static: echo(name(T))
   var ents = addr entities(scene, type(elm))
   var comps = addr components(scene, type(elm))
-  assert(ents[].len == comps[].len)
+  assert(ents[].len() == comps[].len())
   ents[].add(ent)
   comps[].add(elm)
+  assert(verifyNoDups(ents[]))
+  assert(verifySorted(ents[]))
 
 proc add*(ent: EntityId, typ: string, item: pointer) =
   entTypeMapping[typ](ent, item)
@@ -82,7 +76,7 @@ proc del*[T](ent: EntityId, typ: typedesc[T]) =
   comps[].del(idx)
 
 iterator components*(ent: EntityId, typ: typedesc): typ {.inline.} =
-  var scene = EntityMapping[ent.int]
+  var scene = ent.getScene()
   for elm in components(scene, TComponent[typ]):
     if elm.id == ent:
       yield elm.data
@@ -101,10 +95,10 @@ proc hasEnt(comps: seq[pointer], ent: EntityId): bool =
   return false
 
 proc `?`*(ent: EntityId, typ: typedesc): ptr typ =
-  var ents = entities(getScene(ent), typ)
-  var comps = components(getScene(ent), typ)
+  var ents = addr entities(getScene(ent), typ)
+  var comps = addr components(getScene(ent), typ)
   proc `<`(a: EntityId, b: EntityId): bool = a.int < b.int
-  var idx = binarySearch(ents, ent)
+  var idx = binarySearch(ents[], ent)
   if idx == -1: return nil
   return addr comps[idx]
 proc `@`*(ent: EntityId, typ: typedesc): var typ =
@@ -172,11 +166,13 @@ when isMainModule:
       var allents: seq[EntityId] = @[]
       for i in 0..100:
         allents.add(genEntity())
-        echo(allents[allents.high].int)
         testScene.id.add(allents[allents.high])
       randomize(0)
       for i in 0..100:
         allents[i].add(i)
+      for i in 100..0:
+        if i mod 2 == 0:
+          allents[i].add(i.float32)
       var ents = entities(testScene.id, int)
       var comps = components(testScene.id, int)
     teardown:
@@ -188,6 +184,9 @@ when isMainModule:
     test "tAligned":
       for i in ents.low..ents.high:
         check(ents[i].int == comps[i])
+    test "tWalk":
+      for i, ival, fval in walk(testScene.id, int, float32):
+        check(fval[].int == ival[])
   
   
 

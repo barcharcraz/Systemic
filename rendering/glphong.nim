@@ -1,6 +1,7 @@
 import opengl
 import glshaders
 import glcore
+import genutils
 import ecs
 import components
 import unsigned
@@ -30,7 +31,7 @@ void main() {
     //taking the transpose on the GPU like this is likely NOT
     //a very good idea, it is in the VS so meh but still.
     //also this breaks for non-uniform scaleing.
-    norm_out = transpose(mat3(modelview)) * norm;
+    norm_out = mat3(modelview) * norm;
 }
 """
 var version = "#version 140\n"
@@ -71,10 +72,13 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   var dlightsUniform {.global.}: GLuint
   var plightsUniform {.global.}: GLuint
   #var dlights = GetDefaultNode[TDirectionalLight]().sceneList[scene.int]
+  
+  var (camEnt, cam, camTrans) = first(walk(scene, TCamera, TTransform))
+  var viewMatrix = camTrans[].GenRotTransMatrix().AdjustViewMatrix()
+  var projMatrix = cam[].AdjustProjMatrix()
+  
   var dlights = components(scene, TDirectionalLight)
-  var plights: seq[TPointLightRaw] = @[]
-  for id, light, pos in walk(scene, TPointLight, TTransform):
-    plights.add(TPointLightRaw(diffuse: light.diffuse, specular: light.specular, position: vec4f(pos.position, 1)))
+  var plights = CollectPointLights(scene, viewMatrix)
   if vs == 0 or ps == 0:
     var def = genDefine("NUM_DIRECTIONAL", dlights.len)
     var pdef = genDefine("NUM_POINT", plights.len)
@@ -89,16 +93,17 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   if dlightsUniform == 0:
     dlightsUniform = CreateUniformBuffer(dlights)
     glUniformBlockBinding(program, dlightsIdx, 0)
+  else:
+    UpdateUniformBuffer(dlightsUniform, dlights)
   if plightsUniform == 0:
     plightsUniform = CreateUniformBuffer(plights)
     glUniformBlockBinding(program, plightsIdx, 1)
+  else:
+    UpdateUniformBuffer(plightsUniform, plights)
   CheckError()
   glBindBufferBase(GL_UNIFORM_BUFFER, 0, dlightsUniform)
   glBindBufferBase(GL_UNIFORM_BUFFER, 1, plightsUniform)
   CheckError()
-  var (camEnt, cam, camTrans) = first(walk(scene, TCamera, TTransform))
-  var viewMatrix = camTrans[].GenRotTransMatrix().AdjustViewMatrix()
-  var projMatrix = cam[].AdjustProjMatrix()
   glUseProgram(program)
   BindViewProjMatrix(program, viewMatrix, projMatrix)
   for id,mesh,trans,tex,mat in scene.walk(TMesh,TTransform,TImage,TMaterial):
@@ -120,8 +125,7 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
     glBindBuffer(GL_ARRAY_BUFFER.GLenum, buffers.vertex)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER.GLenum, buffers.index)
     CheckError()
-    echo("id: " & $id.int)
-    glDrawElements(GL_TRIANGLES, cast[GLSizei](mesh.indices.len), cGL_UNSIGNED_INT, nil)
+    glDrawElements(GL_TRIANGLES, cast[GLSizei](mesh.indices.len), GL_UNSIGNED_INT, nil)
     CheckError()
 
 

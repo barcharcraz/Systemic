@@ -62,7 +62,8 @@ macro MakeComponentNode*(typ: expr, name: static[string]): stmt =
   var identDefs = newNimNode(nnkIdentDefs)
   var postfix = newNimNode(nnkPostfix)
   postfix.add(newIdentNode(!"*"))
-  postfix.add(newIdentNode(name))
+  var nameIdent = newIdentNode(name)
+  postfix.add(nameIdent)
   identDefs.add(postfix)
   identDefs.add(newNimNode(nnkEmpty))
   var initCall = newNimNode(nnkCall)
@@ -70,7 +71,12 @@ macro MakeComponentNode*(typ: expr, name: static[string]): stmt =
   identDefs.add(initCall)
   result = newNimNode(nnkStmtList)
   result.add(newNimNode(nnkVarSection).add(identDefs))
-
+  result.add(quote do:
+    var vtbl: TSceneNodeVtbl
+    vtbl.clear = proc() =
+      `nameIdent` = initSceneNode[`typ`]()
+    AllSceneNodes.add(vtbl))
+      
 
 
 
@@ -80,12 +86,6 @@ macro MakeComponentNode*(typ: expr): stmt =
   nodeName = genIdentName(nodeName)
   
   result = getAst(MakeComponentNode(typ, nodeName))
-  result.add(quote do:
-    var vtbl: TSceneNodeVtbl
-    vtbl.clear = proc() =
-      GetDefaultNode[`typ`]() = initSceneNode[`typ`]()
-    AllSceneNodes.add(vtbl))
-
 
 template MakeComponent*(typ: expr) =
   MakeComponentNode(typ)

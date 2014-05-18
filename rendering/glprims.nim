@@ -73,7 +73,7 @@ proc RenderPrim*(elm: TPrim, view,proj: TMat4f) =
   glUseProgram(getPrimProgram())
   BindTransforms(getPrimProgram(), elm.pos.toTranslationMatrix(), view, proj)
   var colorIdx = glGetUniformLocation(getPrimProgram(), "color")
-  glUniform3fv(colorIdx, 1, cast[PGLfloat](addr elm.color.data))
+  glUniform3fv(colorIdx, 1, cast[ptr GLfloat](addr elm.color.data))
   if vbo == 0: glGenBuffers(1, addr vbo)
   if index == 0: glGenBuffers(1, addr index)
   glBindBuffer(GL_ARRAY_BUFFER, vbo)
@@ -88,10 +88,10 @@ proc RenderPrim*(elm: TPrim, view,proj: TMat4f) =
   var posLoc = glGetAttribLocation(getPrimProgram(), "pos")
   if posLoc == -1: raise newException(EVertexAttributeNotFound, "pos not found")
   glEnableVertexAttribArray(0)
-  glVertexAttribPointer(posLoc.GLuint, 3, cGL_FLOAT, false, sizeof(TVec3f).GLsizei, cast[PGLvoid](nil))
+  glVertexAttribPointer(posLoc.GLuint, 3, cGL_FLOAT, false, sizeof(TVec3f).GLsizei, cast[pointer](nil))
   glBindBuffer(GL_ARRAY_BUFFER.GLenum, vbo)
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index)
-  glDrawElements(GL_TRIANGLES, cast[GLSizei](elm.mesh.indices.len), cGL_UNSIGNED_INT, nil)
+  glDrawElements(GL_TRIANGLES, cast[GLSizei](elm.mesh.indices.len), GL_UNSIGNED_INT, nil)
   CheckError()
 proc PrimitiveRenderSystem*(scene: SceneId) {.procvar.} =
   var cament = first(walk(scene, TCamera, TTransform))[0]
