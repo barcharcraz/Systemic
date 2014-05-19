@@ -93,7 +93,6 @@ proc CreateProgram*(shaders: varargs[GLuint]): GLuint =
     raise newException(EGraphicsAPI, err)
   for elm in shaders:
     glDetachShader(result, elm)
-  CheckError()
 
 proc CreateVertexAttribPtr*(program: GLuint): GLuint =
   glGenVertexArrays(1, addr result)
@@ -124,11 +123,9 @@ proc CreateMeshBuffers*(mesh: var TMesh): tuple[vert: GLuint, index: GLuint] =
 proc BindModelMatrix*(program: GLuint; model: TMat4f) =
   var model = model
   var modelIdx = glGetUniformLocation(program, "mvp.model")
-  CheckError()
   if modelIdx == -1:
     warn("glGetUniformLocation returned -1 for modelidx")
   glUniformMatrix4fv(modelIdx, 1.GLsizei, false, cast[ptr GLfloat](addr model.data[0]))
-  CheckError()
 proc BindViewProjMatrix*(program: GLuint, view, proj: TMat4f) =
   var proj = proj
   var view = view
@@ -141,7 +138,6 @@ proc BindViewProjMatrix*(program: GLuint, view, proj: TMat4f) =
     warn("glGetUniformLocation returned -1 for viewIdx")
   glUniformMatrix4fv(viewIdx, 1.GLsizei, false, cast[ptr GLfloat](addr view.data[0]))
   glUniformMatrix4fv(projidx, 1.GLsizei, false, cast[ptr GLfloat](addr proj.data[0]))
-  CheckError()
 
 proc BindTransforms*(program: GLuint; model, view, proj: TMat4f) =
   BindViewProjMatrix(program, view, proj)
@@ -159,7 +155,6 @@ proc BindMaterial*(program: GLuint; mat: var TMaterial) =
   glUniform4fv(diffuseIdx, 1, addr mat.diffuse.data[0])
   glUniform4fv(specularIdx, 1, addr mat.specular.data[0])
   glUniform1fv(shineIdx, 1, addr mat.shine)
-  CheckError()
 
 proc InitializeTexture*(width,height: int; levels: int = 6): GLuint =
   glGenTextures(1, addr result)

@@ -2,6 +2,7 @@ import components
 import ecs
 import assetloader
 import vecmath
+import colors
 proc addStaticMesh*(scene: SceneId, model, texture: string, pos: TVec3f): EntityId {.discardable.} =
   result = genEntity()
   scene.add(result)
@@ -24,6 +25,11 @@ proc addPointLight*(scene: SceneId; pos: TVec3f): EntityId {.discardable.} =
   result = genEntity()
   scene.add(result)
   result.add(initPointLight())
+  result.add(initTransform(pos))
+proc addPointLight*(scene: SceneId, pos: TVec3f, color: TColor): EntityId {.discardable.} =
+  result = genEntity()
+  scene.add(result)
+  result.add(initPointLight(color))
   result.add(initTransform(pos))
   
 

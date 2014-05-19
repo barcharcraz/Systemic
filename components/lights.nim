@@ -1,4 +1,5 @@
 import vecmath
+import colors
 type TLightKind = enum
   lkPoint,
   lkDirectional
@@ -46,3 +47,11 @@ proc initPointLight*(): TPointLight =
   result.linear = 0.0'f32
   result.quadratic = 3.53'f32
 
+proc initPointLight*(color: TColor): TPointLight =
+  var (r,g,b) = extractRGB(color)
+  result.diffuse = vec4f(r.float32/255.0, g.float32/255.0, b.float32/255.0, 1.0'f32)
+  result.specular = vec4f(r.float32/255.0, g.float32/255.0, b.float32/255.0, 1.0'f32)
+  result.cutoff = 10'f32
+  result.linear = 0.0'f32
+  result.constant = 0.0'f32
+  result.quadratic = 3.53'f32

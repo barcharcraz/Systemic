@@ -100,10 +100,8 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
     glUniformBlockBinding(program, plightsIdx, 1)
   else:
     UpdateUniformBuffer(plightsUniform, plights)
-  CheckError()
   glBindBufferBase(GL_UNIFORM_BUFFER, 0, dlightsUniform)
   glBindBufferBase(GL_UNIFORM_BUFFER, 1, plightsUniform)
-  CheckError()
   glUseProgram(program)
   BindViewProjMatrix(program, viewMatrix, projMatrix)
   for id,mesh,trans,tex,mat in scene.walk(TMesh,TTransform,TImage,TMaterial):
@@ -121,11 +119,8 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
       buffers.tex = CreateTexture(tex.data, tex.width, tex.height)
     AttachTextureToProgram(buffers.tex, program, 0, "tex")
     glBindVertexArray(buffers.vao)
-    CheckError()
     glBindBuffer(GL_ARRAY_BUFFER.GLenum, buffers.vertex)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER.GLenum, buffers.index)
-    CheckError()
     glDrawElements(GL_TRIANGLES, cast[GLSizei](mesh.indices.len), GL_UNSIGNED_INT, nil)
-    CheckError()
 
 

@@ -3,6 +3,7 @@ import os
 import glfw/glfw
 import opengl
 import math
+import colors
 import input
 import prefabs
 import rendering.glrenderer
@@ -57,10 +58,14 @@ var mainscene = initScene()
 #mainscene.id.addDirectionalLight(vec3f(0.0'f32, 0.0'f32, -1.0'f32))
 #mainscene.id.addComponent(initDirectionalLight(vec3f(0.0'f32,0.0'f32,-1.0'f32)))
 for i in 1..1000:
-  var x = random[float32](-5.0..5.0)
-  var y = random[float32](-5.0..5.0)
-  var z = random[float32](-10.0..0.0)
-  mainscene.id.addPointLight(vec3f(x,y,z))
+  var r = random(0..255)
+  var g = random(0..255)
+  var b = random(0..255)
+  var xyslice = -5.0..5.0
+  var x: float32 = math.random(xyslice)
+  var y: float32 = math.random(xyslice)
+  var z: float32 = math.random(-10.0..0.0)
+  mainscene.id.addPointLight(vec3f(x,y,z), rgb(r,g,b).intensity(0.2))
 
 var camEnt = mainscene.id.addCamera()
 var inp = initShooterKeys()
