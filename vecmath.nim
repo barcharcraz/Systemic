@@ -240,6 +240,18 @@ proc unProject*(win: TVec3f; mtx: TMat4f, viewport: TVec4f): TVec3f =
   result = vec3f(obj[1], obj[2], obj[3])
 proc unProject*(win: TVec3f; view, proj: TMat4f; viewport: TVec4f): TVec3f =
   unProject(win, mul(proj, view), viewport)
+#projection related code
+proc CreateOrthoMatrix*(min, max: TVec3f): TMat4f =
+  var sx = 2 / (max.x - min.x)
+  var sy = 2 / (max.y - min.y)
+  var sz = 2 / (max.z - min.z)
+  var tx = -( max.x + min.x )/( max.x - min.x )
+  var ty = -( max.y + min.y )/( max.y - min.y )
+  var tz = -( max.z + min.z )/( max.z - min.z )
+  result.data = [sx, 0,   0,    0,
+                 0,  sy,  0,    0,
+                 0,  0,   sz,   0,
+                 tx,  ty, tz,   1]
 #quaternion related code
 proc `[]`*(self: TQuatf; i: int): float32 = array[1..4, float32](self)[i]
 proc `[]=`*(self: var TQuatf; i: int; val: float32) = array[1..4,float32](self)[i] = val
@@ -256,11 +268,12 @@ proc x*(q: TQuatf): float32 = q[2]
 proc y*(q: TQuatf): float32 = q[3]
 proc z*(q: TQuatf): float32 = q[4]
 proc mul*(p: TQuatf, q: TQuatf): TQuatf
-proc `/`(q: TQuatf, s: float32): TQuatf =
+proc `/`*(q: TQuatf, s: float): TQuatf =
   result.i = q.i / s
   result.j = q.j / s
   result.k = q.k / s
   result.w = q.w / s
+proc `/`*(q: TQuatf, s: float32): TQuatf = q / s.float
 proc quatf*(w,i,j,k: float32): TQuatf = [w,i,j,k].TQuatf
 proc toVector(q: TQuatf): TVec4f =
   result.data = array[0..3, float32](q)

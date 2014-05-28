@@ -5,4 +5,5 @@ type EGraphicsAPI* = object of ESynch
 type ENoMesh* = object of ESynch
 type EUnsupportedFormat* = object of ESynch
 type EVertexAttributeNotFound* = object of ESynch
+type EFramebufferInvalid* = object of ESynch
 type EInvalidSize* = object of ESynch

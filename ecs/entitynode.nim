@@ -104,35 +104,50 @@ proc `?`*(ent: EntityId, typ: typedesc): ptr typ =
 proc `@`*(ent: EntityId, typ: typedesc): var typ =
   result = (ent?typ)[]
 
+proc createDefault(id: EntityId, typ: typedesc) =
+  var newT: typ
+  id.add(newT)
 
-
-iterator walk*(scene: SceneId; typ1: typedesc): auto {.inline.} =
+iterator walk*(scene: SceneId; typ1: typedesc, create: bool = false): auto {.inline.} =
   var ents = addr entities(scene, typ1)
   var comps = addr components(scene, typ1)
   for i,elm in comps[]:
     yield (ents[i], addr comps[i])
-iterator walk*(scene: SceneId; typ1, typ2: typedesc): auto {.inline.} =
+iterator walk*(scene: SceneId; typ1, typ2: typedesc, create: bool = false): auto {.inline.} =
   var ents = addr entities(scene, typ2)
   var comps = addr components(scene, typ2)
-  for id, a in walk(scene, typ1):
+  for id, a in walk(scene, typ1, create):
+    if comps[].len == 0 and create:
+      createDefault(id, typ2)
     for i in 0..comps[].high:
       if ents[i] == id:
         yield (id, a, addr comps[i])
       if ents[i].int > id.int:
+        if create:
+          echo "hit create"
+          createDefault(id, typ2)
+          yield(id, a, addr comps[i])
         break
-iterator walk*(scene: SceneId; typ1, typ2, typ3: typedesc): auto {.inline.} =
+iterator walk*(scene: SceneId; typ1, typ2, typ3: typedesc, create: bool = false): auto {.inline.} =
   var ents = addr entities(scene, typ3)
   var comps = addr components(scene, typ3)
-  for id, a, b in walk(scene, typ1, typ2):
+  for id, a, b in walk(scene, typ1, typ2, create):
+    if comps[].len == 0 and create:
+      createDefault(id, typ3)
     for i in 0..comps[].high:
       if ents[i] == id:
         yield (id, a, b, addr comps[i])
       if ents[i].int > id.int:
+        if create:
+          createDefault(id, typ3)
+          yield (id, a, b, addr comps[i])
         break
-iterator walk*(scene: SceneId; typ1, typ2, typ3, typ4: typedesc): auto {.inline.} =
+iterator walk*(scene: SceneId; typ1, typ2, typ3, typ4: typedesc, create: bool = false): auto {.inline.} =
   var ents = addr entities(scene, typ4)
   var comps = addr components(scene, typ4)
-  for id, a, b, c in walk(scene, typ1, typ2, typ3):
+  for id, a, b, c in walk(scene, typ1, typ2, typ3, create):
+    if comps[].len == 0 and create:
+      createDefault(id, typ4)
     for i in 0..comps[].high:
       if ents[i] == id:
         assert(a != nil)
@@ -141,6 +156,9 @@ iterator walk*(scene: SceneId; typ1, typ2, typ3, typ4: typedesc): auto {.inline.
         assert(addr comps[i] != nil)
         yield (id, a, b, c, addr comps[i])
       if ents[i].int > id.int:
+        if create:
+          createDefault(id, typ4)
+          yield (id, a, b, c, addr comps[i])
         break
 #procs to add a system that takes a tuple of entities, these
 #are quite useful for more scripty code

@@ -10,6 +10,8 @@ import logging
 import exceptions
 import vecmath
 import unsigned
+import math
+
 ## structure that holds per-object
 ## OpenGL information
 type TObjectBuffers* = object
@@ -17,11 +19,14 @@ type TObjectBuffers* = object
   index*: GLuint
   vao*: GLuint
   tex*: GLuint
+type TShadowMap* = object
+  depthTex*: GLuint
 proc initObjectBuffers*(): TObjectBuffers =
   result.vertex = 0
   result.index = 0
   result.vao = 0
 MakeEntityComponent(TObjectBuffers)
+MakeEntityComponent(TShadowMap)
 ##some utility functions
 proc EnumString*(val: GLenum): string =
   ## gets the string representation of
@@ -93,16 +98,22 @@ proc CreateProgram*(shaders: varargs[GLuint]): GLuint =
     raise newException(EGraphicsAPI, err)
   for elm in shaders:
     glDetachShader(result, elm)
-
-proc CreateVertexAttribPtr*(program: GLuint): GLuint =
-  glGenVertexArrays(1, addr result)
-  glBindVertexArray(result)
+proc CreatePosAttribPtr*(program: GLuint, vao: GLuint = 0): GLuint =
+  if vao == 0:
+    glGenVertexArrays(1, addr result)
+    glBindVertexArray(result)
+  else:
+    result = vao
   var posLoc = glGetAttribLocation(program, "pos")
-  var uvLoc = glGetAttribLocation(program, "uv")
-  var normLoc = glGetAttribLocation(program, "norm")
   if posLoc != -1:
     glEnableVertexAttribArray(posLoc.GLuint)
     glVertexAttribPointer(posLoc.GLuint, 3, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, nil)
+proc CreateVertexAttribPtr*(program: GLuint): GLuint =
+  glGenVertexArrays(1, addr result)
+  glBindVertexArray(result)
+  var uvLoc = glGetAttribLocation(program, "uv")
+  var normLoc = glGetAttribLocation(program, "norm")
+  discard CreatePosAttribPtr(program, result)
   if normLoc != -1:
     glEnableVertexAttribArray(normLoc.GLuint)
     glVertexAttribPointer(normLoc.GLuint, 3, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[pointer](sizeof(TVec3f)))
@@ -173,6 +184,17 @@ proc AttachTextureToProgram*(texture: GLuint; program: GLuint; texUint: GLint; s
   glBindTexture(GL_TEXTURE_2D, texture)
   var samplerLoc = glGetUniformLocation(program, sampler.cstring)
   glUniform1i(samplerLoc, texUint)
+
+
+proc InitializeDepthBuffer*(size: int): GLuint =
+  assert(isPowerOfTwo(size))
+  glGenTextures(1, addr result)
+  glBindTexture(GL_TEXTURE_2D, result)
+  glTexStorage2D(GL_TEXTURE_2D.GLenum, 1.GLsizei, GL_DEPTH_COMPONENT_24.GLenum, size.GLsizei, size.GLsizei)
+  glBindTexture(GL_TEXTURE_2D, 0)
+
+
+
 
 proc CreateUniformBuffer*[T](arr: var openarray[T]): GLuint =
   glGenBuffers(1, addr result)

@@ -22,8 +22,10 @@ import strutils
 import gui.caiglrender
 import widgets
 import editor
+import gametime
 import utils.memory
 import rendering.glcore
+import rendering.glshadowmap
 var log = newConsoleLogger()
 handlers.add(log)
 const winw = 640
@@ -55,17 +57,17 @@ wnd.cursorMode = cmDisabled
 AttachInput(wnd)
 var done = false
 var mainscene = initScene()
-#mainscene.id.addDirectionalLight(vec3f(0.0'f32, 0.0'f32, -1.0'f32))
+mainscene.id.addDirectionalLight(vec3f(0.0'f32, -1.0'f32, -1.0'f32).normalized())
 #mainscene.id.addComponent(initDirectionalLight(vec3f(0.0'f32,0.0'f32,-1.0'f32)))
-for i in 1..1000:
+for i in 1..10:
   var r = random(0..255)
   var g = random(0..255)
   var b = random(0..255)
   var xyslice = -5.0..5.0
   var x: float32 = math.random(xyslice)
   var y: float32 = math.random(xyslice)
-  var z: float32 = math.random(-10.0..0.0)
-  mainscene.id.addPointLight(vec3f(x,y,z), rgb(r,g,b).intensity(0.2))
+  var z: float32 = math.random(-2.0..0.0)
+  mainscene.id.addPointLight(vec3f(x,y,z), rgb(255,255,255))
 
 var camEnt = mainscene.id.addCamera()
 var inp = initShooterKeys()
@@ -75,7 +77,8 @@ wnd.mouseBtnCb = proc(wnd: PWin, btn: TMouseBtn, pressed: bool, modKeys: TModifi
   if input.mbLeft in mouseInfo.buttons:
     handleSelectionAttempt(mainscene.id, mouseInfo.x, mouseInfo.y)
 mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(0,0,-10))
-mainscene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.tga", vec3f(3,0,-5))
+mainscene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.tga", vec3f(0,0,-5))
+mainscene.id.addStaticMesh("assets/land.obj", "assets/diffuse.tga", vec3f(0,-10,0))
 populateAssets(listBox, "assets", "*.obj")
 mainscene.addSystem(AccelerationSystem)
 mainscene.addSystem do (scene: SceneId): 
@@ -87,6 +90,7 @@ mainscene.addSystem do:
 mainscene.addSystem do: 
   for elm in frame: draw(cairo_ctx, elm)
 mainscene.addSystem do: RenderUI(cairo_ctx)
+mainscene.addSystem(RenderShadowMaps)
 mainscene.addSystem(PrimitiveRenderSystem)
 mainscene.addSystem(RenderPhongLit)
 initOpenGLRenderer()
@@ -98,6 +102,7 @@ glDebugMessageCallbackARB(glDebugProc, nil)
 glViewport(0,0,winw,winh)
 glClearColor(0.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
 while not done and not wnd.shouldClose:
+  UpdateGameTime()
   mainscene.update()
   wnd.handleMouse()
   wnd.update()

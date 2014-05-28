@@ -6,6 +6,7 @@ import ecs/scene
 import ecs/scenenode
 import input
 import vecmath
+import gametime
 const movementDbg = true
 loggingWrapper(movementDbg)
 proc VelocitySystem*(scene: SceneId) {.procvar.} =
@@ -25,30 +26,39 @@ proc AccelerationSystem*(scene: SceneId) {.procvar.} =
 proc MovementSystem*(scene: SceneId; inp: TInputMapping; cam: EntityId) {.procvar.} =
   var pos = cam?TTransform
   var vel = cam?TVelocity
-  var newVel: TVec3f
-  var rotX = inp.mouse.x * 0.001
-  var rotY = inp.mouse.y * 0.001
+  var newPos: TVec3f
+  var dt = GetFrameTime()
+  var rotX = inp.mouse.x * 0.1 * dt
+  var rotY = inp.mouse.y * 0.1 * dt
   var newRotX = quatFromAngleAxis(rotX, vec3f(0,1,0))
   var newRotY = quatFromAngleAxis(rotY, vec3f(1,0,0))
   var newRot = identityQuatf()
-  newRot = mul(newRot, newRotX)
+  # what we have here is a First person shooter style camera, 
+  # that is side to side movements rotate around the world UP
+  # direction, while up and down movements rotate around the left/right
+  # direction OF THE CAMERA
+  # so we let q = the old rotation and do
+  # q_new = q * rx * q'
+  newRot = mul(conj(pos[].rotation), newRot)
+  newRot = mul(newRotX, newRot)
+  newRot = mul(pos[].rotation, newRot)
   newRot = mul(newRot, newRotY)
+  newRot = newRot / norm(newRot)
   block:
     using inp
-    if Action("left"): newVel += vec3f(-1,0,0)
-    if Action("right"): newVel += vec3f(1,0,0)
-    if Action("up"): newVel += vec3f(0,1,0)
-    if Action("down"): newVel += vec3f(0,-1,0)
-    if Action("forward"): newVel += vec3f(0,0,-1)
-    if Action("backward"): newVel += vec3f(0,0,1)
+    if Action("left"): newPos += vec3f(-1,0,0)
+    if Action("right"): newPos += vec3f(1,0,0)
+    if Action("up"): newPos += vec3f(0,1,0)
+    if Action("down"): newPos += vec3f(0,-1,0)
+    if Action("forward"): newPos += vec3f(0,0,-1)
+    if Action("backward"): newPos += vec3f(0,0,1)
   #we are multiplying by the inverse of the current rotation
   #but since the rotation matrix is orthogonal we just transpose
   #it
-  newVel = mulv(pos[].rotation.toRotMatrix().transpose(), newVel)
-  if vel != nil:
-    vel[].lin = newVel
-    vel[].rot = newRot
-    assert(norm(vel[].rot) <= 1.1'f32 and norm(vel[].rot) >= 0.9'f32)
+  newPos = newPos * dt * 10
+  newPos = mulv(pos[].rotation.toRotMatrix().transpose(), newPos)
+  pos[].position += newPos
+  pos[].rotation = mul(newRot, pos[].rotation)
   
 proc OrbitMovementSystem*(scene: SceneId, dx, dy: float, pos: TVec3f) =
   var xrot = quatFromAngleAxis(dx * 0.005, vec3f(0,1,0))
