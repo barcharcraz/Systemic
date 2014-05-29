@@ -43,7 +43,6 @@ proc PrimConeMesh*(radius: float, height: float): TPrimMesh =
   result.indices.add(1)
   result.indices.add(topIdx.uint32)
 proc PrimCylinderMesh*(radius: float, height: float): TPrimMesh =
-  const steps = 8
   result = PrimCircleMesh(radius)
   for i,elm in result.verts.pairs():
     result.verts[i][2] = result.verts[i][2] - height/2
@@ -75,7 +74,7 @@ proc PrimCylinderMesh*(radius: float, height: float): TPrimMesh =
 proc initPrim(mesh: TPrimMesh, color: TColor, pos: TVec3f): TPrim =
   result.mesh = mesh
   var (r,g,b) = extractRGB(color)
-  result.color = vec3f(float(r),float(g),float(b)).normalized()
+  result.color = vec3f(float(r),float(g),float(b)).normalize()
   result.pos = pos
 
 proc PrimCone*(pos: TVec3f = vec3f(0,0,0),

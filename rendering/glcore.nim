@@ -19,14 +19,11 @@ type TObjectBuffers* = object
   index*: GLuint
   vao*: GLuint
   tex*: GLuint
-type TShadowMap* = object
-  depthTex*: GLuint
 proc initObjectBuffers*(): TObjectBuffers =
   result.vertex = 0
   result.index = 0
   result.vao = 0
 MakeEntityComponent(TObjectBuffers)
-MakeEntityComponent(TShadowMap)
 ##some utility functions
 proc EnumString*(val: GLenum): string =
   ## gets the string representation of
@@ -91,6 +88,9 @@ proc CreateProgram*(shaders: varargs[GLuint]): GLuint =
   result = glCreateProgram()
   for elm in shaders:
     glAttachShader(result, elm)
+  glBindAttribLocation(result, 0, "pos")
+  glBindAttribLocation(result, 1, "uv")
+  glBindAttribLocation(result, 2, "norm")
   glLinkProgram(result)
   var (res, err) = CheckLinkStatus(result)
   CheckError()
@@ -98,28 +98,26 @@ proc CreateProgram*(shaders: varargs[GLuint]): GLuint =
     raise newException(EGraphicsAPI, err)
   for elm in shaders:
     glDetachShader(result, elm)
-proc CreatePosAttribPtr*(program: GLuint, vao: GLuint = 0): GLuint =
-  if vao == 0:
-    glGenVertexArrays(1, addr result)
-    glBindVertexArray(result)
-  else:
-    result = vao
+proc CreateVertexAttribPtr*(program, vbo, index: GLuint): GLuint =
+  glGenVertexArrays(1, addr result)
+  glBindVertexArray(result)
+  glBindBuffer(GL_ARRAY_BUFFER, vbo)
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index)
   var posLoc = glGetAttribLocation(program, "pos")
+  var uvLoc = glGetAttribLocation(program, "uv")
+  var normLoc = glGetAttribLocation(program, "norm")
   if posLoc != -1:
     glEnableVertexAttribArray(posLoc.GLuint)
     glVertexAttribPointer(posLoc.GLuint, 3, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, nil)
-proc CreateVertexAttribPtr*(program: GLuint): GLuint =
-  glGenVertexArrays(1, addr result)
-  glBindVertexArray(result)
-  var uvLoc = glGetAttribLocation(program, "uv")
-  var normLoc = glGetAttribLocation(program, "norm")
-  discard CreatePosAttribPtr(program, result)
   if normLoc != -1:
     glEnableVertexAttribArray(normLoc.GLuint)
     glVertexAttribPointer(normLoc.GLuint, 3, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[pointer](sizeof(TVec3f)))
   if uvLoc != -1:
     glEnableVertexAttribArray(uvLoc.GLuint)
     glVertexAttribPointer(uvLoc.GLuint, 2, cGL_FLOAT.GLenum, false, sizeof(TVertex).GLsizei, cast[pointer]( 2 * sizeof(TVec3f)))
+  glBindVertexArray(0)
+  glBindBuffer(GL_ARRAY_BUFFER, 0)
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
 
 proc CreateMeshBuffers*(mesh: var TMesh): tuple[vert: GLuint, index: GLuint] =
   glGenBuffers(1, addr result.vert)
@@ -130,6 +128,8 @@ proc CreateMeshBuffers*(mesh: var TMesh): tuple[vert: GLuint, index: GLuint] =
   var indexSize = sizeof(uint32) * mesh.indices.len
   glBufferData(GL_ARRAY_BUFFER, vertSize.GLsizeiptr, addr mesh.verts[0], GL_STATIC_DRAW)
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize.GLsizeiptr, addr mesh.indices[0], GL_STATIC_DRAW)
+  glBindBuffer(GL_ARRAY_BUFFER, 0)
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
 
 proc BindModelMatrix*(program: GLuint; model: TMat4f) =
   var model = model
@@ -191,6 +191,10 @@ proc InitializeDepthBuffer*(size: int): GLuint =
   glGenTextures(1, addr result)
   glBindTexture(GL_TEXTURE_2D, result)
   glTexStorage2D(GL_TEXTURE_2D.GLenum, 1.GLsizei, GL_DEPTH_COMPONENT_24.GLenum, size.GLsizei, size.GLsizei)
+  glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+  glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+  glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+  glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
   glBindTexture(GL_TEXTURE_2D, 0)
 
 

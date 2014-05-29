@@ -27,7 +27,7 @@ proc findSelected(scene: SceneId, x,y: float, mtx: TMat4f): EntityId =
   #if depth >= 0.99999'f32: return (-1).EntityId
   debug("mtx is: "& repr(mtx))
   var selectedPos = unProject(vec3f(x,y,depth), mtx, viewport)
-  debug("Selected: " & vecmath.`$`(selectedPos))
+  debug("Selected: " & formatVec3f(selectedPos))
   debug("Depth Value: " & formatFloat(depth))
   var maxDist = 4.0
   for i,elm in transforms[]:

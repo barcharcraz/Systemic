@@ -15,13 +15,14 @@ struct matrices_t {
     mat4 proj;
 };
 uniform matrices_t mvp;
+uniform mat4 shadowVP;
 in vec3 pos;
 in vec3 norm;
 in vec2 uv;
 out vec3 norm_out;
 out vec3 view_pos;
 out vec2 uv_out;
-
+out vec4 shadowPos;
 void main() {
     uv_out = uv;
     mat4 modelviewproj = mvp.proj * mvp.view * mvp.model;
@@ -32,6 +33,7 @@ void main() {
     //a very good idea, it is in the VS so meh but still.
     //also this breaks for non-uniform scaleing.
     norm_out = mat3(modelview) * norm;
+    shadowPos = shadowVP * mvp.model * vec4(pos, 1);
 }
 """
 var version = "#version 140\n"
@@ -40,6 +42,7 @@ var defPS = """
 in vec3 norm_out;
 in vec3 view_pos;
 in vec2 uv_out;
+in vec4 shadowPos;
 out vec4 outputColor;
 layout(std140) uniform dlightBlock {
   directionalLight_t dlights[NUM_DIRECTIONAL + 1];
@@ -49,8 +52,13 @@ layout(std140) uniform plightBlock {
 };
 uniform material_t mat;
 uniform sampler2D tex;
+uniform sampler2DShadow shad;
 void main() {
   outputColor = mat.ambiant;
+  float visib = 1.0f
+  if (texture(shad, shadowPos.xy).z < shadowPos.z) {
+    visib = 0.5f
+  }
   for(int i = 0; i < NUM_DIRECTIONAL; ++i) {
     outputColor += directionalLight(dlights[i], vec4(norm_out,1), vec4(view_pos,1), mat);
   }
@@ -64,7 +72,7 @@ void main() {
 }
 
 """
-
+proc ConstructBiasMatrix(
 proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   var program {.global.}: GLuint
   var ps {.global.}: GLuint
@@ -77,7 +85,7 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   var viewMatrix = camTrans[].GenRotTransMatrix().AdjustViewMatrix()
   var projMatrix = cam[].AdjustProjMatrix()
   
-  var dlights = components(scene, TDirectionalLight)
+  var dlights = CollectDirLights(scene, viewMatrix)
   var plights = CollectPointLights(scene, viewMatrix)
   if vs == 0 or ps == 0:
     var def = genDefine("NUM_DIRECTIONAL", dlights.len)
@@ -115,12 +123,12 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
       var meshBuf = CreateMeshBuffers(mesh[])
       buffers.vertex = meshBuf.vert
       buffers.index = meshBuf.index
-      buffers.vao = CreateVertexAttribPtr(program)
+      buffers.vao = CreateVertexAttribPtr(program, buffers.vertex, buffers.index)
       buffers.tex = CreateTexture(tex.data, tex.width, tex.height)
     AttachTextureToProgram(buffers.tex, program, 0, "tex")
     glBindVertexArray(buffers.vao)
-    glBindBuffer(GL_ARRAY_BUFFER.GLenum, buffers.vertex)
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER.GLenum, buffers.index)
+    #glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers.index)
     glDrawElements(GL_TRIANGLES, cast[GLSizei](mesh.indices.len), GL_UNSIGNED_INT, nil)
+    glBindVertexArray(0)
 
 

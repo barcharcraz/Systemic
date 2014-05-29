@@ -166,10 +166,10 @@ proc mul*(a: TMat3f; b: TMat3f): TMat3f =
 """
 proc `==`*(a: TMatrix; b: TMatrix): bool =
   result = a.data == b.data
-proc identity4f(): TMat4f =
+proc identity4f*(): TMat4f =
   for i in 1..4:
     result[i,i] = 1'f32
-proc identity3f(): TMat3f =
+proc identity3f*(): TMat3f =
   for i in 1..3:
     result[i,i] = 1'f32
 #vector only code
@@ -179,9 +179,10 @@ proc z*(a: TVec): TVec.T = a[3]
 proc `x=`*(a: var TVec, val: TVec.T) = a[1] = val
 proc `y=`*(a: var TVec, val: TVec.T) = a[2] = val
 proc `z=`*(a: var TVec, val: TVec.T) = a[3] = val
+proc xyz*(a: TVec4f): TVec3f = vec3f(a.x, a.y, a.z)
 proc norm*(a: TVec): float =
   sqrt(dot(a,a))
-proc normalized*(a: TVec): TVec =
+proc normalize*(a: TVec): TVec =
   result = a / norm(a)
 proc `+`*(a, b: TVec): TVec =
   for i in 1..TVec.N:
@@ -200,7 +201,7 @@ proc `*`*(a: TVec, b: float): TVec =
 proc `*`*(b: float, a: TVec): TVec = a * b
 proc dist*(a,b: TVec): float =
   result = norm(a - b)
-proc `$`*(a: TVec3f): string {.noSideEffect.} =
+proc formatVec3f*(a: TVec3f): string {.noSideEffect.} =
   result  =  "x: " & formatFloat(a[1])
   result &= " y: " & formatFloat(a[2])
   result &= " z: " & formatFloat(a[3])
@@ -209,7 +210,10 @@ proc formatVec4f*(a: TVec4f): string {.noSideEffect.} =
   result &= " y: " & formatFloat(a[2])
   result &= " z: " & formatFloat(a[3])
   result &= " w: " & formatFloat(a[4])
-
+proc cross*(u,v: TVec3f): TVec3f =
+  result.x = (u.y * v.z) - (u.z * v.y)
+  result.y = (u.z * v.x) - (u.x * v.z)
+  result.z = (u.x * v.y) - (u.y * v.x)
 #transform related code
 proc toAffine*(a: TMat3f): TMat4f =
   for i in 1..TMat3f.N:
@@ -278,6 +282,7 @@ proc quatf*(w,i,j,k: float32): TQuatf = [w,i,j,k].TQuatf
 proc toVector(q: TQuatf): TVec4f =
   result.data = array[0..3, float32](q)
 proc norm*(q: TQuatf): float = norm(toVector(q))
+proc normalize*(q: TQuatf): TQuatf = q / norm(q)
 proc conj*(q: TQuatf): TQuatf =
   result.i = -q.i
   result.j = -q.j
@@ -397,7 +402,11 @@ when isMainModule:
     bv.data = [0.0'f32, 5.0'f32, 1.0'f32]
     var cv = dot(av,bv)
     check(cv == 10.0'f32)
-  
+  test "TCross1":
+    var a = vec3f(1,0,0)
+    var b = vec3f(0,1,0)
+    var c = cross(a,b)
+    check(c == vec3f(0,0,1))
   test "TRow":
     var ta: TMat4f
     ta[1,1] = 1.0'f32

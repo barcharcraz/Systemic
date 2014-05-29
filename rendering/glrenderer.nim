@@ -81,7 +81,7 @@ proc RenderUntextured*(scene: SceneId) {.procvar.} =
       var (vert, index) = CreateMeshBuffers(model[])
       buffers.vertex = vert
       buffers.index = index
-      buffers.vao = CreateVertexAttribPtr(program)
+      buffers.vao = CreateVertexAttribPtr(program, buffers.vertex, buffers.index)
       buffers.tex = CreateTexture(tex.data, tex.width, tex.height)
           
     CheckError()

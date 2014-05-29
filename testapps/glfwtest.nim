@@ -57,7 +57,7 @@ wnd.cursorMode = cmDisabled
 AttachInput(wnd)
 var done = false
 var mainscene = initScene()
-mainscene.id.addDirectionalLight(vec3f(0.0'f32, -1.0'f32, -1.0'f32).normalized())
+mainscene.id.addDirectionalLight(vec3f(0.0'f32, -1.0'f32, 0.0'f32).normalize())
 #mainscene.id.addComponent(initDirectionalLight(vec3f(0.0'f32,0.0'f32,-1.0'f32)))
 for i in 1..10:
   var r = random(0..255)
@@ -77,8 +77,8 @@ wnd.mouseBtnCb = proc(wnd: PWin, btn: TMouseBtn, pressed: bool, modKeys: TModifi
   if input.mbLeft in mouseInfo.buttons:
     handleSelectionAttempt(mainscene.id, mouseInfo.x, mouseInfo.y)
 mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(0,0,-10))
-mainscene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.tga", vec3f(0,0,-5))
-mainscene.id.addStaticMesh("assets/land.obj", "assets/diffuse.tga", vec3f(0,-10,0))
+mainscene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.tga", vec3f(5,0,-5))
+mainscene.id.addStaticMesh("assets/land.obj", "assets/diffuse.tga", vec3f(0,-5,0))
 populateAssets(listBox, "assets", "*.obj")
 mainscene.addSystem(AccelerationSystem)
 mainscene.addSystem do (scene: SceneId): 
