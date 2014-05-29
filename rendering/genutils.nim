@@ -1,4 +1,5 @@
 import ecs
+import math
 import components
 import vecmath
 
@@ -33,14 +34,14 @@ proc CalcViewMatrix*(dir: TVec3f): TMat4f =
   quat = normalize(quat)
   result = quat.toRotMatrix().toAffine()
 
-const BiasMatrix* = TMat4f(data: [0.5, 0.0, 0.0, 0.0,
+let BiasMatrix* = TMat4f(data: [0.5'f32, 0.0, 0.0, 0.0,
                                   0.0, 0.5, 0.0, 0.0,
                                   0.0, 0.0, 0.5, 0.0,
                                   0.5, 0.5, 0.5, 1.0])
-const DefaultDirProj = CreateOrthoMatrix(vec3f(-20, -20, 20), vec3f(20,20,-20))
+let DefaultDirProj = CreateOrthoMatrix(vec3f(-20, -20, 20), vec3f(20,20,-20))
 proc ConstructDepthVP*(dir: TVec3f, proj: TMat4f): TMat4f =
   var view = CalcViewMatrix(dir)
   var vp = mul(proj, view)
   result = mul(BiasMatrix, vp)
 proc ConstructDirDepthVP*(dir: TVec3f): TMat4f =
-  result = ConstructDirDepthVP(dir, DefaultDirProj)
+  result = ConstructDepthVP(dir, DefaultDirProj)

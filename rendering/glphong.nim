@@ -72,7 +72,6 @@ void main() {
 }
 
 """
-proc ConstructBiasMatrix(
 proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   var program {.global.}: GLuint
   var ps {.global.}: GLuint
