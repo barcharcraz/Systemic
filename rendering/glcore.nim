@@ -202,7 +202,7 @@ proc InitializeDepthBuffer*(size: int): GLuint =
   glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
   glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
   glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE)
-  glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_COMPARE_FUNC, GL_LESS)
+  glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL)
   glBindTexture(GL_TEXTURE_2D, 0)
 
 

@@ -44,11 +44,12 @@ proc RenderShadowMaps*(scene: SceneId) {.procvar.} =
   glDrawBuffer(GL_NONE)
   var oldView: array[1..4, GLint]
   glGetIntegerv(cGL_VIEWPORT, addr oldView[1])
-  glViewport(0,0,1024,1024)
+  glViewport(0,0,4096,4096)
+  glCullFace(GL_FRONT)
   for id, light, map in walk(scene, TDirectionalLight, TShadowMap, create = true):
     var viewMtx = CalcViewMatrix(light[].direction.xyz)
     if map[].depthTex == 0:
-      map[].depthTex = InitializeDepthBuffer(1024)
+      map[].depthTex = InitializeDepthBuffer(4096)
     map[].shadowVP = mul(projmtx, viewMtx)
     map[].shadowVP = mul(BiasMatrix, map[].shadowVP)
     glFrameBufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, map[].depthTex, 0)
@@ -65,5 +66,6 @@ proc RenderShadowMaps*(scene: SceneId) {.procvar.} =
       glDrawElements(GL_TRIANGLES, cast[GLSizei](mesh.indices.len), GL_UNSIGNED_INT, nil)
   glBindFrameBuffer(GL_FRAMEBUFFER, 0)
   glViewport(oldView[1], oldView[2], oldView[3], oldView[4])
+  glCullFace(GL_BACK)
     
     

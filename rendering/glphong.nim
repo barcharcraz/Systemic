@@ -56,7 +56,7 @@ uniform sampler2DShadow shad;
 void main() {
   outputColor = vec4(0,0,0,1);
   float visib = 1.0f;
-  visib = texture(shad, vec3(shadowPos.xy, shadowPos.z - 0.005));
+  visib = texture(shad, vec3(shadowPos.xy, shadowPos.z - 0.0005));
   for(int i = 0; i < NUM_DIRECTIONAL; ++i) {
     outputColor += directionalLight(dlights[i], vec4(norm_out,1), vec4(view_pos,1), mat);
   }
