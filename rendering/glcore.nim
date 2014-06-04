@@ -24,6 +24,12 @@ proc initObjectBuffers*(): TObjectBuffers =
   result.index = 0
   result.vao = 0
 MakeEntityComponent(TObjectBuffers)
+
+type TShadowMap* = object
+  depthTex*: GLuint
+  shadowVP*: TMat4f
+MakeEntityComponent(TShadowMap)
+
 ##some utility functions
 proc EnumString*(val: GLenum): string =
   ## gets the string representation of
@@ -191,10 +197,12 @@ proc InitializeDepthBuffer*(size: int): GLuint =
   glGenTextures(1, addr result)
   glBindTexture(GL_TEXTURE_2D, result)
   glTexStorage2D(GL_TEXTURE_2D.GLenum, 1.GLsizei, GL_DEPTH_COMPONENT_24.GLenum, size.GLsizei, size.GLsizei)
-  glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-  glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+  glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+  glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
   glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
   glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+  glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE)
+  glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_COMPARE_FUNC, GL_LESS)
   glBindTexture(GL_TEXTURE_2D, 0)
 
 

@@ -26,10 +26,6 @@ void main() {
   fragDepth = gl_FragCoord.z;
 }
 """
-type TShadowMap = object
-  depthTex: GLuint
-MakeEntityComponent(TShadowMap)
-
 proc RenderShadowMaps*(scene: SceneId) {.procvar.} =
   var program {.global.}: GLuint
   var ps {.global.}: GLuint
@@ -53,6 +49,8 @@ proc RenderShadowMaps*(scene: SceneId) {.procvar.} =
     var viewMtx = CalcViewMatrix(light[].direction.xyz)
     if map[].depthTex == 0:
       map[].depthTex = InitializeDepthBuffer(1024)
+    map[].shadowVP = mul(projmtx, viewMtx)
+    map[].shadowVP = mul(BiasMatrix, map[].shadowVP)
     glFrameBufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, map[].depthTex, 0)
     glClear(GL_DEPTH_BUFFER_BIT)
     if glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:

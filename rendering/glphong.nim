@@ -54,11 +54,9 @@ uniform material_t mat;
 uniform sampler2D tex;
 uniform sampler2DShadow shad;
 void main() {
-  outputColor = mat.ambiant;
-  float visib = 1.0f
-  if (texture(shad, shadowPos.xy).z < shadowPos.z) {
-    visib = 0.5f
-  }
+  outputColor = vec4(0,0,0,1);
+  float visib = 1.0f;
+  visib = texture(shad, vec3(shadowPos.xy, shadowPos.z - 0.005));
   for(int i = 0; i < NUM_DIRECTIONAL; ++i) {
     outputColor += directionalLight(dlights[i], vec4(norm_out,1), vec4(view_pos,1), mat);
   }
@@ -66,8 +64,9 @@ void main() {
   for(int i = 0; i < NUM_POINT; ++i) {
     outputColor += pointLight(plights[i], vec4(norm_out, 1), vec4(view_pos,1), mat);
   }
-
+  
   outputColor = clamp(outputColor, 0.0, 1.0);
+  outputColor = (visib * outputColor) + mat.ambiant;
   outputColor = outputColor * texture(tex, vec2(uv_out.x, 1 - uv_out.y));
 }
 
@@ -86,6 +85,8 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   
   var dlights = CollectDirLights(scene, viewMatrix)
   var plights = CollectPointLights(scene, viewMatrix)
+  var shadow = components(scene, TShadowMap)[0]
+
   if vs == 0 or ps == 0:
     var def = genDefine("NUM_DIRECTIONAL", dlights.len)
     var pdef = genDefine("NUM_POINT", plights.len)
@@ -111,6 +112,9 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   glBindBufferBase(GL_UNIFORM_BUFFER, 1, plightsUniform)
   glUseProgram(program)
   BindViewProjMatrix(program, viewMatrix, projMatrix)
+  var shadVPLoc = glGetUniformLocation(program, "shadowVP")
+  if shadVPLoc == -1: warn("shadowVP is not an active uniform")
+  glUniformMatrix4fv(shadVPLoc, 1.GLsizei, false, cast[ptr GLfloat](addr shadow.shadowVP.data[0]))
   for id,mesh,trans,tex,mat in scene.walk(TMesh,TTransform,TImage,TMaterial):
     BindMaterial(program,mat[])
     var buffers = id?TObjectBuffers
@@ -125,6 +129,7 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
       buffers.vao = CreateVertexAttribPtr(program, buffers.vertex, buffers.index)
       buffers.tex = CreateTexture(tex.data, tex.width, tex.height)
     AttachTextureToProgram(buffers.tex, program, 0, "tex")
+    AttachTextureToProgram(shadow.depthTex, program, 1, "shad")
     glBindVertexArray(buffers.vao)
     #glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers.index)
     glDrawElements(GL_TRIANGLES, cast[GLSizei](mesh.indices.len), GL_UNSIGNED_INT, nil)
