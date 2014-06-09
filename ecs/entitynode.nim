@@ -160,6 +160,14 @@ iterator walk*(scene: SceneId; typ1, typ2, typ3, typ4: typedesc, create: bool = 
           createDefault(id, typ4)
           yield (id, a, b, c, addr comps[i])
         break
+iterator next*(scene: SceneId, typ: typedesc): iterator(id: EntityId): ptr typ =
+  result = iterator(id: EntityId): ptr typ =
+    var lastId = id
+    for newId, elm in walk(scene, typ):
+      if newId == id:
+        lastId = id
+        yield elm
+      assert(lastId.int < id.int)
 #procs to add a system that takes a tuple of entities, these
 #are quite useful for more scripty code
 proc addSystem*[Ta](scene: SceneId; func: proc(id: SceneId; tup: tuple[a: ptr Ta])) =

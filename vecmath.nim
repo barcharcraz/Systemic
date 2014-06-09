@@ -31,9 +31,12 @@ type
   TQuatf* = distinct array[1..4, float32] #poor man's quaternion
 type
   TAlignedBox3f* = object
-    min: array[3, float32]
-    max: array[3, float32]
-
+    min*: TVec3f
+    max*: TVec3f
+type TAxis* = enum
+  axisYZ = 1,
+  axisXZ = 2,
+  axisXY = 3
 proc `[]=`*(self: var TMatrix; i,j: int; val: TMatrix.T) =
   when TMatrix.O is RowMajor:
     var idx = (TMatrix.M * (i-1)) + (j-1)
@@ -199,6 +202,11 @@ proc `*`*(a: TVec, b: float): TVec =
   for i in 1..TVec.N:
     result[i] = a[i] * b
 proc `*`*(b: float, a: TVec): TVec = a * b
+proc `<`*(a: TVec, b: TVec): bool =
+  result = true
+  for i in 1..TVec.N:
+    if a[i] >= b[i]:
+      return false
 proc dist*(a,b: TVec): float =
   result = norm(a - b)
 proc formatVec3f*(a: TVec3f): string {.noSideEffect.} =
@@ -214,6 +222,43 @@ proc cross*(u,v: TVec3f): TVec3f =
   result.x = (u.y * v.z) - (u.z * v.y)
   result.y = (u.z * v.x) - (u.x * v.z)
   result.z = (u.x * v.y) - (u.y * v.x)
+
+#AABB related code
+proc extend*(aabb: var TAlignedBox3f, target: TVec3f) =
+  if target < aabb.min:
+    aabb.min = target
+  if target > aabb.max:
+    aabb.max = target
+proc extend*(aabb: var TAlignedBox3f, target: TAlignedBox3f) =
+  if target.min < aabb.min:
+    aabb.min = target.min
+  if target.max > aabb.max:
+    aabb.max = target.max
+proc `in`(target: TAlignedBox3f, aabb: TAlignedBox3f): bool =
+  if (target.min > aabb.min) and (target.max < aabb.max):
+    return true
+  return false
+proc split*(aabb: TAlignedBox3f, axis: TAxis): tuple[a,b: TAlignedBox3f] =
+  result.a = aabb
+  result.b = aabb
+  var axisIdx = axis.int
+  var diff = aabb.max - aabb.min
+  result.a.min[axisIdx] = result.a.min[axisIdx] + diff.z
+  result.b.max[axisIdx] = result.b.max[axisIdx] - diff.z
+proc split*(aabb: TAlignedBox3f, axis: TAxis; a,b: var TAlignedBox3f) =
+  var (tmpa, tmpb) = split(aabb, axis)
+  a = tmpa
+  b = tmpb
+proc split*(aabb: TAlignedBox3f): array[1..8, TAlignedBox3f] =
+  split(aabb, axisYZ, result[1], result[3])
+  split(result[1], axisXZ, result[1], result[2])
+  split(result[3], axisXZ, result[3], result[4])
+  split(result[1], axisXY, result[1], result[5])
+  split(result[2], axisXY, result[2], result[6])
+  split(result[3], axisXY, result[3], result[7])
+  split(result[4], axisXY, result[4], result[8])
+proc centroid*(aabb: TAlignedBox3f): TVec3f =
+  result = (aabb.min + aabb.max) / 2
 #transform related code
 proc toAffine*(a: TMat3f): TMat4f =
   for i in 1..TMat3f.N:
@@ -394,7 +439,20 @@ when isMainModule:
 
   import unittest
 
-
+  test "TLessThan":
+    var av = vec3f(0,0,0)
+    var bv = vec3f(1,1,1)
+    check(av < bv)
+  test "TNotLessThan":
+    var av = vec3f(1,1,1)
+    var bv = vec3f(0,1,0)
+    check(not (av > bv))
+    check(not (av < bv))
+  test "TExtend":
+    var aabb: TAlignedBox3f
+    var av = vec3f(5,5,5)
+    aabb.extend(av)
+    check(aabb.max == av)
   test "TDotProduct":
     var av: TVec3f
     av.data = [1.0'f32, 2.0'f32, 0.0'f32]
