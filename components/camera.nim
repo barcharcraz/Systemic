@@ -1,6 +1,8 @@
 import vecmath
 import math
-type TCamera* = TMat4f
+type TCamera* = object
+  matrix*: TMat4f
+
 
 proc initCamera*(near, far, fov: float32): TCamera =
   var m33 = ((far + near) / (far - near))

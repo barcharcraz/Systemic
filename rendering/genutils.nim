@@ -39,6 +39,7 @@ let BiasMatrix* = TMat4f(data: [0.5'f32, 0.0, 0.0, 0.0,
                                   0.0, 0.0, 0.5, 0.0,
                                   0.5, 0.5, 0.5, 1.0])
 let DefaultDirProj = CreateOrthoMatrix(vec3f(-20, -20, 20), vec3f(20,20,-20))
+#proc ConstructDirShadowProj(dir: TVec3f
 proc ConstructDepthVP*(dir: TVec3f, proj: TMat4f): TMat4f =
   var view = CalcViewMatrix(dir)
   var vp = mul(proj, view)

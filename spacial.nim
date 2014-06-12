@@ -28,13 +28,14 @@ proc MakeBVHArray(aabbs: array[1..8, TAlignedBox3f): array[1..8, TAlignedBox3f] 
     result[i].items = @[]
 proc ConstructBVHHelper(scene: SceneId; parent: var TBVHNode[EntityId]): TBVHNode[EntityId] =
   var nextItr = next(scene, TAxisAlignedBB)
+  if parent.items.len == 0:
+    
   if parent.items.len <= BVHMinItems:
     var center = parent.aabb.centroid()
     parent.aabb = TAlignedBox3f(min: center, max: center)
     for elm in parent.items:
       var aabb = nextItr(elm)
       parent.aabb.incl(aabb[].CurAABB)
-
   parent.children.add(MakeBVHArray(split(parent.aabb)))
   for id in parent.items:
     var center = nextItr(id)[].CurAABB.centroid()
