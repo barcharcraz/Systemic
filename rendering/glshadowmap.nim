@@ -26,6 +26,7 @@ void main() {
   fragDepth = gl_FragCoord.z;
 }
 """
+const shadowMapRes = 1024
 proc RenderShadowMaps*(scene: SceneId) {.procvar.} =
   var program {.global.}: GLuint
   var ps {.global.}: GLuint
@@ -42,20 +43,21 @@ proc RenderShadowMaps*(scene: SceneId) {.procvar.} =
   glBindFrameBuffer(GL_FRAMEBUFFER, fbo)
   #glUniformMatrix4fv(transformIdx, 1.GLsizei, false, cast[ptr GLfloat](addr projmtx.data[0]))
   glDrawBuffer(GL_NONE)
+  glReadBuffer(GL_NONE)
   var oldView: array[1..4, GLint]
   glGetIntegerv(cGL_VIEWPORT, addr oldView[1])
-  glViewport(0,0,4096,4096)
+  glViewport(0,0,shadowMapRes,shadowMapRes)
   glCullFace(GL_FRONT)
   for id, light, map in walk(scene, TDirectionalLight, TShadowMap, create = true):
     var viewMtx = CalcViewMatrix(light[].direction.xyz)
     if map[].depthTex == 0:
-      map[].depthTex = InitializeDepthBuffer(4096)
+      map[].depthTex = InitializeDepthBuffer(shadowMapRes)
     map[].shadowVP = mul(projmtx, viewMtx)
     map[].shadowVP = mul(BiasMatrix, map[].shadowVP)
     glFrameBufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, map[].depthTex, 0)
-    glClear(GL_DEPTH_BUFFER_BIT)
     if glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
       raise newException(EFramebufferInvalid, "")
+    glClear(GL_DEPTH_BUFFER_BIT)
     for id, mesh, buffers, trans in scene.walk(TMesh, TObjectBuffers, TTransform):
       var mvmtx = mul(projmtx, viewMtx)
       mvmtx = mul(mvmtx, trans[].GenMatrix())

@@ -61,7 +61,7 @@ proc RenderUntextured*(scene: SceneId) {.procvar.} =
   var camTrans = cameraEnt@TTransform
   var cam = cameraEnt@TCamera
   var viewMatrix = camTrans.GenMatrix()
-  var projMatrix = cam
+  var projMatrix = cam.matrix
   viewMatrix = viewMatrix.AdjustViewMatrix()
   projMatrix = projMatrix.AdjustProjMatrix()
   if vs == 0: vs = CompileShader(GL_VERTEX_SHADER, defVS)

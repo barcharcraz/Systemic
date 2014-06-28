@@ -46,7 +46,7 @@ when defined(macosx):
   var forwardcompat = true
   var profile = glpCore
 else:
-  var glversion = glv42
+  var glversion = glv31
   var forwardcompat = false
   var profile = glpAny
 var api = initGL_API(glversion, forwardcompat, true, profile, glrNone)
@@ -94,11 +94,6 @@ mainscene.addSystem(RenderShadowMaps)
 mainscene.addSystem(PrimitiveRenderSystem)
 mainscene.addSystem(RenderPhongLit)
 initOpenGLRenderer()
-proc glDebugProc(source: GLEnum, typ: GLenum, id: GLuint,
-                 severity: GLenum, len: GLsizei, message: ptr GLchar,
-                 userParam: pointer) {.stdcall.} =
-  echo( "Debug call" & $message)
-glDebugMessageCallbackARB(glDebugProc, nil)
 glViewport(0,0,winw,winh)
 glClearColor(0.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
 while not done and not wnd.shouldClose:

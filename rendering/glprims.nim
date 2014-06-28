@@ -96,7 +96,7 @@ proc RenderPrim*(elm: TPrim, view,proj: TMat4f) =
 proc PrimitiveRenderSystem*(scene: SceneId) {.procvar.} =
   var cament = first(walk(scene, TCamera, TTransform))[0]
   var camTrans = cament@TTransform
-  var camera = cament@TCamera
+  var camera = (cament@TCamera).matrix
   var view = camTrans.GenRotTransMatrix().AdjustViewMatrix()
   var projMatrix = camera.AdjustProjMatrix()
   for elm in PrimitiveStack:

@@ -174,13 +174,25 @@ proc BindMaterial*(program: GLuint; mat: var TMaterial) =
   glUniform1fv(shineIdx, 1, addr mat.shine)
 
 proc InitializeTexture*(width,height: int; levels: int = 6): GLuint =
+  var width = width
+  var height = height
   glGenTextures(1, addr result)
   glBindTexture(GL_TEXTURE_2D, result)
-  glTexStorage2D(GL_TEXTURE_2D, levels.GLsizei, GL_RGBA8, width.GLsizei, height.GLsizei)
+  glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_BASE_LEVEL.GLenum, 0)
+  glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_MAX_LEVEL.GLenum, (levels-1).GLint)
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+  for level in 0..levels-1:
+    glTexImage2D(GL_TEXTURE_2D.GLenum, level.GLint, GL_RGBA8, width.GLsizei, height.GLsizei, 0, GL_RGBA, cGL_UNSIGNED_BYTE, nil)
+    width = max(1, (width/2)).int
+    height = max(1, (height/2)).int
+  glBindTexture(GL_TEXTURE_2D, 0)
+  #glTexStorage2D(GL_TEXTURE_2D, levels.GLsizei, GL_RGBA8, width.GLsizei, height.GLsizei)
 proc CreateTexture*(data: pointer; width, height: int): GLuint =
   ## creates a texture using immutable texture storage and 
   ## uploads `data` to it.
   result = InitializeTexture(width, height)
+  glBindTexture(GL_TEXTURE_2D, result)
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width.GLsizei, height.GLsizei, GL_BGRA, cGL_UNSIGNED_BYTE, data)
   glGenerateMipmap(GL_TEXTURE_2D)
   glBindTexture(GL_TEXTURE_2D, 0)
@@ -196,7 +208,8 @@ proc InitializeDepthBuffer*(size: int): GLuint =
   assert(isPowerOfTwo(size))
   glGenTextures(1, addr result)
   glBindTexture(GL_TEXTURE_2D, result)
-  glTexStorage2D(GL_TEXTURE_2D.GLenum, 1.GLsizei, GL_DEPTH_COMPONENT_24.GLenum, size.GLsizei, size.GLsizei)
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT_24, size.GLsizei, size.GLsizei, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nil)
+  #glTexStorage2D(GL_TEXTURE_2D.GLenum, 1.GLsizei, GL_DEPTH_COMPONENT_24.GLenum, size.GLsizei, size.GLsizei)
   glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
   glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
   glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)

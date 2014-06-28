@@ -81,7 +81,7 @@ proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   
   var (camEnt, cam, camTrans) = first(walk(scene, TCamera, TTransform))
   var viewMatrix = camTrans[].GenRotTransMatrix().AdjustViewMatrix()
-  var projMatrix = cam[].AdjustProjMatrix()
+  var projMatrix = cam[].matrix.AdjustProjMatrix()
   
   var dlights = CollectDirLights(scene, viewMatrix)
   var plights = CollectPointLights(scene, viewMatrix)

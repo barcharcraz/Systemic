@@ -39,7 +39,7 @@ proc findSelected(scene: SceneId, x,y: float, mtx: TMat4f): EntityId =
 proc handleSelectionAttempt*(scene: SceneId, x,y: float) =
   var (camId, cam, camTrans) = first(walk(scene, TCamera, TTransform))
   var viewMtx = camTrans[].GenRotTransMatrix().AdjustViewMatrix()
-  var projMtx = cam[].AdjustProjMatrix()
+  var projMtx = cam[].matrix.AdjustProjMatrix()
   var selected = findSelected(scene, x, y, mul(projMtx, viewMtx))
   debug("Selected Entity: " & $selected.int)
   if selected == (-1).EntityId: return

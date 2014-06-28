@@ -1,4 +1,4 @@
-import ecs/entity
+import ecs
 import vecmath
 type TVelocityKind* = enum
   vkPost
@@ -10,6 +10,7 @@ type TVelocity* = object
 type TTransform* = object
   position*: TVec3f
   rotation*: TQuatf
+MakeEntityComponent(TTransform)
 type TAcceleration* = object
   lin*: TVec3f
   rot*: TQuatf
