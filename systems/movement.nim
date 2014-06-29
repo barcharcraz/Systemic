@@ -4,6 +4,7 @@ import ecs/entity
 import ecs/entitynode
 import ecs/scene
 import ecs/scenenode
+import utils/iterators
 import input
 import vecmath
 import gametime
@@ -23,9 +24,8 @@ proc AccelerationSystem*(scene: SceneId) {.procvar.} =
     vel.rot = mul(vel.rot, acc.rot)
 
 
-proc MovementSystem*(scene: SceneId; inp: TInputMapping; cam: EntityId) {.procvar.} =
-  var pos = cam?TTransform
-  var vel = cam?TVelocity
+proc MovementSystem*(scene: SceneId; inp: TInputMapping) {.procvar.} =
+  var (cam, camMtx, pos, vel) = first(walk(scene, TCamera, TTransform, TVelocity))
   var newPos: TVec3f
   var dt = GetFrameTime()
   var rotX = inp.mouse.x * 0.1 * dt
@@ -59,7 +59,9 @@ proc MovementSystem*(scene: SceneId; inp: TInputMapping; cam: EntityId) {.procva
   newPos = mulv(pos[].rotation.toRotMatrix().transpose(), newPos)
   pos[].position += newPos
   pos[].rotation = mul(newRot, pos[].rotation)
-  
+
+
+
 proc OrbitMovementSystem*(scene: SceneId, dx, dy: float, pos: TVec3f) =
   var xrot = quatFromAngleAxis(dx * 0.005, vec3f(0,1,0))
   var yrot = quatFromAngleAxis(dy * 0.005, vec3f(-1,0,0))
@@ -72,8 +74,14 @@ proc OrbitMovementSystem*(scene: SceneId, dx, dy: float, pos: TVec3f) =
     rot.k = -rot.k
     view[].rotation = mul(view[].rotation, rot)
     view[].position = newPos
-  
+
+proc OrbitMovementSystem*(scene: SceneId, imp: TInputMapping, pos: TVec3f) =
+  OrbitMovementSystem(scene, imp.mouse.x, imp.mouse.y, pos)
+
 proc OrbitSelectionMovement*(scene: SceneId, dx, dy: float) =
   for id, sel, transform in walk(scene, TSelected, TTransform):
     OrbitMovementSystem(scene, dx, dy, transform[].position)
+
+proc OrbitSelectionMovement*(scene: SceneId, imp: TInputMapping) =
+  OrbitSelectionMovement(scene, imp.mouse.x, imp.mouse.y)
 

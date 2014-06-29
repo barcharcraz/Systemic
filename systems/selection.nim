@@ -7,6 +7,7 @@ import components
 import strutils
 import components/selectDat
 import utils/iterators
+import input
 const selectionDbg = true
 loggingWrapper(selectionDbg)
 
@@ -45,4 +46,7 @@ proc handleSelectionAttempt*(scene: SceneId, x,y: float) =
   if selected == (-1).EntityId: return
   var callbck = selected?onMouseDown
   if callbck != nil: callbck[](x,y)
-  
+ 
+proc SelectionSystem*(scene: SceneId, inp: TInputMapping) =
+  if Action(inp, "select"):
+    handleSelectionAttempt(scene, inp.mouse.x, inp.mouse.y)

@@ -98,7 +98,9 @@ method draw*(ctx: PContext, lb: ref TListBox) =
   fill()
   for elm in lb.items: draw(ctx, elm)
   restore()
-
+proc DrawWidgets*(ctx: PContext, group: seq[ref TWidget]) =
+  for elm in group:
+    draw(ctx, elm)
 #{{{ ------ update functions
 method onMouseMove*(self: ref TWidget, mouse: TMouse) = discard
 method onMouseEnter*(self: ref TWidget, mouse: TMouse) = discard

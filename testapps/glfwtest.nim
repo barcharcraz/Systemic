@@ -26,20 +26,26 @@ import gametime
 import utils.memory
 import rendering.glcore
 import rendering.glshadowmap
+
+
+
 var log = newConsoleLogger()
 handlers.add(log)
+
 const winw = 640
 const winh = 480
 #cairo code
 var cairo_surface = image_surface_create(FORMAT_ARGB32, winw, winh)
 var cairo_ctx = create(cairo_surface)
-
+#UI initialization
 var frame: seq[ref TWidget] = @[]
 var listBox = new(initListBox(vec2f(20,20)))
 #listBox.add(new(initButton(vec2f(20,20))))
 #listBox.add(new(initButton(vec2f(20,20))))
 frame.add(listBox)
 
+
+#glfw initialization
 glfw.init()
 when defined(macosx):
   var glversion = glv32
@@ -59,49 +65,44 @@ var done = false
 var mainscene = initScene()
 mainscene.id.addDirectionalLight(vec3f(0.0'f32, -1.0'f32, 0.0'f32).normalize())
 #mainscene.id.addComponent(initDirectionalLight(vec3f(0.0'f32,0.0'f32,-1.0'f32)))
-for i in 1..10:
-  var r = random(0..255)
-  var g = random(0..255)
-  var b = random(0..255)
-  var xyslice = -5.0..5.0
-  var x: float32 = math.random(xyslice)
-  var y: float32 = math.random(xyslice)
-  var z: float32 = math.random(-2.0..0.0)
-  mainscene.id.addPointLight(vec3f(x,y,z), rgb(255,255,255))
 
 var camEnt = mainscene.id.addCamera()
 var inp = initShooterKeys()
 camEnt.add(addr inp)
-wnd.mouseBtnCb = proc(wnd: PWin, btn: TMouseBtn, pressed: bool, modKeys: TModifierKeySet) =
-  var mouseInfo = pollMouse(wnd)
-  if input.mbLeft in mouseInfo.buttons:
-    handleSelectionAttempt(mainscene.id, mouseInfo.x, mouseInfo.y)
+
 mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(0,0,-10))
 mainscene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.tga", vec3f(5,0,-5))
 mainscene.id.addStaticMesh("assets/land.obj", "assets/diffuse.tga", vec3f(0,-5,0))
 populateAssets(listBox, "assets", "*.obj")
-mainscene.addSystem(AccelerationSystem)
-mainscene.addSystem do (scene: SceneId): 
-  inp.Update(pollInput(wnd))
-  MovementSystem(scene, inp, camEnt)
-mainscene.addSystem(movement.VelocitySystem)
-mainscene.addSystem do:
-  handleAllInput(frame, pollInputAbsolute(wnd))
-mainscene.addSystem do: 
-  for elm in frame: draw(cairo_ctx, elm)
-mainscene.addSystem do: RenderUI(cairo_ctx)
-mainscene.addSystem(RenderShadowMaps)
-mainscene.addSystem(PrimitiveRenderSystem)
-mainscene.addSystem(RenderPhongLit)
+
 initOpenGLRenderer()
 glViewport(0,0,winw,winh)
 glClearColor(0.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
+
+proc UpdateAll(scene: SceneId) =
+  inp.Update(pollInput(wnd))
+  AccelerationSystem(scene)
+  MovementSystem(scene, inp)
+  VelocitySystem(scene)
+  HandleAllInput(frame, pollInputAbsolute(wnd))
+  DrawWidgets(cairo_ctx, frame)
+  RenderUI(cairo_ctx)
+  RenderShadowMaps(scene)
+  PrimitiveRenderSystem(scene)
+  RenderPhongLit(scene)
+
 while not done and not wnd.shouldClose:
   UpdateGameTime()
-  mainscene.update()
+  UpdateAll(mainscene.id)
   wnd.handleMouse()
   wnd.update()
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT)
+
 wnd.destroy()
 glfw.terminate()
+
+
+
+
+
 

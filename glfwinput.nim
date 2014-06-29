@@ -77,7 +77,10 @@ proc pollKeyboard*(self: PWin): input.TKeyCombination =
       result.incl(getKey(elm))
     else:
       result.excl(getKey(elm))
-proc pollMouse*(self: PWin): input.TMouse =
+
+
+  
+proc pollMouseAbsolute*(self: PWin): input.TMouse =
   var (x,y) = self.cursorPos
   result.x = x
   result.y = y
@@ -88,10 +91,8 @@ proc pollMouse*(self: PWin): input.TMouse =
   if self.mouseBtnDown(mbRight):
     result.buttons.incl(input.mbRight)
 
-proc pollInput*(self: PWin): input.TInput =
-  result.keyboard = pollKeyboard(self)
-
-  var mouseInfo = pollMouse(self)
+proc pollMouse*(self: PWin): input.TMouse =
+  var mouseInfo = pollMouseAbsolute(self)
   var dx = mouseInfo.x - lastx
   var dy = mouseInfo.y - lasty
   if justEntered:
@@ -100,8 +101,11 @@ proc pollInput*(self: PWin): input.TInput =
     dy = 0
   lastx = mouseInfo.x
   lasty = mouseInfo.y
-  result.mouse.x = dx
-  result.mouse.y = dy
-proc pollInputAbsolute*(self: PWin): input.TInput =
+  result.x = dx
+  result.y = dy
+proc pollInput*(self: PWin): input.TInput =
   result.keyboard = pollKeyboard(self)
   result.mouse = pollMouse(self)
+proc pollInputAbsolute*(self: PWin): input.TInput =
+  result.keyboard = pollKeyboard(self)
+  result.mouse = pollMouseAbsolute(self)
