@@ -18,7 +18,7 @@ proc initAABB*(mesh: TMesh): TAxisAlignedBB =
       result.RestAABB.max = vert.pos
   result.CurAABB = result.RestAABB
 
-proc UpdateAABBs(scene: SceneId) {.procvar.} =
+proc UpdateAABBs*(scene: SceneId) {.procvar.} =
   for id, transform, aabb in walk(scene, TTransform, TAxisAlignedBB):
     var mtx = transform[].GenMatrix()
     var min = vec4f(aabb[].RestAABB.min, 1)
