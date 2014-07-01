@@ -1,5 +1,6 @@
 import math
 import strutils
+import unsigned
 type ColMajor = object
 type RowMajor = object
 type Options = generic x
@@ -33,6 +34,15 @@ type
   TAlignedBox3f* = object
     min*: TVec3f
     max*: TVec3f
+type TCornerType* = enum
+  ctBottomLeftFloor = 0,
+  ctBottomRightFloor = 1,
+  ctTopLeftFloor = 2,
+  ctTopRightFloor = 3,
+  ctBottomLeftCeil = 4,
+  ctBottomRightCeil = 5,
+  ctTopLeftCeil = 6,
+  ctTopRightCeil = 7
 type TAxis* = enum
   axisYZ = 1,
   axisXZ = 2,
@@ -147,7 +157,7 @@ proc initMat3f*(arrs: array[0..8, float32]): TMat3f =
 proc initMat2f*(arrs: array[0..3, float32]): TMat2f =
   result.data = arrs
   result = transpose(result)
-proc `$`(a: TMat3f): string =
+proc `$`*(a: TMat3f): string =
   result = formatFloat(a[1,1]) & " " & formatFloat(a[1,2]) & formatFloat(a[1,3]) & "\n" &
            formatFloat(a[2,1]) & " " & formatFloat(a[2,2]) & formatFloat(a[2,3]) & "\n" &
            formatFloat(a[3,1]) & " " & formatFloat(a[3,2]) & formatFloat(a[3,3])
@@ -207,6 +217,11 @@ proc `<`*(a: TVec, b: TVec): bool =
   for i in 1..TVec.N:
     if a[i] >= b[i]:
       return false
+proc `<=`*(a: TVec, b: TVec): bool =
+  result = true
+  for i in 1..TVec.N:
+    if a[i] > b[i]:
+      return false
 proc dist*(a,b: TVec): float =
   result = norm(a - b)
 proc formatVec3f*(a: TVec3f): string {.noSideEffect.} =
@@ -224,27 +239,38 @@ proc cross*(u,v: TVec3f): TVec3f =
   result.z = (u.x * v.y) - (u.y * v.x)
 
 #AABB related code
-proc extend*(aabb: var TAlignedBox3f, target: TVec3f) =
-  if target < aabb.min:
-    aabb.min = target
-  if target > aabb.max:
-    aabb.max = target
-proc extend*(aabb: var TAlignedBox3f, target: TAlignedBox3f) =
-  if target.min < aabb.min:
-    aabb.min = target.min
-  if target.max > aabb.max:
-    aabb.max = target.max
-proc `in`(target: TAlignedBox3f, aabb: TAlignedBox3f): bool =
-  if (target.min > aabb.min) and (target.max < aabb.max):
+proc contains*(aabb: TAlignedBox3f, target: TAlignedBox3f): bool =
+  if (target.min >= aabb.min) and (target.min <= aabb.max):
+    return true
+  if (target.max <= aabb.max) and (target.max >= aabb.min):
     return true
   return false
+proc encloses*(aabb: TAlignedBox3f, target: TAlignedBox3f): bool =
+  if (target.min >= aabb.min) and (target.max <= aabb.max):
+    return true
+  return false
+proc extend*(aabb: var TAlignedBox3f, target: TVec3f) =
+  for i in 1..3:
+    if target[i] < aabb.min[i]: aabb.min[i] = target[i]
+    if target[i] > aabb.max[i]: aabb.max[i] = target[i]
+proc extend*(aabb: var TAlignedBox3f, target: TAlignedBox3f) =
+  for i in 1..3:
+    if target.min[i] < aabb.min[i]: aabb.min[i] = target.min[i]
+    if target.max[i] > aabb.max[i]: aabb.max[i] = target.max[i]
+  assert(target in aabb)
+proc corner*(aabb: TAlignedBox3f, which: TCornerType): TVec3f =
+  var mult = 1.uint
+  for i in 1..3:
+    if (mult.uint and which.uint) > 0.uint: result[i] = aabb.max[i]
+    else: result[i] = aabb.min[i]
+    mult = mult * 2
 proc split*(aabb: TAlignedBox3f, axis: TAxis): tuple[a,b: TAlignedBox3f] =
   result.a = aabb
   result.b = aabb
   var axisIdx = axis.int
   var diff = aabb.max - aabb.min
-  result.a.min[axisIdx] = result.a.min[axisIdx] + diff.z
-  result.b.max[axisIdx] = result.b.max[axisIdx] - diff.z
+  result.a.min[axisIdx] = result.a.min[axisIdx] + (diff[axisIdx] / 2)
+  result.b.max[axisIdx] = result.b.max[axisIdx] - (diff[axisIdx] / 2)
 proc split*(aabb: TAlignedBox3f, axis: TAxis; a,b: var TAlignedBox3f) =
   var (tmpa, tmpb) = split(aabb, axis)
   a = tmpa
@@ -259,6 +285,10 @@ proc split*(aabb: TAlignedBox3f): array[1..8, TAlignedBox3f] =
   split(result[4], axisXY, result[4], result[8])
 proc centroid*(aabb: TAlignedBox3f): TVec3f =
   result = (aabb.min + aabb.max) / 2
+proc `$`*(aabb: TAlignedBox3f): string {.noSideEffect.} =
+  result = "min: " & formatVec3f(aabb.min) & "\nmax: " & formatVec3f(aabb.max)
+
+
 #transform related code
 proc toAffine*(a: TMat3f): TMat4f =
   for i in 1..TMat3f.N:

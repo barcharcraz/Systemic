@@ -99,9 +99,12 @@ proc PrimitiveRenderSystem*(scene: SceneId) {.procvar.} =
   var camera = (cament@TCamera).matrix
   var view = camTrans.GenRotTransMatrix().AdjustViewMatrix()
   var projMatrix = camera.AdjustProjMatrix()
+  glDisable(cGL_CULL_FACE)
+  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
   for elm in PrimitiveStack:
     RenderPrim(elm, view, projMatrix)
   PrimitiveStack.setLen(0)
   for elm in components(scene, TPrim):
-    echo repr(elm)
     RenderPrim(elm, view, projMatrix)
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+  glEnable(cGL_CULL_FACE)

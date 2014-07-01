@@ -26,7 +26,8 @@ import gametime
 import utils.memory
 import rendering.glcore
 import rendering.glshadowmap
-
+import spacial
+import prims
 
 
 var log = newConsoleLogger()
@@ -71,10 +72,16 @@ var inp = initShooterKeys()
 camEnt.add(addr inp)
 
 mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(0,0,-10))
+mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(10, 10,-45))
+mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(-10,5,-25))
+mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(5,0,-20))
 mainscene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.tga", vec3f(5,0,-5))
 mainscene.id.addStaticMesh("assets/land.obj", "assets/diffuse.tga", vec3f(0,-5,0))
 populateAssets(listBox, "assets", "*.obj")
-
+UpdateAABBs(mainscene.id)
+var octree = MakeOctree(mainscene.id)
+var octreeboxxes = GetBoundingBoxxes(octree[])
+for elm in octreeboxxes: mainscene.id.addComponent(PrimBoundingBox(elm))
 initOpenGLRenderer()
 glViewport(0,0,winw,winh)
 glClearColor(0.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
@@ -87,8 +94,8 @@ proc UpdateAll(scene: SceneId) =
   HandleAllInput(frame, pollInputAbsolute(wnd))
   DrawWidgets(cairo_ctx, frame)
   RenderUI(cairo_ctx)
-  RenderShadowMaps(scene)
   PrimitiveRenderSystem(scene)
+  RenderShadowMaps(scene)
   RenderPhongLit(scene)
 
 while not done and not wnd.shouldClose:

@@ -4,18 +4,14 @@ import transform
 import mesh
 import ecs
 type TAxisAlignedBB* = object
-  RestAABB: TAlignedBox3f
-  CurAABB: TAlignedBox3f
+  RestAABB*: TAlignedBox3f
+  CurAABB*: TAlignedBox3f
 MakeEntityComponent(TAxisAlignedBB)
 proc initAABB*(initial: TAlignedBox3f): TAxisAlignedBB =
   result = TAxisAlignedBB(RestAABB: initial, CurAABB: initial)
  
 proc initAABB*(mesh: TMesh): TAxisAlignedBB =
-  for vert in mesh.verts:
-    if vert.pos < result.RestAABB.min:
-      result.RestAABB.min = vert.pos
-    if vert.pos > result.RestAABB.max:
-      result.RestAABB.max = vert.pos
+  for vert in mesh.verts: result.RestAABB.extend(vert.pos)
   result.CurAABB = result.RestAABB
 
 proc UpdateAABBs*(scene: SceneId) {.procvar.} =

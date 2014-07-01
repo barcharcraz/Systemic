@@ -71,6 +71,27 @@ proc PrimCylinderMesh*(radius: float, height: float): TPrimMesh =
   result.indices.add(uint32(result.verts.high))
   result.indices.add(circleLen - 1)
 
+proc PrimBoundingBoxMesh(aabb: TAlignedBox3f): TPrimMesh =
+  result.verts = @[]
+  result.indices = @[]
+  for elm in TCornerType:
+    var corner = aabb.corner(elm)
+    result.verts.add(corner)
+  result.indices = @[
+    0.uint32,5,4,
+    1,5,0,
+    0,2,1,
+    1,2,3,
+    1,7,5,
+    3,7,1,
+    3,6,7,
+    2,6,3,
+    0,6,2,
+    4,6,0,
+    5,6,4,
+    7,6,5
+  ]
+
 proc initPrim(mesh: TPrimMesh, color: TColor, pos: TVec3f): TPrim =
   result.mesh = mesh
   var (r,g,b) = extractRGB(color)
@@ -109,4 +130,7 @@ proc PrimHandle*(pos: TVec3f = vec3f(0,0,0),
   moveCyl(yrot, ycyl.mesh)
   moveCyl(zrot, zcyl.mesh)
   result = @[xcyl, ycyl, zcyl]
-  
+ 
+
+proc PrimBoundingBox*(aabb: TAlignedBox3f): TPrim =
+  result = initPrim(PrimBoundingBoxMesh(aabb), colGreen, vec3f(0,0,0))
