@@ -208,6 +208,8 @@ proc InitializeDepthBuffer*(size: int): GLuint =
   assert(isPowerOfTwo(size))
   glGenTextures(1, addr result)
   glBindTexture(GL_TEXTURE_2D, result)
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0)
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0)
   glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT_24, size.GLsizei, size.GLsizei, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nil)
   #glTexStorage2D(GL_TEXTURE_2D.GLenum, 1.GLsizei, GL_DEPTH_COMPONENT_24.GLenum, size.GLsizei, size.GLsizei)
   glTexParameteri(GL_TEXTURE_2D.GLenum, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
@@ -237,13 +239,6 @@ proc UpdateUniformBuffer*[T](buffer: GLuint, arr: var openarray[T]) =
     glBufferSubData(GL_UNIFORM_BUFFER, 0.GLintPtr, (sizeof(T) * arr.len).GLsizeiptr, cast[pointer](addr arr))
   glBindBuffer(GL_UNIFORM_BUFFER, 0)
 
-proc AdjustViewMatrix*(mat: TMat4f): TMat4f =
-  result = mat
-  result[1,4] = result[1,4] * -1
-  result[2,4] = result[2,4] * -1
-  result[3,4] = result[3,4] * -1
-proc AdjustProjMatrix*(mat: TMat4f): TMat4f =
-  result = mat
-  result[3,4] = result[3,4] * 2
+
 
  

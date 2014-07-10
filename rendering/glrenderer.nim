@@ -14,7 +14,9 @@ import vecmath
 import unsigned
 import glcore
 import utils.iterators
-
+import genutils
+var test = " this is a test "
+  """this is also a test """
 var defVS = """
 #version 140
 struct matrices_t {
@@ -85,7 +87,7 @@ proc RenderUntextured*(scene: SceneId) {.procvar.} =
       buffers.tex = CreateTexture(tex.data, tex.width, tex.height)
           
     CheckError()
-    AttachTextureToProgram(buffers.tex, program, 0, "tex")
+    AttachTextureToProgram(buffers.tex, program, 0, "tex d" )
     glBindVertexArray(buffers.vao)
     CheckError()
     glBindBuffer(GL_ARRAY_BUFFER.GLenum, buffers.vertex)

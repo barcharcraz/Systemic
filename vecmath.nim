@@ -71,6 +71,10 @@ proc vec2f*(x,y: float32): TVec2f =
   result.data = [x,y]
 proc vec3f*(x,y,z: float32): TVec3f =
   result.data = [x,y,z]
+proc vec3f*(vec: TVec4f): TVec3f =
+  result[1] = vec[1]
+  result[2] = vec[2]
+  result[3] = vec[3]
 proc vec4f*(x,y,z,w: float32): TVec4f =
   result.data = [x,y,z,w]
 proc vec4f*(v: TVec3f, w: float32): TVec4f =
@@ -157,6 +161,10 @@ proc initMat3f*(arrs: array[0..8, float32]): TMat3f =
 proc initMat2f*(arrs: array[0..3, float32]): TMat2f =
   result.data = arrs
   result = transpose(result)
+proc mat3f*(mat: TMat4f): TMat3f =
+  for i in 1..3:
+    for j in 1..3:
+      result[i,j] = mat[i,j]
 proc `$`*(a: TMat3f): string =
   result = formatFloat(a[1,1]) & " " & formatFloat(a[1,2]) & formatFloat(a[1,3]) & "\n" &
            formatFloat(a[2,1]) & " " & formatFloat(a[2,2]) & formatFloat(a[2,3]) & "\n" &
@@ -171,14 +179,15 @@ proc mulv*(a: TMat3f, b: TVec3f): TVec3f =
 proc mul4v*(a: TMat4f, v: TVec4f): TVec4f =
   for i in 1..4:
     result[i] = dot(a.row(i), v)
+
 discard """
 proc mul*(a: TMat3f; b: TMat3f): TMat3f =
   for i in 1..3:
     for j in 1..3:
       result[i,j] = dot(row(a,i), col(b,j))
 """
-proc `==`*(a: TMatrix; b: TMatrix): bool =
-  result = a.data == b.data
+#proc `==`*(a: TMatrix; b: TMatrix): bool =
+#  result = a.data == b.data
 proc identity4f*(): TMat4f =
   for i in 1..4:
     result[i,i] = 1'f32
@@ -189,9 +198,11 @@ proc identity3f*(): TMat3f =
 proc x*(a: TVec): TVec.T = a[1]
 proc y*(a: TVec): TVec.T = a[2]
 proc z*(a: TVec): TVec.T = a[3]
+proc w*(a: TVec): TVec.T = a[4]
 proc `x=`*(a: var TVec, val: TVec.T) = a[1] = val
 proc `y=`*(a: var TVec, val: TVec.T) = a[2] = val
 proc `z=`*(a: var TVec, val: TVec.T) = a[3] = val
+proc `w=`*(a: var TVec, val: TVec.T) = a[4] = val
 proc xyz*(a: TVec4f): TVec3f = vec3f(a.x, a.y, a.z)
 proc norm*(a: TVec): float =
   sqrt(dot(a,a))
@@ -238,56 +249,6 @@ proc cross*(u,v: TVec3f): TVec3f =
   result.y = (u.z * v.x) - (u.x * v.z)
   result.z = (u.x * v.y) - (u.y * v.x)
 
-#AABB related code
-proc contains*(aabb: TAlignedBox3f, target: TAlignedBox3f): bool =
-  if (target.min >= aabb.min) and (target.min <= aabb.max):
-    return true
-  if (target.max <= aabb.max) and (target.max >= aabb.min):
-    return true
-  return false
-proc encloses*(aabb: TAlignedBox3f, target: TAlignedBox3f): bool =
-  if (target.min >= aabb.min) and (target.max <= aabb.max):
-    return true
-  return false
-proc extend*(aabb: var TAlignedBox3f, target: TVec3f) =
-  for i in 1..3:
-    if target[i] < aabb.min[i]: aabb.min[i] = target[i]
-    if target[i] > aabb.max[i]: aabb.max[i] = target[i]
-proc extend*(aabb: var TAlignedBox3f, target: TAlignedBox3f) =
-  for i in 1..3:
-    if target.min[i] < aabb.min[i]: aabb.min[i] = target.min[i]
-    if target.max[i] > aabb.max[i]: aabb.max[i] = target.max[i]
-  assert(target in aabb)
-proc corner*(aabb: TAlignedBox3f, which: TCornerType): TVec3f =
-  var mult = 1.uint
-  for i in 1..3:
-    if (mult.uint and which.uint) > 0.uint: result[i] = aabb.max[i]
-    else: result[i] = aabb.min[i]
-    mult = mult * 2
-proc split*(aabb: TAlignedBox3f, axis: TAxis): tuple[a,b: TAlignedBox3f] =
-  result.a = aabb
-  result.b = aabb
-  var axisIdx = axis.int
-  var diff = aabb.max - aabb.min
-  result.a.min[axisIdx] = result.a.min[axisIdx] + (diff[axisIdx] / 2)
-  result.b.max[axisIdx] = result.b.max[axisIdx] - (diff[axisIdx] / 2)
-proc split*(aabb: TAlignedBox3f, axis: TAxis; a,b: var TAlignedBox3f) =
-  var (tmpa, tmpb) = split(aabb, axis)
-  a = tmpa
-  b = tmpb
-proc split*(aabb: TAlignedBox3f): array[1..8, TAlignedBox3f] =
-  split(aabb, axisYZ, result[1], result[3])
-  split(result[1], axisXZ, result[1], result[2])
-  split(result[3], axisXZ, result[3], result[4])
-  split(result[1], axisXY, result[1], result[5])
-  split(result[2], axisXY, result[2], result[6])
-  split(result[3], axisXY, result[3], result[7])
-  split(result[4], axisXY, result[4], result[8])
-proc centroid*(aabb: TAlignedBox3f): TVec3f =
-  result = (aabb.min + aabb.max) / 2
-proc `$`*(aabb: TAlignedBox3f): string {.noSideEffect.} =
-  result = "min: " & formatVec3f(aabb.min) & "\nmax: " & formatVec3f(aabb.max)
-
 
 #transform related code
 proc toAffine*(a: TMat3f): TMat4f =
@@ -331,6 +292,8 @@ proc CreateOrthoMatrix*(min, max: TVec3f): TMat4f =
                  0,  sy,  0,    0,
                  0,  0,   sz,   0,
                  tx,  ty, tz,   1]
+proc CreateOrthoMatrix*(box: TAlignedBox3f): TMat4f =
+  result = CreateOrthoMatrix(box.min, box.max)
 #quaternion related code
 proc `[]`*(self: TQuatf; i: int): float32 = array[1..4, float32](self)[i]
 proc `[]=`*(self: var TQuatf; i: int; val: float32) = array[1..4,float32](self)[i] = val
@@ -371,10 +334,17 @@ proc mul*(p: TQuatf; q: TQuatf): TQuatf =
   result[2] = p.w * q.x + p.x * q.w + p.y * q.z - p.z * q.y;
   result[3] = p.w * q.y + p.y * q.w + p.z * q.x - p.x * q.z;
   result[4] = p.w * q.z + p.z * q.w + p.x * q.y - p.y * q.x;
+
 proc mulv*(q: TQuatf; v: TVec3f): TVec3f =
   var qv = quatf(0, v.x, v.y, v.z)
   var prod = mul(q, mul(qv, conj(q)))
   result = vec3f(prod.i, prod.j, prod.k)
+proc mul*(p: TQuatf; a: TAlignedBox3f): TAlignedBox3f =
+  var rotmin = mulv(p, a.min)
+  var rotmax = mulv(p, a.max)
+  for i in 1..3:
+    result.min[i] = min(a.min[i], rotmin[i])
+    result.max[i] = max(a.max[i], rotmax[i])
 proc toRotMatrix*(q: TQuatf): TMat3f =
   #this code is ported from Eigen
   #pretty much directly
@@ -447,8 +417,125 @@ proc identityQuatf*(): TQuatf =
   result[3] = 0.0'f32
   result[4] = 0.0'f32
 
+#AABB related code
+proc contains*(aabb: TAlignedBox3f, target: TAlignedBox3f): bool =
+  if (target.min >= aabb.min) and (target.min <= aabb.max):
+    return true
+  if (target.max <= aabb.max) and (target.max >= aabb.min):
+    return true
+  return false
+proc encloses*(aabb: TAlignedBox3f, target: TAlignedBox3f): bool =
+  if (target.min >= aabb.min) and (target.max <= aabb.max):
+    return true
+  return false
+proc extend*(aabb: var TAlignedBox3f, target: TVec3f) =
+  for i in 1..3:
+    if target[i] < aabb.min[i]: aabb.min[i] = target[i]
+    if target[i] > aabb.max[i]: aabb.max[i] = target[i]
+proc extend*(aabb: var TAlignedBox3f, target: TAlignedBox3f) =
+  for i in 1..3:
+    if target.min[i] < aabb.min[i]: aabb.min[i] = target.min[i]
+    if target.max[i] > aabb.max[i]: aabb.max[i] = target.max[i]
+  #assert(target in aabb)
+proc corner*(aabb: TAlignedBox3f, which: TCornerType): TVec3f =
+  var mult = 1.uint
+  for i in 1..3:
+    if (mult.uint and which.uint) > 0.uint: result[i] = aabb.max[i]
+    else: result[i] = aabb.min[i]
+    mult = mult * 2
+proc split*(aabb: TAlignedBox3f, axis: TAxis): tuple[a,b: TAlignedBox3f] =
+  result.a = aabb
+  result.b = aabb
+  var axisIdx = axis.int
+  var diff = aabb.max - aabb.min
+  result.a.min[axisIdx] = result.a.min[axisIdx] + (diff[axisIdx] / 2)
+  result.b.max[axisIdx] = result.b.max[axisIdx] - (diff[axisIdx] / 2)
+proc split*(aabb: TAlignedBox3f, axis: TAxis; a,b: var TAlignedBox3f) =
+  var (tmpa, tmpb) = split(aabb, axis)
+  a = tmpa
+  b = tmpb
+proc split*(aabb: TAlignedBox3f): array[1..8, TAlignedBox3f] =
+  split(aabb, axisYZ, result[1], result[3])
+  split(result[1], axisXZ, result[1], result[2])
+  split(result[3], axisXZ, result[3], result[4])
+  split(result[1], axisXY, result[1], result[5])
+  split(result[2], axisXY, result[2], result[6])
+  split(result[3], axisXY, result[3], result[7])
+  split(result[4], axisXY, result[4], result[8])
+proc centroid*(aabb: TAlignedBox3f): TVec3f =
+  result = (aabb.min + aabb.max) / 2
+proc mulArea*(aabb: TAlignedBox3f, mat: TMat4f): TAlignedBox3f =
+  ## multiplies the aabb by the matrix and preserves the area
+  ## this means that it is not "real" matrix multiplication, but
+  ## rather multiplication of each corner of the AABB by the matrix
+  ## followed by a reconstruction of the aabb
+  var transformedPoints: array[1..8, TVec3f]
+  for i in 1..8:
+    var corner = aabb.corner(TCornerType(i-1))
+    transformedPoints[i] = vec3f(mul4v(mat, vec4f(corner, 1)))
+  var minx:float32 = Inf
+  var miny:float32 = Inf
+  var minz:float32 = Inf
+  var maxx:float32 = NegInf
+  var maxy:float32 = NegInf
+  var maxz:float32 = NegInf
+  for vec in transformedPoints:
+    if vec.x < minx: minx = vec.x
+    if vec.y < miny: miny = vec.y
+    if vec.z < minz: minz = vec.z
+    if vec.x > maxx: maxx = vec.x
+    if vec.y > maxy: maxy = vec.y
+    if vec.z > maxz: maxz = vec.z
+  result.min = vec3f(minx, miny, minz)
+  result.max = vec3f(maxx, maxy, maxz)
+
+proc `$`*(aabb: TAlignedBox3f): string {.noSideEffect.} =
+  result = "min: " & formatVec3f(aabb.min) & "\nmax: " & formatVec3f(aabb.max)
 
 
+# frustum related code, for culling and
+# other stuff
+type TPlane* = distinct TVec4f
+type TNormalPlane* = distinct TVec4f
+proc extractPlane*(matrix: TMat4f, side, sign: int): TPlane =
+  ## extract a frustum plane from a matrix
+  ## the side and sign parameters determine
+  ## which row vector is used and weather it is added
+  ## or subtracted from the last row vector
+  result = TPlane(matrix.row(4) + float(sign)*matrix.row(side))
+proc extractPlane*(matrix: TMat4f, plane: int): TPlane =
+  assert(plane > 0)
+  assert(plane < 7)
+  var sgn = plane mod 2
+  if sgn > 0: sgn = -1
+  else: sgn = 1
+  result = extractPlane(matrix, (plane div 2) + 1, sgn)
+proc toHessianNormalForm*(plane: TPlane): TNormalPlane =
+  var asq = pow(TVec4f(plane).x, 2)
+  var bsq = pow(TVec4f(plane).y, 2)
+  var csq = pow(TVec4f(plane).z, 2)
+  var denom = sqrt(asq + bsq + csq)
+  result = (plane.TVec4f / denom).TNormalPlane
+proc distance(plane: TNormalPlane, point: TVec3f): float =
+  var plane = plane.TVec4f
+  var normVec = vec3f(plane.x, plane.y, plane.z)
+  result = dot(normVec, point) + plane.w
+proc frustumContains*(frustum: TMat4f, box: TAlignedBox3f): bool =
+  result = true
+  for i in 1..6:
+    var numOut: int = 0
+    var numIn: int = 0
+    var plane = toHessianNormalForm(extractPlane(frustum, i))
+    for k in 1..8:
+      if not ((numIn == 0) or (numOut == 0)): break
+      if plane.distance(box.corner((k-1).TCornerType)) < 0:
+        inc(numOut)
+      else:
+        inc(numIn)
+    if numIn == 0:
+      return false
+    
+      
 discard """
 const XSwiz = {'x', 'r', 'u' }
 const YSwiz = {'y', 'g', 'v' }

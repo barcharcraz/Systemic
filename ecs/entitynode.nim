@@ -65,6 +65,11 @@ proc add*[T](ent: EntityId, elm: T) =
 proc add*(ent: EntityId, typ: string, item: pointer) =
   entTypeMapping[typ](ent, item)
 
+proc add*[T](scene: SceneId, item: T): EntityId {.discardable.} =
+  result = genEntity()
+  add(scene, result)
+  result.add(item)
+
 proc del*[T](ent: EntityId, typ: typedesc[T]) =
   var scene = ent.getScene()
   var comps = addr components(scene, TComponent[T])

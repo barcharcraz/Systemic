@@ -25,7 +25,7 @@ proc ClearAll*() =
 proc initSceneNode*[T](): TSceneNode[T] = 
   newSeq(result.sceneList, 10)
 
-proc addComponent*[T](scene: SceneId, item: T)
+#proc addComponent*[T](scene: SceneId, item: T)
 
 proc addToNode*[T](node: var TSceneNode[T], scene: SceneId, item: T) =
   if node.sceneList.len <= scene.int:
@@ -93,13 +93,13 @@ template MakeComponent*(typ: expr) =
     typeMapping.add(name(typ)) do (scene: SceneId, elm: pointer):
       addComponent(scene, cast[ptr typ](elm)[])
 
-proc addComponent*[T](scene: TScene, item: T) = 
-  GetDefaultNode[T]().addToNode(scene.id, item)
-proc addComponent*[T](scene: SceneId; item: T) =
-  echo name(T)
-  GetDefaultNode[T]().addToNode(scene, item)
-proc deleteComponent*[T](scene: SceneId; typ: typedesc[T]; idx: int) =
-  GetDefaultNode[T]().sceneList[scene.int].del(idx)
+#proc addComponent*[T](scene: TScene, item: T) = 
+#  GetDefaultNode[T]().addToNode(scene.id, item)
+#proc addComponent*[T](scene: SceneId; item: T) =
+#  echo name(T)
+#  GetDefaultNode[T]().addToNode(scene, item)
+#proc deleteComponent*[T](scene: SceneId; typ: typedesc[T]; idx: int) =
+#  GetDefaultNode[T]().sceneList[scene.int].del(idx)
 ##gets the sequence of typ components in the given scene
 template getComponent*(scene: TScene, typ: expr): expr = 
   GetDefaultNode[typ]().sceneList[scene.id]

@@ -7,3 +7,4 @@ type EUnsupportedFormat* = object of ESynch
 type EVertexAttributeNotFound* = object of ESynch
 type EFramebufferInvalid* = object of ESynch
 type EInvalidSize* = object of ESynch
+type ENotFound* = object of ESynch

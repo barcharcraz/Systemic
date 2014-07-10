@@ -9,6 +9,8 @@ import components
 import math
 import genutils
 import utils/iterators
+import prims
+import culling
 var defvs = """
 #version 140
 uniform mat4 lightTransform;
@@ -27,12 +29,30 @@ void main() {
 }
 """
 const shadowMapRes = 1024
+proc findLightMatrix(scene: SceneId): TMat4f =
+  var bbox = BruteForceFrustum(scene)
+  #bbox.max = bbox.max + vec3f(10,10,10)
+  #bbox.min = bbox.min - vec3f(10,10,10)
+  swap(bbox.max.data[2], bbox.min.data[2])
+  echo bbox
+  #bbox.min = vec3f(-20, -20, 20)
+  #bbox.max = vec3f(20,20,-20)
+  var prim {.global.}: EntityId
+  if prim == 0.EntityId:
+    prim = genEntity()
+    scene.add(prim)
+    prim.add(PrimBoundingBox(bbox))
+  else:
+    prim@TPrim = PrimBoundingBox(bbox)
+  result = CreateOrthoMatrix(bbox)
 proc RenderShadowMaps*(scene: SceneId) {.procvar.} =
   var program {.global.}: GLuint
   var ps {.global.}: GLuint
   var vs {.global.}: GLuint
   var fbo {.global.}: GLuint
-  var projmtx = CreateOrthoMatrix(vec3f(-20, -20, 20), vec3f(20, 20, -20))
+  var projmtx = findLightMatrix(scene)
+
+  #var projmtx = CreateOrthoMatrix(vec3f(-20, -20, 20), vec3f(20, 20, -20))
   if vs == 0 or ps == 0:
     vs = CompileShader(GL_VERTEX_SHADER, defvs)
     ps = CompileShader(GL_FRAGMENT_SHADER, defps)

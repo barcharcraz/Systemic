@@ -12,7 +12,7 @@ type TPrim* = object
   pos*: TVec3f
   color*: TVec3f
   mesh*: TPrimMesh
-MakeComponent(TPrim)
+MakeEntityComponent(TPrim)
 proc PrimCircleMesh(radius: float): TPrimMesh =
   const steps = 8
   var nextVert = vec3f(radius,0,0)

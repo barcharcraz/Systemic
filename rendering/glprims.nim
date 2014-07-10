@@ -16,6 +16,7 @@ import unsigned
 import algorithm
 import sequtils
 import utils/iterators
+import genutils
 const primVS = """
 #version 140
 struct matrices_t {

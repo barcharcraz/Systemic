@@ -33,8 +33,8 @@ import prims
 var log = newConsoleLogger()
 handlers.add(log)
 
-const winw = 640
-const winh = 480
+const winw = 1280
+const winh = 1024
 #cairo code
 var cairo_surface = image_surface_create(FORMAT_ARGB32, winw, winh)
 var cairo_ctx = create(cairo_surface)
@@ -71,17 +71,15 @@ var camEnt = mainscene.id.addCamera()
 var inp = initShooterKeys()
 camEnt.add(addr inp)
 
-mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(0,0,-10))
-mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(10, 10,-45))
-mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(-10,5,-25))
-mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(5,0,-20))
-mainscene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.tga", vec3f(5,0,-5))
+mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(10,0,-2))
+#mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(10, 10,-45))
+#mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(-10,5,-25))
+#mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(5,0,-20))
+var testObj = mainscene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.tga", vec3f(5,0,-5))
+(testObj@TTransform).rotation = quatFromAngleAxis(PI/2, vec3f(1,0,0))
 mainscene.id.addStaticMesh("assets/land.obj", "assets/diffuse.tga", vec3f(0,-5,0))
 populateAssets(listBox, "assets", "*.obj")
 UpdateAABBs(mainscene.id)
-var octree = MakeOctree(mainscene.id)
-var octreeboxxes = GetBoundingBoxxes(octree[])
-for elm in octreeboxxes: mainscene.id.addComponent(PrimBoundingBox(elm))
 initOpenGLRenderer()
 glViewport(0,0,winw,winh)
 glClearColor(0.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
@@ -92,12 +90,11 @@ proc UpdateAll(scene: SceneId) =
   MovementSystem(scene, inp)
   VelocitySystem(scene)
   HandleAllInput(frame, pollInputAbsolute(wnd))
-  DrawWidgets(cairo_ctx, frame)
-  RenderUI(cairo_ctx)
   PrimitiveRenderSystem(scene)
   RenderShadowMaps(scene)
   RenderPhongLit(scene)
-
+  DrawWidgets(cairo_ctx, frame)
+  RenderUI(cairo_ctx)
 while not done and not wnd.shouldClose:
   UpdateGameTime()
   UpdateAll(mainscene.id)

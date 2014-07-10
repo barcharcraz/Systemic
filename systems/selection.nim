@@ -2,6 +2,7 @@ import vecmath
 import utils/log
 import opengl
 import rendering/glcore
+import rendering/genutils
 import ecs
 import components
 import strutils

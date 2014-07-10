@@ -46,3 +46,12 @@ proc ConstructDepthVP*(dir: TVec3f, proj: TMat4f): TMat4f =
   result = mul(BiasMatrix, vp)
 proc ConstructDirDepthVP*(dir: TVec3f): TMat4f =
   result = ConstructDepthVP(dir, DefaultDirProj)
+
+proc AdjustViewMatrix*(mat: TMat4f): TMat4f =
+  result = mat
+  result[1,4] = result[1,4] * -1
+  result[2,4] = result[2,4] * -1
+  result[3,4] = result[3,4] * -1
+proc AdjustProjMatrix*(mat: TMat4f): TMat4f =
+  result = mat
+  result[3,4] = result[3,4] * 2

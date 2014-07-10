@@ -17,7 +17,6 @@ proc initAABB*(mesh: TMesh): TAxisAlignedBB =
 proc UpdateAABBs*(scene: SceneId) {.procvar.} =
   for id, transform, aabb in walk(scene, TTransform, TAxisAlignedBB):
     var mtx = transform[].GenMatrix()
-    var min = vec4f(aabb[].RestAABB.min, 1)
-    var max = vec4f(aabb[].RestAABB.max, 1)
-    aabb[].CurAABB.min = mul4v(mtx, min).xyz
-    aabb[].CurAABB.max = mul4v(mtx, max).xyz
+    aabb[].CurAABB = mulArea(aabb[].RestAABB, mtx)
+    #if aabb[].CurAABB.max < aabb[].CurAABB.min:
+    #  swap(aabb.CurAABB.min, aabb[].CurAABB.max)
