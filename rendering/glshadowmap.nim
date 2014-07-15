@@ -51,7 +51,6 @@ proc RenderShadowMaps*(scene: SceneId) {.procvar.} =
   var vs {.global.}: GLuint
   var fbo {.global.}: GLuint
   var projmtx = findLightMatrix(scene)
-
   #var projmtx = CreateOrthoMatrix(vec3f(-20, -20, 20), vec3f(20, 20, -20))
   if vs == 0 or ps == 0:
     vs = CompileShader(GL_VERTEX_SHADER, defvs)

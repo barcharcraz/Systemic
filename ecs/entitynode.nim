@@ -44,7 +44,6 @@ template MakeEntityComponent*(typ: expr) =
 proc entities*(scene: SceneId; typ: typedesc): var seq[EntityId] =
   macro getIdent(): expr =
     result = newIdentNode(!(genIdentName(name(typ) & "EntityIds")))
-  static: echo(name(typ))
   result = getIdent().sceneList[scene.int]
   if result.isnil:
     getIdent().sceneList[scene.int] = @[]
@@ -53,7 +52,6 @@ proc entities*(scene: SceneId; typ: typedesc): var seq[EntityId] =
   assert(verifySorted(result))
 proc add*[T](ent: EntityId, elm: T) =
   var scene: SceneId = ent.getScene
-  static: echo(name(T))
   var ents = addr entities(scene, type(elm))
   var comps = addr components(scene, type(elm))
   assert(ents[].len() == comps[].len())
@@ -129,7 +127,6 @@ iterator walk*(scene: SceneId; typ1, typ2: typedesc, create: bool = false): auto
         yield (id, a, addr comps[i])
       if ents[i].int > id.int:
         if create:
-          echo "hit create"
           createDefault(id, typ2)
           yield(id, a, addr comps[i])
         break

@@ -129,7 +129,6 @@ proc transpose*(a: TMatrix): TMatrix =
       result[i,j] = a[j,i]
 
 proc det*(a: SquareMatrix): float =
-  static: echo SquareMatrix.N
   when SquareMatrix.N == 2:
     result = (a[1,1] * a[2,2]) - (a[1,2] * a[2,1])
   else:
@@ -488,7 +487,6 @@ proc mulArea*(aabb: TAlignedBox3f, mat: TMat4f): TAlignedBox3f =
     if vec.z > maxz: maxz = vec.z
   result.min = vec3f(minx, miny, minz)
   result.max = vec3f(maxx, maxy, maxz)
-
 proc `$`*(aabb: TAlignedBox3f): string {.noSideEffect.} =
   result = "min: " & formatVec3f(aabb.min) & "\nmax: " & formatVec3f(aabb.max)
 
@@ -552,6 +550,31 @@ proc `.`*[N: static[int]; T](self: TVec[N, T]; field: static[string]): TVec[fiel
     if field[i-1] in WSwiz:
       result[i] = self[4]
 """
+#directly graphics related functions, like ports of glu stuff and the like, 
+proc LookAt*(eye, center, up: TVec3f): TMat4f =
+  ## makes a viewing matrix that looks at a given object from a given center
+  ## and "up" point, this works like gluLookAt but returns a matrix instead
+  ## of messing with the old matrix stack.
+  var forward = center - eye
+  forward = normalize(forward)
+  var side = cross(forward, up)
+  side = normalize(side)
+  up = cross(side, forward)
+  result = identity4f()
+  result[1][1] = side[1]
+  result[2][1] = side[2]
+  result[3][1] = side[3]
+
+  result[1][2] = up[0]
+  result[2][2] = up[1]
+  result[3][2] = up[2]
+  
+  result[1][3] = -1 * forward[1]
+  result[2][3] = -1 * forward[2]
+  result[3][3] = -1 * forward[3]
+
+  var eyeTrans = toTranslationMatrix(-1 * eye)
+  result = mul(eyeTrans, result)
 when isMainModule:
 
   import unittest

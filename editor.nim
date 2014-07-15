@@ -6,7 +6,6 @@ import widgets
 
 type CAssetContainer = generic x
   add(x, string, proc())
-static: echo((ref TListBox) is CAssetContainer)
 proc populateAssets*(cont: ref TListBox, folder: string, pattern: string) =
   for file in walkFiles(folder / pattern):
     var filev = file

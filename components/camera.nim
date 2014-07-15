@@ -2,9 +2,15 @@ import vecmath
 import math
 type TCamera* = object
   matrix*: TMat4f
+  near: float
+  far: float
+  fov: float
 
 
 proc initCamera*(near, far, fov: float32): TCamera =
+  result.fov = fov
+  result.near = near
+  result.far = far
   var m33 = ((far + near) / (far - near))
   var m34 = ((far * near) / (far - near))
   var scale = (1 / tan(fov * 0.5 * (PI / 180)))
