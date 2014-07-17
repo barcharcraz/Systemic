@@ -48,7 +48,6 @@ proc genIdentName*(name: string): string {.compileTime.}=
 macro concatName(name: static[string]): expr =
   var resultString: string = name & "SceneNode"
   resultString = genIdentName(resultString)
-  echo(resultString)
   result = newIdentNode(!resultString)
 proc GetDefaultNode*[T](): var TSceneNode[T] =
   result = concatName(typetraits.name(T))
@@ -82,7 +81,6 @@ macro MakeComponentNode*(typ: expr, name: static[string]): stmt =
 
 macro MakeComponentNode*(typ: expr): stmt =
   var nodeName: string = repr(typ) & "SceneNode"
-  echo nodeName
   nodeName = genIdentName(nodeName)
   
   result = getAst(MakeComponentNode(typ, nodeName))

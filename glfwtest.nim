@@ -44,8 +44,6 @@ var listBox = new(initListBox(vec2f(20,20)))
 #listBox.add(new(initButton(vec2f(20,20))))
 #listBox.add(new(initButton(vec2f(20,20))))
 frame.add(listBox)
-
-
 #glfw initialization
 glfw.init()
 when defined(macosx):
@@ -101,7 +99,7 @@ while not done and not wnd.shouldClose:
   wnd.handleMouse()
   wnd.update()
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT)
-
+  
 wnd.destroy()
 glfw.terminate()
 

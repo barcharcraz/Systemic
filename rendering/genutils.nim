@@ -39,7 +39,12 @@ let BiasMatrix* = TMat4f(data: [0.5'f32, 0.0, 0.0, 0.0,
                                   0.0, 0.0, 0.5, 0.0,
                                   0.5, 0.5, 0.5, 1.0])
 let DefaultDirProj = CreateOrthoMatrix(vec3f(-20, -20, 20), vec3f(20,20,-20))
-#proc ConstructDirShadowProj(dir: TVec3f
+proc ConstructDirShadowMatrices*(camera: TCamera, dir: TVec3f): tuple[view, proj: TMat4f] =
+  var corners: array[TFrustumCorner, TVec3f]
+  for elm in TFrustumCorner:
+    corners[elm] =  FrustumCorner(camera, elm)
+  var centroid = sum(corners) / len(corners).float32
+  system.
 proc ConstructDepthVP*(dir: TVec3f, proj: TMat4f): TMat4f =
   var view = CalcViewMatrix(dir)
   var vp = mul(proj, view)

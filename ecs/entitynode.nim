@@ -14,7 +14,7 @@ proc verifyNoDups[T](a: openarray[T]): bool =
   var a: seq[T] = @a
   sort(a) do (a,b: EntityId) -> int: system.cmp[int](a.int, b.int)
   var dups: seq[T] = @[]
-  var i: int = a.low
+  var i: int = a.low.int
   while i < a.high:
     if a[i] == a[i+1]:
       dups.add(a[i])
@@ -83,19 +83,6 @@ iterator components*(ent: EntityId, typ: typedesc): typ {.inline.} =
   for elm in components(scene, TComponent[typ]):
     if elm.id == ent:
       yield elm.data
-
-type HasEntComponent = generic x
-  compiles(GetDefaultNode[TComponent[x]]())
-
-proc hasEnt(comps: seq[pointer], ent: EntityId): bool =
-  type TBaseComp = object
-    id: EntityId
-  for elm in comps:
-    #here we rely on structural compatibility
-    var baseComp: TBaseComp = cast[TBaseComp](elm)
-    if baseComp.id == ent:
-      return true
-  return false
 
 proc `?`*(ent: EntityId, typ: typedesc): ptr typ =
   var ents = addr entities(getScene(ent), typ)

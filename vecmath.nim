@@ -10,9 +10,7 @@ type TMatrix*[N: static[int]; M: static[int]; T; O: Options] = object
   data*: array[0..M*N-1, T]
 type 
   SquareMatrix[N: static[int]; T] = TMatrix[N,N,T,ColMajor]
-type SquareMatGT[T: static[int]] = generic x
-  x is SquareMatrix
-  x.N > T
+
 type
   TVec*[N: static[int]; T] = TMatrix[N, 1, T, ColMajor]
   TVec3*[T] = TVec[3, T]
@@ -293,6 +291,13 @@ proc CreateOrthoMatrix*(min, max: TVec3f): TMat4f =
                  tx,  ty, tz,   1]
 proc CreateOrthoMatrix*(box: TAlignedBox3f): TMat4f =
   result = CreateOrthoMatrix(box.min, box.max)
+proc CreateOrthoMatrix*(left, right, bottom, top, near, far: float32): TMat4f =
+  ## this works just like glOrtho
+  result.data = [2/(right - left), 0, 0, 0,
+                 0, 2/(top-bottom), 0, 0,
+                 0, 0, -2 / (far - near), 0,
+                 -(right + left)/(right - left), -(top+bottom)/(top-bottom), 
+                 -2 * ((far + near)/(far - near)), 1]
 #quaternion related code
 proc `[]`*(self: TQuatf; i: int): float32 = array[1..4, float32](self)[i]
 proc `[]=`*(self: var TQuatf; i: int; val: float32) = array[1..4,float32](self)[i] = val
@@ -439,7 +444,7 @@ proc extend*(aabb: var TAlignedBox3f, target: TAlignedBox3f) =
 proc corner*(aabb: TAlignedBox3f, which: TCornerType): TVec3f =
   var mult = 1.uint
   for i in 1..3:
-    if (mult.uint and which.uint) > 0.uint: result[i] = aabb.max[i]
+    if (mult and which.uint) > 0.uint: result[i] = aabb.max[i]
     else: result[i] = aabb.min[i]
     mult = mult * 2
 proc split*(aabb: TAlignedBox3f, axis: TAxis): tuple[a,b: TAlignedBox3f] =
@@ -559,19 +564,19 @@ proc LookAt*(eye, center, up: TVec3f): TMat4f =
   forward = normalize(forward)
   var side = cross(forward, up)
   side = normalize(side)
-  up = cross(side, forward)
+  var up = cross(side, forward)
   result = identity4f()
-  result[1][1] = side[1]
-  result[2][1] = side[2]
-  result[3][1] = side[3]
+  result[1,1] = side[1]
+  result[2,1] = side[2]
+  result[3,1] = side[3]
 
-  result[1][2] = up[0]
-  result[2][2] = up[1]
-  result[3][2] = up[2]
+  result[1,2] = up[0]
+  result[2,2] = up[1]
+  result[3,2] = up[2]
   
-  result[1][3] = -1 * forward[1]
-  result[2][3] = -1 * forward[2]
-  result[3][3] = -1 * forward[3]
+  result[1,3] = -1 * forward[1]
+  result[2,3] = -1 * forward[2]
+  result[3,3] = -1 * forward[3]
 
   var eyeTrans = toTranslationMatrix(-1 * eye)
   result = mul(eyeTrans, result)

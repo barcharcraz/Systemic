@@ -12,4 +12,3 @@ proc populateAssets*(cont: ref TListBox, folder: string, pattern: string) =
     echo file
     cont.add(file) do:
       activeScene().addStaticMesh(filev, folder / "diffuse.tga", vec3f(0,0,0))
-      

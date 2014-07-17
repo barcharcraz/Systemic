@@ -2,6 +2,7 @@ import logging
 import scene
 import exceptions
 type EntityId* = distinct int
+proc low*(a: EntityId): EntityId {.borrow.}
 proc `==`*(a, b: EntityId): bool {.borrow.}
 var EntityMapping: seq[SceneId] = @[]
 proc clearEntMapping*() =
