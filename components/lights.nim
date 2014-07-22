@@ -14,7 +14,11 @@ type TDirectionalLight* = object
   diffuse*: TVec4f
   specular*: TVec4f
   direction*: TVec4f
-
+type TSpotLight* = object
+  diffuse*: TVec4f
+  specular*: TVec4f
+  direction*: TVec4f
+  fov*: float32
 type TDirectionalLightRaw* = TDirectionalLight
   ## This is a bit of a stupid type definition, but
   ## have it for consistency, and it will be useful

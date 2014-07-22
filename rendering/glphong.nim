@@ -37,6 +37,7 @@ void main() {
 }
 """
 var version = "#version 140\n"
+
 var defPS = """
 """ & LightStructs & ForwardLighting & """
 in vec3 norm_out;
@@ -68,9 +69,9 @@ void main() {
   outputColor = clamp(outputColor, 0.0, 1.0);
   outputColor = (visib * outputColor) + mat.ambiant;
   outputColor = outputColor * texture(tex, vec2(uv_out.x, 1 - uv_out.y));
-}
-
+} 
 """
+
 proc RenderPhongLit*(scene: SceneId) {.procvar.} =
   var program {.global.}: GLuint
   var ps {.global.}: GLuint

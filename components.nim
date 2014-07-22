@@ -22,6 +22,7 @@ export selectDat
 MakeEntityComponent(TCamera)
 MakeEntityComponent(TPointLight)
 MakeEntityComponent(TDirectionalLight)
+MakeEntityComponent(TSpotLight)
 MakeEntityComponent(TMesh)
 MakeEntityComponent(TMaterial)
 MakeEntityComponent(TAcceleration)

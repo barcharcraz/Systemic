@@ -176,7 +176,8 @@ proc mulv*(a: TMat3f, b: TVec3f): TVec3f =
 proc mul4v*(a: TMat4f, v: TVec4f): TVec4f =
   for i in 1..4:
     result[i] = dot(a.row(i), v)
-
+proc mul3v*(a: TMat4f, b: TVec3f): TVec3f =
+  result = vec3f(mul4v(a, vec4f(b, 1)))
 discard """
 proc mul*(a: TMat3f; b: TMat3f): TMat3f =
   for i in 1..3:
@@ -245,6 +246,20 @@ proc cross*(u,v: TVec3f): TVec3f =
   result.x = (u.y * v.z) - (u.z * v.y)
   result.y = (u.z * v.x) - (u.x * v.z)
   result.z = (u.x * v.y) - (u.y * v.x)
+proc extrema*(vecs: varargs[TVec3f]): tuple[min,max: TVec3f] =
+  result.min.x = Inf
+  result.min.y = Inf
+  result.min.z = Inf
+  result.max.x = NegInf
+  result.max.y = NegInf
+  result.max.z = NegInf
+  for vec in vecs:
+    if vec.x > result.max.x: result.max.x = vec.x
+    elif vec.x < result.min.x: result.min.x = vec.x
+    if vec.y > result.max.y: result.max.y = vec.y
+    elif vec.y < result.min.y: result.min.y = vec.y
+    if vec.z > result.max.z: result.max.z = vec.z
+    elif vec.z < result.min.z: result.min.z = vec.z
 
 
 #transform related code
@@ -477,21 +492,9 @@ proc mulArea*(aabb: TAlignedBox3f, mat: TMat4f): TAlignedBox3f =
   for i in 1..8:
     var corner = aabb.corner(TCornerType(i-1))
     transformedPoints[i] = vec3f(mul4v(mat, vec4f(corner, 1)))
-  var minx:float32 = Inf
-  var miny:float32 = Inf
-  var minz:float32 = Inf
-  var maxx:float32 = NegInf
-  var maxy:float32 = NegInf
-  var maxz:float32 = NegInf
-  for vec in transformedPoints:
-    if vec.x < minx: minx = vec.x
-    if vec.y < miny: miny = vec.y
-    if vec.z < minz: minz = vec.z
-    if vec.x > maxx: maxx = vec.x
-    if vec.y > maxy: maxy = vec.y
-    if vec.z > maxz: maxz = vec.z
-  result.min = vec3f(minx, miny, minz)
-  result.max = vec3f(maxx, maxy, maxz)
+  var minmax = extrema(transformedPoints)
+  result.min = minmax.min
+  result.max = minmax.max
 proc `$`*(aabb: TAlignedBox3f): string {.noSideEffect.} =
   result = "min: " & formatVec3f(aabb.min) & "\nmax: " & formatVec3f(aabb.max)
 
@@ -570,14 +573,14 @@ proc LookAt*(eye, center, up: TVec3f): TMat4f =
   result[2,1] = side[2]
   result[3,1] = side[3]
 
-  result[1,2] = up[0]
-  result[2,2] = up[1]
-  result[3,2] = up[2]
+  result[1,2] = up[1]
+  result[2,2] = up[2]
+  result[3,2] = up[3]
   
   result[1,3] = -1 * forward[1]
   result[2,3] = -1 * forward[2]
   result[3,3] = -1 * forward[3]
-
+  result = result.transpose()
   var eyeTrans = toTranslationMatrix(-1 * eye)
   result = mul(eyeTrans, result)
 when isMainModule:

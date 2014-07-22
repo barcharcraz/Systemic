@@ -33,8 +33,8 @@ import prims
 var log = newConsoleLogger()
 handlers.add(log)
 
-const winw = 1280
-const winh = 1024
+const winw = 1366
+const winh = 1366
 #cairo code
 var cairo_surface = image_surface_create(FORMAT_ARGB32, winw, winh)
 var cairo_ctx = create(cairo_surface)
@@ -62,7 +62,7 @@ wnd.cursorMode = cmDisabled
 AttachInput(wnd)
 var done = false
 var mainscene = initScene()
-mainscene.id.addDirectionalLight(vec3f(0.0'f32, -1.0'f32, 0.0'f32).normalize())
+mainscene.id.addDirectionalLight(vec3f(-1.0'f32, -1.0'f32, 0.0'f32).normalize())
 #mainscene.id.addComponent(initDirectionalLight(vec3f(0.0'f32,0.0'f32,-1.0'f32)))
 
 var camEnt = mainscene.id.addCamera()

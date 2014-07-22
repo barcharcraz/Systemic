@@ -16,6 +16,12 @@ struct directionalLight_t {
     vec4 specular;
     vec4 direction;
 };
+struct spotLight_t {
+  vec4 diffuse;
+  vec4 specular;
+  vec4 direction;
+  float fov;
+};
 struct material_t {
     vec4 ambiant;
     vec4 diffuse;

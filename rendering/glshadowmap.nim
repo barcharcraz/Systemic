@@ -28,7 +28,7 @@ void main() {
   fragDepth = gl_FragCoord.z;
 }
 """
-const shadowMapRes = 1024
+const shadowMapRes = 4096
 proc findLightMatrix(scene: SceneId): TMat4f =
   var bbox = BruteForceFrustum(scene)
   #bbox.max = bbox.max + vec3f(10,10,10)
@@ -50,8 +50,7 @@ proc RenderShadowMaps*(scene: SceneId) {.procvar.} =
   var ps {.global.}: GLuint
   var vs {.global.}: GLuint
   var fbo {.global.}: GLuint
-  var projmtx = findLightMatrix(scene)
-  #var projmtx = CreateOrthoMatrix(vec3f(-20, -20, 20), vec3f(20, 20, -20))
+  var (camEnt, camera, camTrans) = first(walk(scene, TCamera, TTransform))
   if vs == 0 or ps == 0:
     vs = CompileShader(GL_VERTEX_SHADER, defvs)
     ps = CompileShader(GL_FRAGMENT_SHADER, defps)
@@ -68,7 +67,7 @@ proc RenderShadowMaps*(scene: SceneId) {.procvar.} =
   glViewport(0,0,shadowMapRes,shadowMapRes)
   glCullFace(GL_FRONT)
   for id, light, map in walk(scene, TDirectionalLight, TShadowMap, create = true):
-    var viewMtx = CalcViewMatrix(light[].direction.xyz)
+    var (viewMtx, projMtx) = ConstructDirShadowMatrices(camera[], camTrans[].GenRotTransMatrix(), vec3f(light[].direction))
     if map[].depthTex == 0:
       map[].depthTex = InitializeDepthBuffer(shadowMapRes)
     map[].shadowVP = mul(projmtx, viewMtx)
