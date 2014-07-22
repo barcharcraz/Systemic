@@ -16,7 +16,6 @@ import glcore
 import utils.iterators
 import genutils
 var test = " this is a test "
-  """this is also a test """
 var defVS = """
 #version 140
 struct matrices_t {

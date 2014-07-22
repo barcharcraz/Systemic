@@ -44,7 +44,6 @@ proc ConstructDirShadowMatrices*(camera: TCamera, dir: TVec3f): tuple[view, proj
   for elm in TFrustumCorner:
     corners[elm] =  FrustumCorner(camera, elm)
   var centroid = sum(corners) / len(corners).float32
-  system.
 proc ConstructDepthVP*(dir: TVec3f, proj: TMat4f): TMat4f =
   var view = CalcViewMatrix(dir)
   var vp = mul(proj, view)
