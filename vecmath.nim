@@ -1,6 +1,7 @@
 import math
 import strutils
 import unsigned
+import utils/memory
 type ColMajor = object
 type RowMajor = object
 type Options = generic x
@@ -45,6 +46,9 @@ type TAxis* = enum
   axisYZ = 1,
   axisXZ = 2,
   axisXY = 3
+type TRay* = object
+  dir*: TVec3f
+  origin*: TVec3f
 proc `[]=`*(self: var TMatrix; i,j: int; val: TMatrix.T) =
   when TMatrix.O is RowMajor:
     var idx = (TMatrix.M * (i-1)) + (j-1)
@@ -178,6 +182,9 @@ proc mul4v*(a: TMat4f, v: TVec4f): TVec4f =
     result[i] = dot(a.row(i), v)
 proc mul3v*(a: TMat4f, b: TVec3f): TVec3f =
   result = vec3f(mul4v(a, vec4f(b, 1)))
+proc mul3vd*(a: TMat4f, b: TVec3f): TVec3f =
+  ## treats the input as a direction, not as a position
+  result = vec3f(mul4v(a, vec4f(b, 0)))
 discard """
 proc mul*(a: TMat3f; b: TMat3f): TMat3f =
   for i in 1..3:
@@ -429,7 +436,14 @@ proc quatFromAngleAxis*(angle: float; axis: TVec3f): TQuatf =
   result[3] = axis[2] * vecScale
   result[4] = axis[3] * vecScale
   result[1] = cos(0.5 * angle)
-
+proc quatFromTwoVectors*(v,w: TVec3f): TQuatf =
+  var v = normalize(v)
+  var w = normalize(w)
+  var c = normalize(cross(v,w))
+  result.i = c.x
+  result.j = c.y
+  result.k = c.z
+  result.w = 1 + dot(v,w)
 proc identityQuatf*(): TQuatf =
   result[1] = 1.0'f32
   result[2] = 0.0'f32
@@ -498,7 +512,247 @@ proc mulArea*(aabb: TAlignedBox3f, mat: TMat4f): TAlignedBox3f =
 proc `$`*(aabb: TAlignedBox3f): string {.noSideEffect.} =
   result = "min: " & formatVec3f(aabb.min) & "\nmax: " & formatVec3f(aabb.max)
 
+#this ray has more information
+#than TRay, for fast slope based intersections
+type TRayClassification = enum
+  MMM,MMP,MPM,MPP,PMM,PMP,PPM,PPP,POO,MOO,OPO,OMO,OOP,OOM,
+  OMM,OMP,OPM,OPP,MOM,MOP,POM,POP,MMO,MPO,PMO,PPO
+type TIntersectRay* = object
+  class: TRayClassification
+  x,y,z: float
+  i,j,k: float
+  ii,ij,ik:float
+  ibyj,jbyi,kbyj,jbyk,ibyk,kbyi: float
+  c_xy,c_yx,c_zy,c_yz,c_xz,c_zx: float
+proc Precompute_Ray*(ray: TRay): TIntersectRay =
+  const XXX = {MMM,MMP,MPM,MPP,PMM,PMP,PPM,PPP,POO,MOO,OPO,OMO,OOP,OOM,
+               OMM,OMP,OPM,OPP,MOM,MOP,POM,POP,MMO,MPO,PMO,PPO}
+  const MXX = {MMM,MMP,MPM,MPP,MOO,MOM,MOP,MMO,MPO}
+  const PXX = {PMM,PMP,PPM,PPP,POO,POM,POP,PMO,PPO}
+  const OXX = {OPO,OMO,OOP,OOM,OMM,OMP,OPM,OPP}
+  const XMX = {MMM,MMP,PMM,PMP,OMO,OMM,OMP,MMO,PMO}
+  const XPX = {MPM,MPP,PPM,PPP,OPO,OPM,OPP,MPO,PPO}
+  const XOX = {POO,MOO,OOP,OOM,MOM,MOP,POM,POP}
+  const XXM = {MMM,MPM,PMM,PPM,OOM,OMM,OPM,MOM,POM}
+  const XXP = {MMP,MPP,PMP,PPP,OOP,OMP,OPP,MOP,POP}
+  const XXO = {POO,MOO,OPO,OMO,MMO,MPO,PMO,PPO}
+  result.x = ray.origin.x
+  result.y = ray.origin.y
+  result.z = ray.origin.z
+  result.i = ray.dir.x
+  result.j = ray.dir.y
+  result.k = ray.dir.z
+  result.ii = 1.0/result.i
+  result.ij = 1.0/result.j
+  result.ik = 1.0/result.k
+  result.ibyj = result.i * result.ij
+  result.jbyi = result.j * result.ii
+  result.jbyk = result.j * result.ik
+  result.kbyj = result.k * result.ij
+  result.ibyk = result.i * result.ik
+  result.kbyi = result.k * result.ii
+  result.c_xy = result.y - result.jbyi * result.x
+  result.c_yx = result.x - result.kbyi * result.y
+  result.c_zy = result.y - result.ibyj * result.z
+  result.c_yz = result.z - result.kbyj * result.y
+  result.c_xz = result.z - result.ibyk * result.x
+  result.c_zx = result.x - result.jbyk * result.z
+  var possibleClass: set[TRayClassification] = XXX
+  #the paper does this with if statements, but I like this way much better
+  if result.i < 0: possibleClass = possibleClass * MXX
+  elif result.i == 0: possibleClass = possibleClass * OXX
+  else: possibleClass = possibleClass * PXX
+  if result.j < 0: possibleClass = possibleClass * XMX
+  elif result.j == 0: possibleClass = possibleClass * XOX
+  else: possibleClass = possibleClass * XPX
+  if result.k < 0: possibleClass = possibleClass * XXM
+  elif result.k == 0: possibleClass = possibleClass * XXO
+  else: possibleClass = possibleClass * XXP
+  assert(card(possibleClass) == 1)
+  var intVal = cast[int64](possibleClass)
+  var idx: uint32 = 0
+  BitScanForward64(addr idx, intVal)
+  result.class = cast[TRayClassification](idx)
 
+proc intersects*(r: TIntersectRay, b: TAlignedBox3f): bool =
+  case r.class
+  of MMM:
+    if (r.x < b.min.x) or (r.y < b.min.y) or (r.z < b.min.z) or 
+      (r.jbyi * b.min.x - b.max.y + r.c_xy > 0) or 
+      (r.ibyj * b.min.y - b.max.x + r.c_yx > 0) or 
+      (r.jbyk * b.min.z - b.max.y + r.c_zy > 0) or 
+      (r.kbyj * b.min.y - b.max.z + r.c_yz > 0) or 
+      (r.kbyi * b.min.x - b.max.z + r.c_xz > 0) or 
+      (r.ibyk * b.min.z - b.max.x + r.c_zx > 0): return false
+    return true
+  of MMP:
+    if (r.x < b.min.x) or (r.y < b.min.y) or (r.z > b.max.z) or 
+      (r.jbyi * b.min.x - b.max.y + r.c_xy > 0) or
+      (r.ibyj * b.min.y - b.max.x + r.c_yx > 0) or
+      (r.jbyk * b.max.z - b.max.y + r.c_zy > 0) or
+      (r.kbyj * b.min.y - b.min.z + r.c_yz < 0) or
+      (r.kbyi * b.min.x - b.min.z + r.c_xz < 0) or
+      (r.ibyk * b.max.z - b.max.x + r.c_zx > 0): return false
+    return true
+  of MPM:
+    if (r.x < b.min.x) or (r.y > b.max.y) or (r.z < b.min.z) or
+      (r.jbyi * b.min.x - b.min.y + r.c_xy < 0) or
+      (r.ibyj * b.max.y - b.max.x + r.c_yx > 0) or
+      (r.jbyk * b.min.z - b.min.y + r.c_zy < 0) or
+      (r.kbyj * b.max.y - b.max.z + r.c_yz > 0) or
+      (r.kbyi * b.min.x - b.max.z + r.c_xz > 0) or
+      (r.ibyk * b.min.z - b.max.x + r.c_zx > 0): return false
+    return true
+  of MPP:
+    if (r.x < b.min.x) or (r.y > b.max.y) or (r.z > b.max.z) or
+      (r.jbyi * b.min.x - b.min.y + r.c_xy < 0) or
+      (r.ibyj * b.max.y - b.max.x + r.c_yx > 0) or
+      (r.jbyk * b.max.z - b.min.y + r.c_zy < 0) or
+      (r.kbyj * b.max.y - b.min.z + r.c_yz < 0) or
+      (r.kbyi * b.min.x - b.min.z + r.c_xz < 0) or
+      (r.ibyk * b.max.z - b.max.x + r.c_zx > 0): return false
+    return true
+  of PMM:
+    if (r.x > b.max.x) or (r.y < b.min.y) or (r.z < b.min.z) or
+      (r.jbyi * b.max.x - b.max.y + r.c_xy > 0) or
+      (r.ibyj * b.min.y - b.min.x + r.c_yx < 0) or
+      (r.jbyk * b.min.z - b.max.y + r.c_zy > 0) or
+      (r.kbyj * b.min.y - b.max.z + r.c_yz > 0) or
+      (r.kbyi * b.max.x - b.max.z + r.c_xz > 0) or
+      (r.ibyk * b.min.z - b.min.x + r.c_zx < 0): return false
+    return true
+  of PMP:
+    if (r.x > b.max.x) or (r.y < b.min.y) or (r.z > b.max.z) or
+      (r.jbyi * b.max.x - b.max.y + r.c_xy > 0) or
+      (r.ibyj * b.min.y - b.min.x + r.c_yx < 0) or
+      (r.jbyk * b.max.z - b.max.y + r.c_zy > 0) or
+      (r.kbyj * b.min.y - b.min.z + r.c_yz < 0) or
+      (r.kbyi * b.max.x - b.min.z + r.c_xz < 0) or
+      (r.ibyk * b.max.z - b.min.x + r.c_zx < 0): return false
+    return true
+  of PPM:
+    if (r.x > b.max.x) or (r.y > b.max.y) or (r.z < b.min.z) or
+      (r.jbyi * b.max.x - b.min.y + r.c_xy < 0) or
+      (r.ibyj * b.max.y - b.min.x + r.c_yx < 0) or
+      (r.jbyk * b.min.z - b.min.y + r.c_zy < 0) or
+      (r.kbyj * b.max.y - b.max.z + r.c_yz > 0) or
+      (r.kbyi * b.max.x - b.max.z + r.c_xz > 0) or
+      (r.ibyk * b.min.z - b.min.x + r.c_zx < 0): return false
+    return true
+  of PPP:
+    if (r.x > b.max.x) or (r.y > b.max.y) or (r.z > b.max.z) or
+      (r.jbyi * b.max.x - b.min.y + r.c_xy < 0) or
+      (r.ibyj * b.max.y - b.min.x + r.c_yx < 0) or
+      (r.jbyk * b.max.z - b.min.y + r.c_zy < 0) or
+      (r.kbyj * b.max.y - b.min.z + r.c_yz < 0) or
+      (r.kbyi * b.max.x - b.min.z + r.c_xz < 0) or
+      (r.ibyk * b.max.z - b.min.x + r.c_zx < 0): return false
+    return true
+  of OMM:
+    if (r.x < b.min.x) or (r.x > b.max.x) or
+      (r.y < b.min.y) or (r.z < b.min.z) or
+      (r.jbyk * b.min.z - b.max.y + r.c_zy > 0) or
+      (r.kbyj * b.min.y - b.max.z + r.c_yz > 0): return false
+    return true
+  of OMP:
+    if (r.x < b.min.x) or (r.x > b.max.x) or
+      (r.y < b.min.y) or (r.z > b.max.z) or
+      (r.jbyk * b.max.z - b.max.y + r.c_zy > 0) or
+      (r.kbyj * b.min.y - b.min.z + r.c_yz < 0): return false
+    return true
+  of OPM:
+    if (r.x < b.min.x) or (r.x > b.max.x) or
+      (r.y > b.max.y) or (r.z < b.min.z) or
+      (r.jbyk * b.min.z - b.min.y + r.c_zy < 0) or
+      (r.kbyj * b.max.y - b.max.z + r.c_yz > 0): return false
+    return true
+  of OPP:
+    if (r.x < b.min.x) or (r.x > b.max.x) or
+      (r.y > b.max.y) or (r.z > b.max.z) or
+      (r.jbyk * b.max.z - b.min.y + r.c_zy < 0) or
+      (r.kbyj * b.max.y - b.min.z + r.c_yz < 0) :return false
+    return true
+  of MOM:
+    if (r.y < b.min.y) or (r.y > b.max.y) or
+      (r.x < b.min.x) or (r.z < b.min.z)  or
+      (r.kbyi * b.min.x - b.max.z + r.c_xz > 0) or
+      (r.ibyk * b.min.z - b.max.x + r.c_zx > 0): return false
+    return true
+  of MOP:
+    if (r.y < b.min.y) or (r.y > b.max.y) or
+      (r.x < b.min.x) or (r.z > b.max.z) or
+      (r.kbyi * b.min.x - b.min.z + r.c_xz < 0) or
+      (r.ibyk * b.max.z - b.max.x + r.c_zx > 0): return false
+    return true
+  of POM:
+    if (r.y < b.min.y) or (r.y > b.max.y) or
+      (r.x > b.max.x) or (r.z < b.min.z) or
+      (r.kbyi * b.max.x - b.max.z + r.c_xz > 0) or
+      (r.ibyk * b.min.z - b.min.x + r.c_zx < 0): return false
+    return true
+  of POP:
+    if (r.y < b.min.y) or (r.y > b.max.y) or
+      (r.x > b.max.x) or (r.z > b.max.z) or
+      (r.kbyi * b.max.x - b.min.z + r.c_xz < 0) or
+      (r.ibyk * b.max.z - b.min.x + r.c_zx < 0): return false
+    return true
+  of MMO:
+    if (r.z < b.min.z) or (r.z > b.max.z) or
+      (r.x < b.min.x) or (r.y < b.min.y)  or
+      (r.jbyi * b.min.x - b.max.y + r.c_xy > 0) or
+      (r.ibyj * b.min.y - b.max.x + r.c_yx > 0): return false
+    return true
+  of MPO:
+    if (r.z < b.min.z) or (r.z > b.max.z) or
+      (r.x < b.min.x) or (r.y > b.max.y) or
+      (r.jbyi * b.min.x - b.min.y + r.c_xy < 0) or
+      (r.ibyj * b.max.y - b.max.x + r.c_yx > 0): return false
+    return true
+  of PMO:
+    if (r.z < b.min.z) or (r.z > b.max.z) or
+      (r.x > b.max.x) or (r.y < b.min.y)  or
+      (r.jbyi * b.max.x - b.max.y + r.c_xy > 0) or
+      (r.ibyj * b.min.y - b.min.x + r.c_yx < 0): return false
+    return true
+  of PPO:
+    if (r.z < b.min.z) or (r.z > b.max.z) or
+      (r.x > b.max.x) or (r.y > b.max.y) or
+      (r.jbyi * b.max.x - b.min.y + r.c_xy < 0) or
+      (r.ibyj * b.max.y - b.min.x + r.c_yx < 0): return false
+    return true
+  of MOO:
+    if (r.x < b.min.x) or
+      (r.y < b.min.y) or (r.y > b.max.y) or
+      (r.z < b.min.z) or (r.z > b.max.z): return false
+    return true
+  of POO:
+    if (r.x > b.max.x) or
+      (r.y < b.min.y) or (r.y > b.max.y) or
+      (r.z < b.min.z) or (r.z > b.max.z): return false
+    return true
+  of OMO:
+    if (r.y < b.min.y) or
+      (r.x < b.min.x) or (r.x > b.max.x) or
+      (r.z < b.min.z) or (r.z > b.max.z): return false
+    return true
+  of OPO:
+    if (r.y > b.max.y) or
+      (r.x < b.min.x) or (r.x > b.max.x) or
+      (r.z < b.min.z) or (r.z > b.max.z): return false
+    return true
+  of OOM:
+    if (r.z < b.min.z) or
+      (r.x < b.min.x) or (r.x > b.max.x) or
+      (r.y < b.min.y) or (r.y > b.max.y): return false
+    return true
+  of OOP:
+    if (r.z > b.max.z) or
+      (r.x < b.min.x) or (r.x > b.max.x) or
+      (r.y < b.min.y) or (r.y > b.max.y): return false
+    return true
+  return false
+proc intersects*(r: TRay, b: TAlignedBox3f): bool =
+  result = intersects(Precompute_Ray(r), b)
 # frustum related code, for culling and
 # other stuff
 type TPlane* = distinct TVec4f

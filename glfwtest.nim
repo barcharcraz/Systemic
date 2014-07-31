@@ -62,11 +62,14 @@ wnd.cursorMode = cmDisabled
 AttachInput(wnd)
 var done = false
 var mainscene = initScene()
-mainscene.id.addDirectionalLight(vec3f(-1.0'f32, -1.0'f32, 0.0'f32).normalize())
+#mainscene.id.addDirectionalLight(vec3f(-1.0'f32, -1.0'f32, 0.0'f32).normalize())
 #mainscene.id.addComponent(initDirectionalLight(vec3f(0.0'f32,0.0'f32,-1.0'f32)))
+mainscene.id.addSpotLight(vec3f(0, 2, -2), vec3f(0,-1,0), colBlue)
 
 var camEnt = mainscene.id.addCamera()
 var inp = initShooterKeys()
+inp.AddAction("FreeLook", {input.keyLeftShift})
+inp.AddAction("select", {input.mbRight})
 camEnt.add(addr inp)
 
 mainscene.id.addStaticMesh("assets/sphere.obj", "assets/diffuse.tga", vec3f(10,0,-2))
@@ -84,13 +87,17 @@ glClearColor(0.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
 
 proc UpdateAll(scene: SceneId) =
   inp.Update(pollInput(wnd))
+  if inp.Action("FreeLook"): wnd.cursorMode = cmDisabled
+  else: wnd.cursorMode = cmNormal
+
   AccelerationSystem(scene)
-  MovementSystem(scene, inp)
+  EditorMovementSystem(scene, inp, not inp.Action("FreeLook"))
   VelocitySystem(scene)
-  HandleAllInput(frame, pollInputAbsolute(wnd))
+  HandleAllInput(frame, pollInput(wnd))
   PrimitiveRenderSystem(scene)
   RenderShadowMaps(scene)
   RenderPhongLit(scene)
+  SelectionSystem(scene, inp)
   DrawWidgets(cairo_ctx, frame)
   RenderUI(cairo_ctx)
 while not done and not wnd.shouldClose:
@@ -102,6 +109,8 @@ while not done and not wnd.shouldClose:
   
 wnd.destroy()
 glfw.terminate()
+
+
 
 
 

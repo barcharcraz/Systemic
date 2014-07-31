@@ -23,7 +23,18 @@ proc CollectDirLights*(scene: SceneId, viewMtx: TMat4f): seq[TDirectionalLightRa
     dlight.specular = light[].specular
     dlight.direction = mul4v(viewMtx, light[].direction)
     result.add(dlight)
-    
+
+proc CollectSpotLights*(scene: SceneId, viewMtx: TMat4f): seq[TSpotLightRaw] =
+  result = @[]
+  for i, light, pos in walk(scene, TSpotLight, TTransform):
+     var slight: TSpotLightRaw
+     slight.diffuse = light[].diffuse
+     slight.specular = light[].specular
+     slight.cutoff = light[].cutoff
+     slight.direction = mul4v(viewMtx, vec4f(mulv(pos[].rotation, vec3f(0,1,0)).normalize(), 0.0))
+     slight.fov = light[].fov
+     slight.position = mul4v(viewMtx, vec4f(pos[].position, 1))
+     result.add(slight)
 proc CalcViewMatrix*(dir: TVec3f): TMat4f =
   # this could be a useful function for vecmath
   var dir = normalize(dir)

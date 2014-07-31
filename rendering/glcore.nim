@@ -222,7 +222,6 @@ proc InitializeDepthBuffer*(size: int): GLuint =
 
 
 
-
 proc CreateUniformBuffer*[T](arr: var openarray[T]): GLuint =
   glGenBuffers(1, addr result)
   glBindBuffer(GL_UNIFORM_BUFFER, result)

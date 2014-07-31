@@ -152,5 +152,4 @@ proc layoutList(elms: var seq[ref TWidget], anchor: ref TWidget) =
     elm.size.y = ystep
     elm.pos.x = anchor.pos.x
     elm.pos.y = anchor.pos.y + (i.float * ystep)
-
 #}}}

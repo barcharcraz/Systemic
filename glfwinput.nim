@@ -22,6 +22,8 @@ proc getKey(k: glfw.TKey): input.TKey =
     const keyAVal = glfw.keyA.int
     const inputKeyAVal = input.keyA.int
     return cast[input.TKey]((intVal - keyAVal) + inputKeyAVal)
+  of glfw.keyLeftShift:
+    return input.keyLeftShift
   else:
     return input.keyUnknown
 proc keyCb(o: PWin; key: glfw.TKey; scanCode: int; action: TKeyAction;
@@ -79,33 +81,27 @@ proc pollKeyboard*(self: PWin): input.TKeyCombination =
       result.excl(getKey(elm))
 
 
-  
-proc pollMouseAbsolute*(self: PWin): input.TMouse =
+
+
+proc pollMouse*(self: PWin): input.TMouse =
   var (x,y) = self.cursorPos
   result.x = x
   result.y = y
-  # TODO: include all the mouse buttons
-  #       here, not just L and R
-  if self.mouseBtnDown(mbLeft):
+  if self.mouseBtnDown(glfw.mbLeft):
     result.buttons.incl(input.mbLeft)
-  if self.mouseBtnDown(mbRight):
+  if self.mouseBtnDown(glfw.mbRight):
     result.buttons.incl(input.mbRight)
-
-proc pollMouse*(self: PWin): input.TMouse =
-  var mouseInfo = pollMouseAbsolute(self)
-  var dx = mouseInfo.x - lastx
-  var dy = mouseInfo.y - lasty
+  var dx = result.x - lastx
+  var dy = result.y - lasty
   if justEntered:
     justEntered = false
     dx = 0
     dy = 0
-  lastx = mouseInfo.x
-  lasty = mouseInfo.y
-  result.x = dx
-  result.y = dy
+  lastx = result.x
+  lasty = result.y
+  result.dx = dx
+  result.dy = dy
 proc pollInput*(self: PWin): input.TInput =
   result.keyboard = pollKeyboard(self)
   result.mouse = pollMouse(self)
-proc pollInputAbsolute*(self: PWin): input.TInput =
-  result.keyboard = pollKeyboard(self)
-  result.mouse = pollMouseAbsolute(self)
+

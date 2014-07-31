@@ -12,6 +12,9 @@ type TPrim* = object
   pos*: TVec3f
   color*: TVec3f
   mesh*: TPrimMesh
+type TPrimPoint* = object
+  pos*: TVec3f
+  color*: TVec3f
 MakeEntityComponent(TPrim)
 proc PrimCircleMesh(radius: float): TPrimMesh =
   const steps = 8
@@ -29,6 +32,8 @@ proc PrimCircleMesh(radius: float): TPrimMesh =
     result.indices.add(0)
   result.indices.add(1)
   result.indices.add(result.verts.high.uint32)
+  
+  
 
 proc PrimConeMesh*(radius: float, height: float): TPrimMesh =
   const steps = 8
@@ -70,6 +75,7 @@ proc PrimCylinderMesh*(radius: float, height: float): TPrimMesh =
   result.indices.add(circleLen + 1)
   result.indices.add(uint32(result.verts.high))
   result.indices.add(circleLen - 1)
+
 
 proc PrimBoundingBoxMesh(aabb: TAlignedBox3f): TPrimMesh =
   result.verts = @[]

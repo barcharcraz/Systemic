@@ -1,6 +1,7 @@
 import tables
 import ecs/entitynode
 import ecs/scenenode
+
 type TUsagePage* = enum
   upUndefined = 00,
   upGenericDesktop = 01
@@ -89,6 +90,7 @@ type TKey* = enum
   keyNumpad8 = 96,
   keyNumpad9 = 97,
   keyNumpad0 = 98,
+  keyLeftShift = 225
 type TMouseButton* = enum
   mbLeft = 1,
   mbRight = 2,
@@ -100,29 +102,38 @@ type TAxis = float
 type TMouse* = object
   x*: TAxis ##defined as being from 0-width
   y*: TAxis ##defined as being from 0-height going up
+  dx*: TAxis
+  dy*: TAxis
   buttons*: set[TMouseButton]
 type TInput* = object
   keyboard*: TKeyCombination
   mouse*: TMouse
+type TAction* = object
+  keys*: set[TKey]
+  mousebuttons*: set[TMouseButton]
 type TInputMapping* = object
   pressed*: TKeyCombination
   mouse*: TMouse
-  actions: TTable[string, TKeyCombination]
+  actions: TTable[string, TAction]
 
 type TKeyboard* = object
   keys*: TKeyCombination
 proc initInputMapping*(): TInputMapping =
   result.pressed = {}
   result.mouse.buttons = {}
-  result.actions = initTable[string, TKeyCombination]()
+  result.actions = initTable[string, TAction]()
 proc ActivateKey*(self: var TInputMapping, key: TKey) =
   self.pressed.incl(key)
 proc DeactivateKey*(self: var TInputMapping, key: TKey) = 
   self.pressed.excl(key)
 proc AddAction*(self: var TInputMapping, name: string, action: TKeyCombination) =
-  self.actions.add(name, action)
+  self.actions.add(name, TAction(keys: action, mousebuttons: {}))
+proc AddAction*(self: var TInputMapping, name: string, action: set[TMouseButton]) =
+  self.actions.add(name, TAction(keys: {}, mousebuttons: action))
 proc Action*(self: TInputMapping, name: string): bool =
-  result = self.actions[name] <= self.pressed
+  var action = self.actions[name]
+  result = action.keys <= self.pressed
+  result = result and action.mousebuttons <= self.mouse.buttons
 proc Update*(inp: var TInputMapping, newInfo: TInput) =
   inp.pressed = newInfo.keyboard
   inp.mouse = newInfo.mouse

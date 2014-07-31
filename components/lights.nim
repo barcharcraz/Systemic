@@ -1,5 +1,6 @@
 import vecmath
 import colors
+import math
 type TLightKind = enum
   lkPoint,
   lkDirectional
@@ -17,7 +18,7 @@ type TDirectionalLight* = object
 type TSpotLight* = object
   diffuse*: TVec4f
   specular*: TVec4f
-  direction*: TVec4f
+  cutoff*: float32
   fov*: float32
 type TDirectionalLightRaw* = TDirectionalLight
   ## This is a bit of a stupid type definition, but
@@ -37,6 +38,14 @@ type TPointLightRaw* = object
   constant*: float32
   linear*: float32
   quadratic*: float32
+type TSpotLightRaw* = object
+  diffuse*: TVec4f
+  specular*: TVec4f
+  direction*: TVec4f
+  position*: TVec4f
+  cutoff*: float32
+  fov*: float32
+
 type TLight* = TPointLight | TDirectionalLight
 
 proc initDirectionalLight*(dir: TVec3f): TDirectionalLight =
@@ -59,3 +68,10 @@ proc initPointLight*(color: TColor): TPointLight =
   result.constant = 1.0'f32
   result.linear = 0.0'f32
   result.quadratic = 0.05'f32
+
+proc initSpotLight*(color: TColor): TSpotLight =
+  var (r,g,b) = extractRGB(color)
+  result.diffuse = vec4f(r.float32/255.0, g.float32/255.0, b.float32/255.0, 1.0'f32)
+  result.specular = vec4f(r.float32/255.0, g.float32/255.0, b.float32/255.0, 1.0'f32)
+  result.cutoff = 20'f32
+  result.fov = 30.0 * (PI / 180.0)

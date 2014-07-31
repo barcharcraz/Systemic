@@ -8,7 +8,7 @@ import utils/iterators
 import input
 import vecmath
 import gametime
-const movementDbg = true
+const movementDbg = false
 loggingWrapper(movementDbg)
 proc VelocitySystem*(scene: SceneId) {.procvar.} =
   for id, elm in walk(scene, TVelocity):
@@ -28,8 +28,8 @@ proc MovementSystem*(scene: SceneId; inp: TInputMapping) {.procvar.} =
   var (cam, camMtx, pos, vel) = first(walk(scene, TCamera, TTransform, TVelocity))
   var newPos: TVec3f
   var dt = GetFrameTime()
-  var rotX = inp.mouse.x * 0.1 * dt
-  var rotY = inp.mouse.y * 0.1 * dt
+  var rotX = inp.mouse.dx * 0.1 * dt
+  var rotY = inp.mouse.dy * 0.1 * dt
   var newRotX = quatFromAngleAxis(rotX, vec3f(0,1,0))
   var newRotY = quatFromAngleAxis(rotY, vec3f(1,0,0))
   var newRot = identityQuatf()
@@ -64,24 +64,35 @@ proc MovementSystem*(scene: SceneId; inp: TInputMapping) {.procvar.} =
 
 proc OrbitMovementSystem*(scene: SceneId, dx, dy: float, pos: TVec3f) =
   var xrot = quatFromAngleAxis(dx * 0.005, vec3f(0,1,0))
-  var yrot = quatFromAngleAxis(dy * 0.005, vec3f(-1,0,0))
-  var rot = mul(xrot, yrot)
+  #var yrot = quatFromAngleAxis(dy * 0.005, vec3f(-1,0,0))
+  #var rot = mul(yrot, xrot)
   for id, cam, view in walk(scene, TCamera, TTransform):
-    var newPos = mulv(toRotMatrix(rot), (view[].position - pos))
-    newPos = newPos + pos
+    
+    view[].position = view[].position - pos
+    var yrot = quatFromAngleAxis(dy * 0.005, normalize(cross(vec3f(0,1,0), view[].position)))
+    var rot = mul(xrot, yrot)
+    debug(formatVec3f(view[].position))
+    rot = normalize(rot)
+    view[].position = mulv(toRotMatrix(rot), view[].position)
+    view[].position = view[].position + pos
+    #debug(formatVec3f(view[].position))
     rot.i = -rot.i
     rot.j = -rot.j
     rot.k = -rot.k
     view[].rotation = mul(view[].rotation, rot)
-    view[].position = newPos
 
 proc OrbitMovementSystem*(scene: SceneId, imp: TInputMapping, pos: TVec3f) =
-  OrbitMovementSystem(scene, imp.mouse.x, imp.mouse.y, pos)
+  OrbitMovementSystem(scene, imp.mouse.dx, imp.mouse.dy, pos)
 
 proc OrbitSelectionMovement*(scene: SceneId, dx, dy: float) =
   for id, sel, transform in walk(scene, TSelected, TTransform):
     OrbitMovementSystem(scene, dx, dy, transform[].position)
 
 proc OrbitSelectionMovement*(scene: SceneId, imp: TInputMapping) =
-  OrbitSelectionMovement(scene, imp.mouse.x, imp.mouse.y)
+  OrbitSelectionMovement(scene, imp.mouse.dx, imp.mouse.dy)
 
+proc EditorMovementSystem*(scene: SceneId, imp: TInputMapping, editorActive: bool) =
+  if editorActive:
+    OrbitSelectionMovement(scene, imp)
+  else:
+    MovementSystem(scene, imp)

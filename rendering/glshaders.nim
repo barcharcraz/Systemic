@@ -1,5 +1,27 @@
 import exceptions
 import logging
+const BasicVS* = """
+#version 140
+struct matrices_t {
+  mat4 model;
+  mat4 view;
+  mat4 proj;
+};
+
+uniform matrices_t mvp;
+in vec3 pos;
+void main() {
+  gl_Position = mvp.proj * mvp.view * mvp.model * vec4(pos, 1);
+}
+"""
+const BasicPS* = """
+#version 140
+uniform vec3 color;
+out vec4 outputColor;
+void main() {
+  outputColor = vec4(color,1);
+}
+"""
 const LightStructs* = """
 
 struct pointLight_t {
@@ -20,6 +42,8 @@ struct spotLight_t {
   vec4 diffuse;
   vec4 specular;
   vec4 direction;
+  vec4 position;
+  float cutoff;
   float fov;
 };
 struct material_t {
@@ -78,10 +102,33 @@ vec4 directionalLight(in directionalLight_t light,
 {
     return phongLight(mat, normalize(viewPos), normalize(-light.direction), normalize(norm), light.diffuse, light.specular);
 }
-
+vec4 spotLight(in spotLight_t light,
+               in vec4 norm,
+               in vec4 viewPos,
+               in material_t mat)
+{
+  float distance = distance(viewPos, light.position);
+  float angle = acos(dot(normalize(viewPos), light.direction));
+  if(angle > (light.fov / 2)) {
+    return vec4(0,0,0,0);
+  }
+  if(distance > light.cutoff) {
+    return vec4(0,0,0,0);
+  }
+  vec4 rv = phongLight(mat, normalize(viewPos), normalize(viewPos- light.position), normalize(norm), light.diffuse, light.specular);
+  return rv;
+}
 
 """
-
+const FloatPacking* = """
+vec4 pack_float(const in float val) {
+  const vec4 bit_shift = vec4(256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0);
+  const vec4 bit_mask = vec4(0.0, 1.0/256.0, 1.0/256.0, 1.0/256.0, 1.0/256.0);
+  vec4 res = fract(val * bit_shift)
+  res -= res.xxyz * bit_mask;
+  resutn res;
+}
+"""
 proc genDefine*(name: string, val: auto): string =
   result = "#define " & name & " " & $val & "\n"
 

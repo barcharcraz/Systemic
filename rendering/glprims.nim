@@ -4,6 +4,7 @@
 ##(batching will not happen, draw calls will contain a handful of elms, etc)
 
 import glcore
+import glshaders
 import opengl
 import prims
 import vecmath
@@ -17,28 +18,7 @@ import algorithm
 import sequtils
 import utils/iterators
 import genutils
-const primVS = """
-#version 140
-struct matrices_t {
-  mat4 model;
-  mat4 view;
-  mat4 proj;
-};
 
-uniform matrices_t mvp;
-in vec3 pos;
-void main() {
-  gl_Position = mvp.proj * mvp.view * mvp.model * vec4(pos, 1);
-}
-"""
-const primPS = """
-#version 140
-uniform vec3 color;
-out vec4 outputColor;
-void main() {
-  outputColor = vec4(color,1);
-}
-"""
 
 type TPrimType* = enum
   ptCone
@@ -46,8 +26,8 @@ proc getPrimProgram(): GLuint =
   var prog {.global.}: GLuint
   var ps {.global.}: GLuint
   var vs {.global.}: GLuint
-  if vs.int == 0: vs = CompileShader(GL_VERTEX_SHADER, primVS)
-  if ps.int == 0: ps = CompileShader(GL_FRAGMENT_SHADER, primPS)
+  if vs.int == 0: vs = CompileShader(GL_VERTEX_SHADER, BasicVS)
+  if ps.int == 0: ps = CompileShader(GL_FRAGMENT_SHADER, BasicPS)
   if prog.int == 0: prog = CreateProgram(vs, ps)
   result = prog
 
@@ -94,6 +74,7 @@ proc RenderPrim*(elm: TPrim, view,proj: TMat4f) =
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index)
   glDrawElements(GL_TRIANGLES, cast[GLSizei](elm.mesh.indices.len), GL_UNSIGNED_INT, nil)
   CheckError()
+  
 proc PrimitiveRenderSystem*(scene: SceneId) {.procvar.} =
   var cament = first(walk(scene, TCamera, TTransform))[0]
   var camTrans = cament@TTransform

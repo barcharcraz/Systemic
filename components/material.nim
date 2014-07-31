@@ -7,7 +7,7 @@ type TMaterial* = object
   shine*: float32
 
 proc initMaterial*(): TMaterial =
-  result.ambiant.data = [0.0'f32, 0.0'f32, 0.0'f32, 1.0'f32]
+  result.ambiant.data = [0.1'f32, 0.1'f32, 0.1'f32, 1.0'f32]
   result.diffuse.data = [1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32]
   result.specular.data = [1.0'f32, 1.0'f32, 1.0'f32, 1.0'f32]
   result.shine = 30.0'f32

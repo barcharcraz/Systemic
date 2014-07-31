@@ -70,14 +70,18 @@ proc add*[T](scene: SceneId, item: T): EntityId {.discardable.} =
 
 proc del*[T](ent: EntityId, typ: typedesc[T]) =
   var scene = ent.getScene()
-  var comps = addr components(scene, TComponent[T])
+  var ents = addr entities(scene, T)
+  var comps = addr components(scene, T)
   var idx = 0
-  for i,elm in comps[].pairs():
-    if elm.id == ent:
+  for i,elm in ents[].pairs():
+    if elm == ent:
       idx = i
       break
   comps[].del(idx)
-
+  ents[].del(idx)
+proc clear*[T](scene: SceneId, typ: typedesc[T]) =
+  components(scene, T) = @[]
+  entities(scene, T) = @[]
 iterator components*(ent: EntityId, typ: typedesc): typ {.inline.} =
   var scene = ent.getScene()
   for elm in components(scene, TComponent[typ]):

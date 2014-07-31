@@ -32,5 +32,9 @@ proc addPointLight*(scene: SceneId, pos: TVec3f, color: TColor): EntityId {.disc
   scene.add(result)
   result.add(initPointLight(color))
   result.add(initTransform(pos))
-  
+proc addSpotLight*(scene: SceneId, pos, dir: TVec3f, color: TColor): EntityId {.discardable.} =
+  result = genEntity()
+  scene.add(result)
+  result.add(initTransform(pos, quatFromTwoVectors(vec3f(0,1,0), dir)))
+  result.add(initSpotLight(color))
 
