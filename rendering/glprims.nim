@@ -74,6 +74,7 @@ proc RenderPrim*(elm: TPrim, view,proj: TMat4f) =
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index)
   glDrawElements(GL_TRIANGLES, cast[GLSizei](elm.mesh.indices.len), GL_UNSIGNED_INT, nil)
   CheckError()
+proc RenderRay*(elm: TRay) =
   
 proc PrimitiveRenderSystem*(scene: SceneId) {.procvar.} =
   var cament = first(walk(scene, TCamera, TTransform))[0]
