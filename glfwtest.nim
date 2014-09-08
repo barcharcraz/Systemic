@@ -33,8 +33,8 @@ import prims
 var log = newConsoleLogger()
 handlers.add(log)
 
-const winw = 1366
-const winh = 1366
+const winw = 800
+const winh = 600
 #cairo code
 var cairo_surface = image_surface_create(FORMAT_ARGB32, winw, winh)
 var cairo_ctx = create(cairo_surface)
@@ -62,11 +62,11 @@ wnd.cursorMode = cmDisabled
 AttachInput(wnd)
 var done = false
 var mainscene = initScene()
-#mainscene.id.addDirectionalLight(vec3f(-1.0'f32, -1.0'f32, 0.0'f32).normalize())
+mainscene.id.addDirectionalLight(vec3f(0.0'f32, -1.0'f32, 0.0'f32).normalize())
 #mainscene.id.addComponent(initDirectionalLight(vec3f(0.0'f32,0.0'f32,-1.0'f32)))
-mainscene.id.addSpotLight(vec3f(0, 2, -2), vec3f(0,-1,0), colBlue)
+#mainscene.id.addSpotLight(vec3f(0, 2, -2), vec3f(0,-1,0), colBlue)
 
-var camEnt = mainscene.id.addCamera()
+var camEnt = mainscene.id.addCamera(fov = 800/600)
 var inp = initShooterKeys()
 inp.AddAction("FreeLook", {input.keyLeftShift})
 inp.AddAction("select", {input.mbRight})
@@ -81,6 +81,10 @@ var testObj = mainscene.id.addStaticMesh("assets/testobj.obj", "assets/diffuse.t
 mainscene.id.addStaticMesh("assets/land.obj", "assets/diffuse.tga", vec3f(0,-5,0))
 populateAssets(listBox, "assets", "*.obj")
 UpdateAABBs(mainscene.id)
+
+for id, aabb in walk(mainscene.id, TAxisAlignedBB):
+  mainscene.id.add(PrimBoundingBox(aabb[].curAABB))
+
 initOpenGLRenderer()
 glViewport(0,0,winw,winh)
 glClearColor(0.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
@@ -94,9 +98,9 @@ proc UpdateAll(scene: SceneId) =
   EditorMovementSystem(scene, inp, not inp.Action("FreeLook"))
   VelocitySystem(scene)
   HandleAllInput(frame, pollInput(wnd))
+  RenderPhongLit(scene)
   PrimitiveRenderSystem(scene)
   RenderShadowMaps(scene)
-  RenderPhongLit(scene)
   SelectionSystem(scene, inp)
   DrawWidgets(cairo_ctx, frame)
   RenderUI(cairo_ctx)

@@ -35,8 +35,8 @@ proc findLightMatrix(scene: SceneId): TMat4f =
   #bbox.min = bbox.min - vec3f(10,10,10)
   swap(bbox.max.data[2], bbox.min.data[2])
   echo bbox
-  #bbox.min = vec3f(-20, -20, 20)
-  #bbox.max = vec3f(20,20,-20)
+  bbox.min = vec3f(-20, -20, 20)
+  bbox.max = vec3f(20,20,-20)
   var prim {.global.}: EntityId
   if prim == 0.EntityId:
     prim = genEntity()
@@ -72,7 +72,7 @@ proc RenderShadowMaps*(scene: SceneId) {.procvar.} =
       map[].depthTex = InitializeDepthBuffer(shadowMapRes)
     map[].shadowVP = mul(projmtx, viewMtx)
     map[].shadowVP = mul(BiasMatrix, map[].shadowVP)
-    glFrameBufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, map[].depthTex, 0)
+    glFrameBufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, map[].depthTex, 0)
     if glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
       raise newException(EFramebufferInvalid, "")
     glClear(GL_DEPTH_BUFFER_BIT)
@@ -82,7 +82,7 @@ proc RenderShadowMaps*(scene: SceneId) {.procvar.} =
       var transformIdx = glGetUniformLocation(program, "lightTransform")
       glUniformMatrix4fv(transformIdx, 1.GLsizei, false, cast[ptr GLfloat](addr mvmtx.data[0]))
       glBindVertexArray(buffers[].vao)
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[].index)
+      #glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[].index)
       glDrawElements(GL_TRIANGLES, cast[GLSizei](mesh.indices.len), GL_UNSIGNED_INT, nil)
   glBindFrameBuffer(GL_FRAMEBUFFER, 0)
   glViewport(oldView[1], oldView[2], oldView[3], oldView[4])
