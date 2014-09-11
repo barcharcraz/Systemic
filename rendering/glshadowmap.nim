@@ -31,12 +31,12 @@ void main() {
 const shadowMapRes = 4096
 proc findLightMatrix(scene: SceneId): TMat4f =
   var bbox = BruteForceFrustum(scene)
-  #bbox.max = bbox.max + vec3f(10,10,10)
-  #bbox.min = bbox.min - vec3f(10,10,10)
+  bbox.max = bbox.max + vec3f(10,10,10)
+  bbox.min = bbox.min - vec3f(10,10,10)
   swap(bbox.max.data[2], bbox.min.data[2])
   echo bbox
-  bbox.min = vec3f(-20, -20, 20)
-  bbox.max = vec3f(20,20,-20)
+  #bbox.min = vec3f(-20, -20, -20)
+  #bbox.max = vec3f(20,20,20)
   var prim {.global.}: EntityId
   if prim == 0.EntityId:
     prim = genEntity()

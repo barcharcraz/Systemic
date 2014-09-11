@@ -2,7 +2,7 @@ import ecs
 import math
 import components
 import vecmath
-
+import prims
 proc CollectPointLights*(scene: SceneId, viewMtx: TMat4f): seq[TPointLightRaw] =
   result = @[]
   for i, light, pos in walk(scene, TPointLight, TTransform):
@@ -54,6 +54,7 @@ proc ConstructDirShadowMatrices*(camera: TCamera, cameraPos: TMat4f, dir: TVec3f
   var corners: array[TFrustumCorner, TVec3f]
   for elm in TFrustumCorner:
     corners[elm] =  FrustumCorner(camera, elm)
+    #echo elm, formatVec3f(corners[elm])
     corners[elm] = mul3v(cameraPos, corners[elm])
   var centroid = sum(corners) / len(corners).float32
   let nearOffset = 0.0
@@ -67,7 +68,9 @@ proc ConstructDirShadowMatrices*(camera: TCamera, cameraPos: TMat4f, dir: TVec3f
   for elm in TFrustumCorner:
     corners[elm] = mul3v(result.view, corners[elm])
   var (min, max) = extrema(corners)
+  echo max.z
   result.proj = CreateOrthoMatrix(min.x, max.x, min.y, max.y, -max.z - nearOffset, -min.z)
+  DrawPrimBoundingBox(TAlignedBox3f(min: min, max: max))
 proc ConstructDepthVP*(dir: TVec3f, proj: TMat4f): TMat4f =
   var view = CalcViewMatrix(dir)
   var vp = mul(proj, view)

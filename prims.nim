@@ -140,3 +140,23 @@ proc PrimHandle*(pos: TVec3f = vec3f(0,0,0),
 
 proc PrimBoundingBox*(aabb: TAlignedBox3f): TPrim =
   result = initPrim(PrimBoundingBoxMesh(aabb), colGreen, vec3f(0,0,0))
+
+## what follows is the immediate mode primitive stack it works in concert with the ECS system
+## each of the following functions will add a primitive to a special RenderingStack list that is cleared
+## after it is rendered, thus we get a kind of immediate mode rendering.
+
+type TPrimitiveStack* = seq[TPrim]
+
+MakeEntityComponent(TPrimitiveStack)
+
+proc DrawPrim*(scene: SceneId, prim: TPrim) =
+  if components(scene, TPrimitiveStack).len == 0:
+    var stack: TPrimitiveStack = @[]
+    scene.add(stack)
+  var stack = scene?TPrimitiveStack
+  stack[].add(prim)
+proc DrawPrim*(prim: TPrim) = DrawPrim(0.SceneId, prim)
+proc DrawPrimBoundingBox*(scene: SceneId, aabb: TAlignedBox3f) =
+  DrawPrim(scene, PrimBoundingBox(aabb))
+proc DrawPrimBoundingBox*(aabb: TAlignedBox3f) = DrawPrimBoundingBox(0.SceneId, aabb)
+

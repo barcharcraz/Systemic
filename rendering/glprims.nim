@@ -84,9 +84,10 @@ proc PrimitiveRenderSystem*(scene: SceneId) {.procvar.} =
   var projMatrix = camera.AdjustProjMatrix()
   glDisable(cGL_CULL_FACE)
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-  for elm in PrimitiveStack:
-    RenderPrim(elm, view, projMatrix)
-  PrimitiveStack.setLen(0)
+  for id, elm in walk(scene, TPrimitiveStack):
+    for prim in elm[]:
+      RenderPrim(prim, view, projMatrix)
+    elm[].setLen(0)
   for elm in components(scene, TPrim):
     RenderPrim(elm, view, projMatrix)
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)

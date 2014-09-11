@@ -167,8 +167,20 @@ proc mfirst*[T: HasComponent](scene: SceneId): var T =
     result = comps[][0]
 proc first*[T: HasComponent](scene: SceneId): T =
   when compiles(GetDefaultNode[T]()):
-    result = mfirst[T](scene)    
-
+    result = mfirst[T](scene)
+proc `?`*(scene: SceneId, typ: typedesc): ptr typ =
+  ## the `?` operator on a scene will get a pointer to the first
+  ## component of typ that is in the scene, if there is no component
+  ## of typ in the scene than this function will return a nil pointer
+  if scene.components(typ).len == 0:
+    result = nil
+  else:
+    result = addr scene.components(typ)[0]
+proc `@`*(scene: SceneId, typ: typedesc): var typ =
+  ## the `@` operator on a scene will get a modifiable reference to
+  ## the first component of that type in the scene, if no component
+  ## exists the program will crash or an exception will be thrown
+  result = (scene?typ)[]
 when isMainModule:
   proc testSystem(id: SceneId, ints: openarray[int]) =
     for elm in ints:

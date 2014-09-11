@@ -62,7 +62,7 @@ wnd.cursorMode = cmDisabled
 AttachInput(wnd)
 var done = false
 var mainscene = initScene()
-mainscene.id.addDirectionalLight(vec3f(0.0'f32, -1.0'f32, 0.0'f32).normalize())
+mainscene.id.addDirectionalLight(vec3f(1.0'f32, -1.0'f32, 0.0'f32).normalize())
 #mainscene.id.addComponent(initDirectionalLight(vec3f(0.0'f32,0.0'f32,-1.0'f32)))
 #mainscene.id.addSpotLight(vec3f(0, 2, -2), vec3f(0,-1,0), colBlue)
 
@@ -82,13 +82,13 @@ mainscene.id.addStaticMesh("assets/land.obj", "assets/diffuse.tga", vec3f(0,-5,0
 populateAssets(listBox, "assets", "*.obj")
 UpdateAABBs(mainscene.id)
 
-for id, aabb in walk(mainscene.id, TAxisAlignedBB):
-  mainscene.id.add(PrimBoundingBox(aabb[].curAABB))
+#for id, aabb in walk(mainscene.id, TAxisAlignedBB):
+#  mainscene.id.add(PrimBoundingBox(aabb[].curAABB))
 
 initOpenGLRenderer()
 glViewport(0,0,winw,winh)
 glClearColor(0.0'f32, 0.0'f32, 0.0'f32, 1.0'f32)
-
+echo mainscene.id.int
 proc UpdateAll(scene: SceneId) =
   inp.Update(pollInput(wnd))
   if inp.Action("FreeLook"): wnd.cursorMode = cmDisabled

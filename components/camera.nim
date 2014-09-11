@@ -35,8 +35,9 @@ type TFrustumCorner* = enum
   fcFarBL,
   fcFarBR
 proc FrustumCorner*(camera: TCamera, which: TFrustumCorner): TVec3f =
-  var hfar = 2 * tan(camera.fov / 2) * camera.far
-  var hnear = 2 * tan(camera.fov / 2) * camera.near
+  var rfov = camera.fov * (PI / 180.0)
+  var hfar = 2 * tan(rfov / 2) * camera.far
+  var hnear = 2 * tan(rfov / 2) * camera.near
   var wfar = hfar * camera.aspect
   var wnear = hnear * camera.aspect
   case which
