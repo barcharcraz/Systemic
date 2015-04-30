@@ -52,7 +52,7 @@ proc RenderPrim*(elm: TPrim, view,proj: TMat4f) =
   var index {.global.}: GLuint
   var vao {.global.}: GLuint
   glUseProgram(getPrimProgram())
-  BindTransforms(getPrimProgram(), elm.pos.toTranslationMatrix(), view, proj)
+  BindTransforms(getPrimProgram(), elm.transform, view, proj)
   var colorIdx = glGetUniformLocation(getPrimProgram(), "color")
   glUniform3fv(colorIdx, 1, cast[ptr GLfloat](addr elm.color.data))
   if vbo == 0: glGenBuffers(1, addr vbo)

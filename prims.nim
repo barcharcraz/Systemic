@@ -9,7 +9,7 @@ type TPrimMesh* = object
   verts*: seq[TVec3f]
   indices*: seq[uint32]
 type TPrim* = object
-  pos*: TVec3f
+  transform*: TMat4f
   color*: TVec3f
   mesh*: TPrimMesh
 type TPrimPoint* = object
@@ -102,7 +102,8 @@ proc initPrim(mesh: TPrimMesh, color: TColor, pos: TVec3f): TPrim =
   result.mesh = mesh
   var (r,g,b) = extractRGB(color)
   result.color = vec3f(float(r),float(g),float(b)).normalize()
-  result.pos = pos
+  result.transform = toTranslationMatrix(pos)
+
 
 proc PrimCone*(pos: TVec3f = vec3f(0,0,0),
                color: TColor = colForestGreen,
@@ -158,5 +159,8 @@ proc DrawPrim*(scene: SceneId, prim: TPrim) =
 proc DrawPrim*(prim: TPrim) = DrawPrim(0.SceneId, prim)
 proc DrawPrimBoundingBox*(scene: SceneId, aabb: TAlignedBox3f) =
   DrawPrim(scene, PrimBoundingBox(aabb))
+proc DrawPrimCone*(scene: SceneId, pos: TVec3f) =
+  DrawPrim(scene, PrimCone(pos))
 proc DrawPrimBoundingBox*(aabb: TAlignedBox3f) = DrawPrimBoundingBox(0.SceneId, aabb)
+proc DrawPrimCone*(pos: TVec3f) = DrawPrimCone(0.SceneId, pos)
 

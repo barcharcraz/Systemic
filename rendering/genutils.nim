@@ -57,20 +57,22 @@ proc ConstructDirShadowMatrices*(camera: TCamera, cameraPos: TMat4f, dir: TVec3f
     #echo elm, formatVec3f(corners[elm])
     corners[elm] = mul3v(cameraPos, corners[elm])
   var centroid = sum(corners) / len(corners).float32
+  centroid.z = -5.0
   let nearOffset = 0.0
   let distFromCentroid = 5.0 + nearOffset
   var workingPos = centroid + -1 * normalize(dir) * distFromCentroid
   var upv = vec3f(0,1,0)
-  #var dotp = dot(upv, normalize(centroid - workingPos))
-  #if dotp == 1.0 or dotp == -1.0:
-  #  upv = vec3f(1,0,0)
+  var dotp = dot(upv, normalize(centroid - workingPos))
+  if dotp == 1.0 or dotp == -1.0:
+    upv = vec3f(1,0,0)
   result.view = LookAt(workingPos, centroid, upv)
   for elm in TFrustumCorner:
     corners[elm] = mul3v(result.view, corners[elm])
   var (min, max) = extrema(corners)
-  echo max.z
+  #echo min.y
   result.proj = CreateOrthoMatrix(min.x, max.x, min.y, max.y, -max.z - nearOffset, -min.z)
-  DrawPrimBoundingBox(TAlignedBox3f(min: min, max: max))
+  #DrawPrimBoundingBox(TAlignedBox3f(min: min, max: max))
+  DrawPrimCone(workingPos)
 proc ConstructDepthVP*(dir: TVec3f, proj: TMat4f): TMat4f =
   var view = CalcViewMatrix(dir)
   var vp = mul(proj, view)

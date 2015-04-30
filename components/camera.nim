@@ -42,35 +42,35 @@ proc FrustumCorner*(camera: TCamera, which: TFrustumCorner): TVec3f =
   var wnear = hnear * camera.aspect
   case which
   of fcNearUL:
-    result.z = camera.near
+    result.z = -camera.near
     result.y = hnear / 2
     result.x = -wnear / 2
   of fcNearUR:
-    result.z = camera.near
+    result.z = -camera.near
     result.y = hnear / 2
     result.x = wnear / 2
   of fcNearBL:
-    result.z = camera.near
+    result.z = -camera.near
     result.y = -hnear / 2
     result.x = -wnear / 2
   of fcNearBR:
-    result.z = camera.near
+    result.z = -camera.near
     result.y = -hnear / 2
     result.x = wnear / 2
   of fcFarUL:
-    result.z = camera.far
+    result.z = -camera.far
     result.y = hfar / 2
     result.x = -wfar / 2
   of fcFarUR:
-    result.z = camera.far
+    result.z = -camera.far
     result.y = hfar / 2
     result.x = wfar / 2
   of fcFarBL:
-    result.z = camera.far
+    result.z = -camera.far
     result.y = -hfar / 2
     result.x = -wfar / 2
   of fcFarBR:
-    result.z = camera.far
+    result.z = -camera.far
     result.y = -hfar / 2
     result.x = wfar / 2 
 
